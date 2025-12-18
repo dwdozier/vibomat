@@ -1,0 +1,47 @@
+# GEMINI.md - AI Assistant Guide
+
+This guide provides context and instructions for AI assistants to effectively contribute to this project.
+
+## 1. Project Summary
+
+A Python CLI tool to programmatically create and manage Spotify playlists from local JSON data files. It supports multiple methods for securely handling Spotify API credentials.
+
+## 2. Development Environment
+
+Use the following commands to set up the development environment.
+
+1.  **Install dependencies:**
+    ```bash
+    uv sync
+    ```
+
+2.  **Activate virtual environment:**
+    ```bash
+    source .venv/bin/activate
+    ```
+
+## 3. Core Architecture
+
+-   **Main Entry Point:** The application logic is contained entirely within `spotify_playlist_builder.py`.
+-   **Core Class:** The `SpotifyPlaylistBuilder` class orchestrates all interaction with the Spotify API, including authentication, track searching, and playlist manipulation.
+-   **Credential Management:** The script can retrieve credentials from a `.env` file, the system's native keychain (via `keyring`), or 1Password. The default source is `.env`.
+-   **Configuration:** Project dependencies and tool settings are defined in `pyproject.toml`.
+
+## 4. Key Commands
+
+Use these commands to maintain code quality and run the application.
+
+-   **Run the application:**
+    ```bash
+    python spotify_playlist_builder.py playlists/your-playlist.json --source [env|keyring|1password]
+    ```
+
+-   **Format code:**
+    ```bash
+    black .
+    ```
+
+-   **Lint code:**
+    ```bash
+    ruff check .
+    ```

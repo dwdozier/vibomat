@@ -46,7 +46,7 @@ This reads from `pyproject.toml` and creates an isolated environment.
 
 ### 3. Choose Credential Storage Method
 
-You can store credentials in either `.env` (simpler) or 1Password (more secure). Pick one:
+You can store credentials in `.env`, your system's secure keychain, or 1Password. Pick one:
 
 #### Option A: Use .env File
 
@@ -59,11 +59,19 @@ SPOTIFY_CLIENT_SECRET=your_client_secret_here
 
 **Important:** Add `.env` to `.gitignore` so you don't commit secrets.
 
-```bash
-python spotify_playlist.py playlist.json your_spotify_username
-```
+#### Option B: Use System Keychain (macOS, Linux, Windows)
 
-#### Option B: Use 1Password (Recommended)
+Use a helper command to securely store your credentials in your operating system's default keychain (e.g., macOS Keychain, Windows Credential Manager).
+
+**Store credentials:**
+```bash
+python spotify_playlist_builder.py --store-credentials
+```
+You will be prompted to enter your Client ID and Secret.
+
+This is more secure than a `.env` file as credentials are encrypted and managed by your OS.
+
+#### Option C: Use 1Password (Recommended)
 
 **Install and authenticate 1Password CLI:**
 
@@ -94,12 +102,6 @@ op read "op://Personal/Spotify/client_id"
 
 Should output your Client ID.
 
-**Then run:**
-
-```bash
-python spotify_playlist.py playlist.json your_spotify_username --source 1password
-```
-
 ## Usage
 
 ### Create a Playlist JSON File
@@ -121,21 +123,23 @@ Create a file in `playlists/` like `my-playlist.json`:
 ### Run the Script
 
 **Using .env (default):**
-
 ```bash
-python spotify_playlist.py playlists/my-playlist.json your_spotify_username
+python spotify_playlist_builder.py playlists/my-playlist.json
+```
+
+**Using System Keychain:**
+```bash
+python spotify_playlist_builder.py playlists/my-playlist.json --source keyring
 ```
 
 **Using 1Password:**
-
 ```bash
-python spotify_playlist.py playlists/my-playlist.json your_spotify_username --source 1password
+python spotify_playlist_builder.py playlists/my-playlist.json --source 1password
 ```
 
 **With custom 1Password vault/item (if different from defaults):**
-
 ```bash
-python spotify_playlist.py playlists/my-playlist.json your_spotify_username --source 1password --vault "MyVault" --item "MySpotifyItem"
+python spotify_playlist_builder.py playlists/my-playlist.json --source 1password --vault "MyVault" --item "MySpotifyItem"
 ```
 
 ### What Happens
@@ -161,7 +165,7 @@ Playlist ready: https://open.spotify.com/playlist/7abc123...
 
 ```sh
 spotify-playlist-builder/
-├── spotify_playlist.py      # Main script
+├── spotify_playlist_builder.py # Main script
 ├── pyproject.toml           # Project config & dependencies
 ├── uv.lock                  # Locked dependencies
 ├── .venv/                   # Virtual environment (in .gitignore)
@@ -179,15 +183,15 @@ spotify-playlist-builder/
 - **Track Not Found**: If a track isn't found, check the spelling. Spotify's search is forgiving but works best with exact artist/track names
 - **Reuse the JSON**: You can run the same JSON multiple times to create duplicate playlists, or modify it and create variations
 - **Version Control**: Keep your playlist JSON files in git to track curation changes over time
-- **Credential Security**: 1Password is more secure than .env—credentials stay encrypted and never committed to git
-- **Team Sharing**: If sharing with your team, have each person use their own 1Password account or .env file locally
+- **Credential Security**: 1Password and the system keychain are more secure than .env—credentials stay encrypted and never committed to git
+- **Team Sharing**: If sharing with your team, have each person use their own credential store locally
 
 ## Example
 
 See `playlists/depeche-mode.json` for a complete example with ~36 tracks.
 
 ```bash
-python spotify_playlist.py playlists/depeche-mode.json your_username
+python spotify_playlist_builder.py playlists/depeche-mode.json
 ```
 
 ## License

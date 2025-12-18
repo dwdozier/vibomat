@@ -45,3 +45,6 @@ htmlcov/
 
 # uv
 uv.lock
+
+# cached
+.cache
