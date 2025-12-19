@@ -350,7 +350,7 @@ class SpotifyPlaylistBuilder:
 
         return failed_tracks
 
-    def build_playlist_from_json(self, json_file: str) -> None:
+    def build_playlist_from_json(self, json_file: str, dry_run: bool = False) -> None:
         """Build or update a playlist from a JSON file."""
         with open(json_file, "r") as f:
             playlist_data = json.load(f)
@@ -361,6 +361,9 @@ class SpotifyPlaylistBuilder:
 
         print(f"Authenticated as: {self.user_id}")
         print(f"Processing playlist: {playlist_name}")
+
+        if dry_run:
+            print("DRY RUN MODE: No changes will be made to your Spotify account.")
 
         # Search for tracks with updated logic (prefer studio albums)
         print(f"Searching for {len(tracks)} tracks (preferring studio albums)...")
@@ -377,6 +380,20 @@ class SpotifyPlaylistBuilder:
                 new_track_uris.append(uri)
             else:
                 failed_tracks.append(f"{artist} - {track_name}")
+
+        if dry_run:
+            print("\n[Dry Run Summary]")
+            print(f"Playlist: {playlist_name}")
+            print(f"Tracks found: {len(new_track_uris)}")
+            print(f"Tracks missing: {len(failed_tracks)}")
+
+            if failed_tracks:
+                print(f"\n⚠️  {len(failed_tracks)} tracks not found:")
+                for track in failed_tracks:
+                    print(f"  - {track}")
+            else:
+                print("\n✓ All tracks found successfully.")
+            return
 
         # Check if playlist already exists
         existing_playlist_id = self.find_playlist_by_name(playlist_name)
@@ -448,12 +465,13 @@ def main() -> None:
     if len(sys.argv) < 2:
         print(
             "Usage: python spotify_playlist_builder.py <json_file> "
-            "[--source env|keyring|1password] [--vault VAULT_NAME]"
+            "[--source env|keyring|1password] [--vault VAULT_NAME] [--dry-run]"
         )
         print("\nExamples:")
         print("  python spotify_playlist_builder.py playlist.json")
         print("  python spotify_playlist_builder.py playlist.json --source keyring")
         print("  python spotify_playlist_builder.py playlist.json --source env")
+        print("  python spotify_playlist_builder.py playlist.json --dry-run")
         print("  python spotify_playlist_builder.py playlist.json --source 1password")
         print(
             "  python spotify_playlist_builder.py playlist.json "
@@ -487,6 +505,9 @@ def main() -> None:
         if vault_idx + 1 < len(sys.argv):
             vault = sys.argv[vault_idx + 1]
 
+    # Parse dry-run argument
+    dry_run = "--dry-run" in sys.argv
+
     # Validate inputs
     if not Path(json_file).exists():
         print(f"Error: {json_file} not found")
@@ -502,7 +523,7 @@ def main() -> None:
 
         # Build playlist
         builder = SpotifyPlaylistBuilder(client_id, client_secret)
-        builder.build_playlist_from_json(json_file)
+        builder.build_playlist_from_json(json_file, dry_run=dry_run)
 
     except Exception as e:
         print(f"Error: {e}")

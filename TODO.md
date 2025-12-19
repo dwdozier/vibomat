@@ -3,7 +3,7 @@
 ## Features
 
 - [x] **Update Existing Playlists**: Add logic to update a playlist if the name already exists, rather than creating a duplicate.
-- [ ] **"Dry Run" Mode**: Add a `--dry-run` flag to verify track availability without creating a playlist.
+- [x] **"Dry Run" Mode**: Add a `--dry-run` flag to verify track availability without creating a playlist.
 - [ ] **Export Functionality**: Create a command to export an existing Spotify playlist to a local JSON file (backup/migration).
 - [ ] **Private Playlists**: Support a `"public": false` field in the JSON schema to create private playlists.
 - [ ] **Enhanced Search**: Improve search accuracy (e.g., filter by album, fuzzy matching).
