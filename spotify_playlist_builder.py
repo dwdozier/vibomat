@@ -4,6 +4,7 @@ import json
 import sys
 import os
 import subprocess
+import difflib
 from pathlib import Path
 from typing import Any
 
@@ -189,60 +190,70 @@ class SpotifyPlaylistBuilder:
             raise Exception("Failed to authenticate with Spotify: current_user() returned None")
         self.user_id = user["id"]
 
+    def _similarity(self, s1: str, s2: str) -> float:
+        """Calculate string similarity ratio."""
+        return difflib.SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+
     def search_track(self, artist: str, track: str, album: str | None = None) -> str | None:
         """
-        Search for a track on Spotify, return URI if found.
+        Search for a track on Spotify using fuzzy matching to find the best version.
 
         Args:
             artist: Artist name
             track: Track name
-            album: Optional album name to prefer
+            album: Optional album name to prefer/filter by
 
         Returns:
             Spotify URI if found, None otherwise
         """
-        # If album is specified, try searching with album first
+        # 1. Try specific search if album is provided (Exact Match Strategy)
         if album:
             query = f"track:{track} artist:{artist} album:{album}"
-            results = self.sp.search(q=query, type="track", limit=5)
-            if results is None:
-                return None
-
-            if results["tracks"]["items"]:
-                # Find exact album match if possible
-                for item in results["tracks"]["items"]:
-                    if album.lower() in item["album"]["name"].lower():
-                        return item["uri"]
-                # If no exact match, use first result from album search
+            results = self.sp.search(q=query, type="track", limit=1)
+            if results and results["tracks"]["items"]:
                 return results["tracks"]["items"][0]["uri"]
 
-        # Fallback: search without album, prefer studio albums over compilations
+        # 2. Fallback: Broader search with fuzzy matching (Best Match Strategy)
         query = f"track:{track} artist:{artist}"
-        results = self.sp.search(q=query, type="track", limit=10)
-        if results is None:
+        results = self.sp.search(q=query, type="track", limit=20)
+        if results is None or not results["tracks"]["items"]:
             return None
 
-        if results["tracks"]["items"]:
-            # Try to avoid compilations/greatest hits
-            compilation_keywords = [
-                "greatest hits",
-                "best of",
-                "collection",
-                "singles",
-                "anthology",
-                "essential",
-                "electrospective",
-                "retrospective",
-            ]
+        candidates = results["tracks"]["items"]
+        best_match = None
+        best_score = -1.0
 
-            # First pass: look for non-compilation albums
-            for item in results["tracks"]["items"]:
-                album_name = item["album"]["name"].lower()
-                if not any(keyword in album_name for keyword in compilation_keywords):
-                    return item["uri"]
+        for item in candidates:
+            score = 0.0
+            item_name = item["name"]
+            item_artists = [a["name"] for a in item["artists"]]
+            item_album = item["album"]["name"]
 
-            # If all are compilations, just return the first result
-            return results["tracks"]["items"][0]["uri"]
+            # 1. Artist Match (Weight: 30)
+            artist_match = max(self._similarity(artist, a) for a in item_artists)
+            score += artist_match * 30
+
+            # 2. Track Name Match (Weight: 40)
+            track_match = self._similarity(track, item_name)
+            score += track_match * 40
+
+            # 3. Album Preference (Weight: 30)
+            if album:
+                album_match = self._similarity(album, item_album)
+                score += album_match * 30
+            else:
+                # Prefer studio albums over compilations
+                compilation_keywords = ["greatest hits", "best of", "collection", "anthology"]
+                is_compilation = any(k in item_album.lower() for k in compilation_keywords)
+                score += 10 if is_compilation else 30
+
+            if score > best_score:
+                best_score = score
+                best_match = item
+
+        # Threshold check (60/100) to ensure we don't return garbage
+        if best_match and best_score > 60:
+            return best_match["uri"]
 
         return None
 
