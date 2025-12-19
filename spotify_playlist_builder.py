@@ -293,16 +293,20 @@ class SpotifyPlaylistBuilder:
             batch = track_uris[i : i + 100]
             self.sp.playlist_remove_all_occurrences_of_items(playlist_id, batch)
 
-    def create_playlist(self, playlist_name: str, description: str = "") -> str:
+    def create_playlist(
+        self, playlist_name: str, description: str = "", public: bool = False
+    ) -> str:
         """Create a new playlist for the authenticated user."""
         playlist = self.sp.user_playlist_create(
-            user=self.user_id, name=playlist_name, public=True, description=description
+            user=self.user_id, name=playlist_name, public=public, description=description
         )
         if playlist is None:
             raise Exception(f"Failed to create playlist '{playlist_name}'")
         return playlist["id"]
 
-    def update_playlist_details(self, playlist_id: str, description: str) -> None:
+    def update_playlist_details(
+        self, playlist_id: str, description: str, public: bool = False
+    ) -> None:
         """Update playlist details if they differ."""
         playlist = self.sp.playlist(playlist_id)
         if playlist is None:
@@ -310,10 +314,18 @@ class SpotifyPlaylistBuilder:
 
         # Check description (handle None from API)
         current_description = playlist.get("description") or ""
+        current_public = playlist.get("public")
 
+        changes = {}
         if current_description != description:
-            print("Updating playlist description...")
-            self.sp.playlist_change_details(playlist_id, description=description)
+            changes["description"] = description
+
+        if current_public != public:
+            changes["public"] = public
+
+        if changes:
+            print(f"Updating playlist details: {', '.join(changes.keys())}...")
+            self.sp.playlist_change_details(playlist_id, **changes)
 
     def _add_track_uris_to_playlist(self, playlist_id: str, track_uris: list[str]) -> None:
         """Add track URIs to a playlist in batches."""
@@ -350,6 +362,104 @@ class SpotifyPlaylistBuilder:
 
         return failed_tracks
 
+    def get_playlist_tracks_details(self, playlist_id: str) -> list[dict[str, str]]:
+        """Get full track details from a playlist for export."""
+        tracks: list[dict[str, str]] = []
+        offset = 0
+        limit = 100
+
+        while True:
+            results = self.sp.playlist_tracks(playlist_id, limit=limit, offset=offset)
+            if results is None:
+                break
+
+            for item in results["items"]:
+                track = item.get("track")
+                if track:
+                    # Get primary artist
+                    artists = track.get("artists", [])
+                    artist_name = artists[0]["name"] if artists else "Unknown"
+
+                    track_data = {
+                        "artist": artist_name,
+                        "track": track["name"],
+                        "album": track["album"]["name"],
+                    }
+                    tracks.append(track_data)
+
+            if not results["next"]:
+                break
+            offset += limit
+
+        return tracks
+
+    def export_playlist_to_json(self, playlist_name: str, output_file: str) -> None:
+        """Export an existing playlist to a JSON file."""
+        print(f"Searching for playlist: {playlist_name}")
+        playlist_id = self.find_playlist_by_name(playlist_name)
+
+        if not playlist_id:
+            raise Exception(f"Playlist '{playlist_name}' not found in your library.")
+
+        # Get playlist details for description
+        playlist_info = self.sp.playlist(playlist_id)
+        if playlist_info is None:
+            raise Exception(f"Failed to fetch details for playlist ID: {playlist_id}")
+
+        description = playlist_info.get("description") or ""
+        public = playlist_info.get("public")
+
+        print(f"Fetching tracks for '{playlist_name}'...")
+        tracks = self.get_playlist_tracks_details(playlist_id)
+
+        export_data = {
+            "name": playlist_name,
+            "description": description,
+            "public": public,
+            "tracks": tracks,
+        }
+
+        with open(output_file, "w") as f:
+            json.dump(export_data, f, indent=2)
+
+        print(f"✓ Successfully exported {len(tracks)} tracks to {output_file}")
+
+    def backup_all_playlists(self, output_dir: str) -> None:
+        """Backup all user playlists to JSON files in a directory."""
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        print("Fetching all playlists...")
+        offset = 0
+        limit = 50
+        playlists = []
+
+        while True:
+            results = self.sp.current_user_playlists(limit=limit, offset=offset)
+            if results is None:
+                break
+            playlists.extend(results["items"])
+            if not results["next"]:
+                break
+            offset += limit
+
+        print(f"Found {len(playlists)} playlists. Starting backup...")
+
+        for i, pl in enumerate(playlists):
+            name = pl["name"]
+            pid = pl["id"]
+            # Sanitize filename
+            safe_name = "".join(c for c in name if c.isalnum() or c in (" ", "-", "_")).strip()
+            if not safe_name:
+                safe_name = f"playlist_{pid}"
+            filename = f"{safe_name}.json"
+            filepath = os.path.join(output_dir, filename)
+
+            print(f"[{i+1}/{len(playlists)}] Backing up: {name}")
+            try:
+                self.export_playlist_to_json(name, filepath)
+            except Exception as e:
+                print(f"  Failed to backup '{name}': {e}")
+
     def build_playlist_from_json(self, json_file: str, dry_run: bool = False) -> None:
         """Build or update a playlist from a JSON file."""
         with open(json_file, "r") as f:
@@ -357,6 +467,7 @@ class SpotifyPlaylistBuilder:
 
         playlist_name = playlist_data.get("name", "New Playlist")
         description = playlist_data.get("description", "")
+        public = playlist_data.get("public", False)
         tracks = playlist_data.get("tracks", [])
 
         print(f"Authenticated as: {self.user_id}")
@@ -401,7 +512,7 @@ class SpotifyPlaylistBuilder:
         if existing_playlist_id:
             print(f"Found existing playlist (ID: {existing_playlist_id})")
 
-            self.update_playlist_details(existing_playlist_id, description)
+            self.update_playlist_details(existing_playlist_id, description, public=public)
 
             current_track_uris = self.get_playlist_tracks(existing_playlist_id)
 
@@ -423,7 +534,7 @@ class SpotifyPlaylistBuilder:
             playlist_id = existing_playlist_id
         else:
             print("Creating new playlist...")
-            playlist_id = self.create_playlist(playlist_name, description)
+            playlist_id = self.create_playlist(playlist_name, description, public=public)
             print(f"Playlist created (ID: {playlist_id})")
             print(f"Adding {len(new_track_uris)} tracks...")
             self._add_track_uris_to_playlist(playlist_id, new_track_uris)
@@ -465,13 +576,17 @@ def main() -> None:
     if len(sys.argv) < 2:
         print(
             "Usage: python spotify_playlist_builder.py <json_file> "
-            "[--source env|keyring|1password] [--vault VAULT_NAME] [--dry-run]"
+            "[--source env|keyring|1password] [--vault VAULT_NAME] [--dry-run] "
+            "[--export PLAYLIST_NAME] "
+            "[--backup-all [DIRECTORY]]"
         )
         print("\nExamples:")
         print("  python spotify_playlist_builder.py playlist.json")
         print("  python spotify_playlist_builder.py playlist.json --source keyring")
         print("  python spotify_playlist_builder.py playlist.json --source env")
         print("  python spotify_playlist_builder.py playlist.json --dry-run")
+        print("  python spotify_playlist_builder.py backup.json --export 'My Playlist'")
+        print("  python spotify_playlist_builder.py --backup-all backups/")
         print("  python spotify_playlist_builder.py playlist.json --source 1password")
         print(
             "  python spotify_playlist_builder.py playlist.json "
@@ -508,8 +623,27 @@ def main() -> None:
     # Parse dry-run argument
     dry_run = "--dry-run" in sys.argv
 
+    # Parse export argument
+    export_playlist_name = None
+    if "--export" in sys.argv:
+        export_idx = sys.argv.index("--export")
+        if export_idx + 1 < len(sys.argv):
+            export_playlist_name = sys.argv[export_idx + 1]
+        else:
+            print("Error: --export requires a playlist name")
+            sys.exit(1)
+
+    # Parse backup-all argument
+    backup_dir = None
+    if "--backup-all" in sys.argv:
+        backup_idx = sys.argv.index("--backup-all")
+        if backup_idx + 1 < len(sys.argv) and not sys.argv[backup_idx + 1].startswith("-"):
+            backup_dir = sys.argv[backup_idx + 1]
+        else:
+            backup_dir = "backups"
+
     # Validate inputs
-    if not Path(json_file).exists():
+    if not export_playlist_name and not backup_dir and not Path(json_file).exists():
         print(f"Error: {json_file} not found")
         sys.exit(1)
 
@@ -523,7 +657,12 @@ def main() -> None:
 
         # Build playlist
         builder = SpotifyPlaylistBuilder(client_id, client_secret)
-        builder.build_playlist_from_json(json_file, dry_run=dry_run)
+        if backup_dir:
+            builder.backup_all_playlists(backup_dir)
+        elif export_playlist_name:
+            builder.export_playlist_to_json(export_playlist_name, json_file)
+        else:
+            builder.build_playlist_from_json(json_file, dry_run=dry_run)
 
     except Exception as e:
         print(f"Error: {e}")
