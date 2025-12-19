@@ -51,3 +51,6 @@ uv.lock
 
 # Gemini
 .gemini
+
+# playlist dir
+playlist/

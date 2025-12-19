@@ -174,7 +174,12 @@ class SpotifyPlaylistBuilder:
         redirect_uri: str = "https://127.0.0.1:8888/callback",
     ) -> None:
         """Initialize Spotify API client with OAuth authentication."""
-        scope = "playlist-modify-public playlist-modify-private"
+        scope = (
+            "playlist-modify-public"
+            "playlist-modify-private "
+            "playlist-read-private "
+            "playlist-read-collaborative"
+        )
         self.sp = spotipy.Spotify(
             auth_manager=SpotifyOAuth(
                 client_id=client_id,

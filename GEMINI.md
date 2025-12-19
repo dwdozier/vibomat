@@ -51,3 +51,11 @@ Use these commands to maintain code quality and run the application.
     ```bash
     pre-commit run --all-files
     ```
+
+## 5. Coding Standards
+
+-   **Line Length:** 100 characters.
+-   **Type Hinting:** Required for all function signatures (Python 3.11+ syntax).
+-   **Docstrings:** Required for all functions and classes.
+-   **Formatter:** Black.
+-   **Linter:** Ruff.
