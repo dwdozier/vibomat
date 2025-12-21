@@ -24,3 +24,9 @@ repos:
         args: ["check"]
         language: system
         types: [python]
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        types: [python]
+        pass_filenames: false
