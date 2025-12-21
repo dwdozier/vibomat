@@ -2,6 +2,7 @@ import pytest
 from spotipy.exceptions import SpotifyException
 
 
+@pytest.mark.ci
 def test_rate_limit_retry_success(builder, mock_spotify):
     """
     Test that a method decorated with @rate_limit_retry retries on 429.
@@ -37,6 +38,7 @@ def test_rate_limit_retry_success(builder, mock_spotify):
     assert mock_spotify.search.call_count == 2
 
 
+@pytest.mark.ci
 def test_rate_limit_retry_failure(builder, mock_spotify):
     """
     Test that retries eventually stop and raise the exception.
@@ -57,6 +59,7 @@ def test_rate_limit_retry_failure(builder, mock_spotify):
     assert mock_spotify.search.call_count == 5
 
 
+@pytest.mark.ci
 def test_other_exception_no_retry(builder, mock_spotify):
     """
     Test that other exceptions are NOT retried.
