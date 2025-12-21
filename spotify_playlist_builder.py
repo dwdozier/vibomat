@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from spotipy.exceptions import SpotifyException
 import json
 import os
 import difflib
@@ -11,6 +12,13 @@ from pathlib import Path
 from typing import Any, Annotated
 import typer
 from enum import Enum
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception,
+    before_sleep_log,
+)
 
 try:
     import keyring
@@ -24,6 +32,21 @@ except ImportError:
 
 # Configure logger
 logger = logging.getLogger("spotify_playlist_builder")
+
+
+# Rate Limit Retry Configuration
+def is_rate_limit_error(exception):
+    """Return True if exception is a 429 Too Many Requests."""
+    return isinstance(exception, SpotifyException) and exception.http_status == 429
+
+
+rate_limit_retry = retry(
+    retry=retry_if_exception(is_rate_limit_error),
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
 
 app = typer.Typer(help="Spotify Playlist Builder CLI")
 
@@ -157,6 +180,7 @@ class SpotifyPlaylistBuilder:
         """Calculate string similarity ratio."""
         return difflib.SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
+    @rate_limit_retry
     def search_track(self, artist: str, track: str, album: str | None = None) -> str | None:
         """
         Search for a track on Spotify using fuzzy matching to find the best version.
@@ -220,6 +244,7 @@ class SpotifyPlaylistBuilder:
 
         return None
 
+    @rate_limit_retry
     def find_playlist_by_name(self, playlist_name: str) -> str | None:
         """Find a playlist by name for the authenticated user."""
         offset = 0
@@ -240,6 +265,7 @@ class SpotifyPlaylistBuilder:
 
         return None
 
+    @rate_limit_retry
     def get_playlist_tracks(self, playlist_id: str) -> list[str]:
         """Get all track URIs from a playlist."""
         tracks = []
@@ -258,6 +284,7 @@ class SpotifyPlaylistBuilder:
 
         return tracks
 
+    @rate_limit_retry
     def clear_playlist(self, playlist_id: str) -> None:
         """Remove all tracks from a playlist."""
         track_uris = self.get_playlist_tracks(playlist_id)
@@ -267,6 +294,7 @@ class SpotifyPlaylistBuilder:
             batch = track_uris[i : i + 100]
             self.sp.playlist_remove_all_occurrences_of_items(playlist_id, batch)
 
+    @rate_limit_retry
     def create_playlist(
         self, playlist_name: str, description: str = "", public: bool = False
     ) -> str:
@@ -278,6 +306,7 @@ class SpotifyPlaylistBuilder:
             raise Exception(f"Failed to create playlist '{playlist_name}'")
         return playlist["id"]
 
+    @rate_limit_retry
     def update_playlist_details(
         self, playlist_id: str, description: str, public: bool = False
     ) -> None:
@@ -301,6 +330,7 @@ class SpotifyPlaylistBuilder:
             logger.info(f"Updating playlist details: {', '.join(changes.keys())}...")
             self.sp.playlist_change_details(playlist_id, **changes)
 
+    @rate_limit_retry
     def _add_track_uris_to_playlist(self, playlist_id: str, track_uris: list[str]) -> None:
         """Add track URIs to a playlist in batches."""
         # Add in batches of 100 (Spotify API limit)
@@ -336,6 +366,7 @@ class SpotifyPlaylistBuilder:
 
         return failed_tracks
 
+    @rate_limit_retry
     def get_playlist_tracks_details(self, playlist_id: str) -> list[dict[str, str]]:
         """Get full track details from a playlist for export."""
         tracks: list[dict[str, str]] = []

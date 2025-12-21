@@ -27,7 +27,7 @@ repos:
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: uv run pytest --cov=spotify_playlist_builder --cov-fail-under=40
+        entry: uv run pytest --cov=spotify_playlist_builder --cov-fail-under=90 tests/
         language: system
         types: [python]
         pass_filenames: false
