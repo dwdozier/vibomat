@@ -210,3 +210,111 @@ def test_update_playlist_details_no_change(builder, mock_spotify):
     builder.update_playlist_details("pid", "Same Description", public=False)
 
     mock_spotify.playlist_change_details.assert_not_called()
+
+
+def test_get_playlist_tracks_details(builder, mock_spotify):
+    """Test retrieving full track details."""
+    mock_spotify.playlist_tracks.return_value = {
+        "items": [
+            {
+                "track": {
+                    "name": "Track 1",
+                    "artists": [{"name": "Artist 1"}],
+                    "album": {"name": "Album 1"},
+                }
+            },
+            {
+                "track": {
+                    "name": "Track 2",
+                    "artists": [{"name": "Artist 2"}],
+                    "album": {"name": "Album 2"},
+                }
+            },
+        ],
+        "next": None,
+    }
+
+    details = builder.get_playlist_tracks_details("pid")
+
+    assert len(details) == 2
+    assert details[0] == {"artist": "Artist 1", "track": "Track 1", "album": "Album 1"}
+
+
+def test_export_playlist_to_json(builder, mock_spotify):
+    """Test exporting a playlist to a JSON file."""
+    # Mock finding playlist
+    with patch.object(builder, "find_playlist_by_name", return_value="pid"):
+        # Mock playlist details
+        mock_spotify.playlist.return_value = {"description": "Desc", "public": True}
+
+        # Mock getting tracks
+        with patch.object(
+            builder, "get_playlist_tracks_details", return_value=[{"artist": "A", "track": "B"}]
+        ):
+
+            # Mock file I/O
+            with patch("builtins.open", new_callable=MagicMock) as mock_open:
+                builder.export_playlist_to_json("My Playlist", "out.json")
+
+                # Verify file write
+                mock_open.assert_called_with("out.json", "w")
+                handle = mock_open.return_value.__enter__.return_value
+                # We expect json.dump to write something
+                assert handle.write.call_count > 0
+
+
+def test_build_playlist_from_json_dry_run(builder, mock_spotify):
+    """Test dry run mode does not create/update playlists."""
+    playlist_data = {"name": "New Playlist", "tracks": [{"artist": "A", "track": "B"}]}
+
+    with patch("json.load", return_value=playlist_data), patch("builtins.open", MagicMock()):
+
+        with patch.object(builder, "search_track", return_value="uri:1"):
+            builder.build_playlist_from_json("file.json", dry_run=True)
+
+            # Should not check for existing playlist or create one
+            mock_spotify.current_user_playlists.assert_not_called()
+            mock_spotify.user_playlist_create.assert_not_called()
+
+
+def test_build_playlist_from_json_create_new(builder, mock_spotify):
+    """Test creating a new playlist from JSON."""
+    playlist_data = {"name": "New Playlist", "tracks": [{"artist": "A", "track": "B"}]}
+
+    with patch("json.load", return_value=playlist_data), patch("builtins.open", MagicMock()):
+
+        # Mock: Playlist doesn't exist
+        with (
+            patch.object(builder, "find_playlist_by_name", return_value=None),
+            patch.object(builder, "search_track", return_value="uri:1"),
+            patch.object(builder, "create_playlist", return_value="new_pid") as mock_create,
+            patch.object(builder, "_add_track_uris_to_playlist") as mock_add,
+        ):
+
+            builder.build_playlist_from_json("file.json")
+
+            mock_create.assert_called()
+            mock_add.assert_called_with("new_pid", ["uri:1"])
+
+
+def test_build_playlist_from_json_update_existing(builder, mock_spotify):
+    """Test updating an existing playlist from JSON."""
+    playlist_data = {"name": "Existing Playlist", "tracks": [{"artist": "A", "track": "B"}]}
+
+    with patch("json.load", return_value=playlist_data), patch("builtins.open", MagicMock()):
+
+        # Mock: Playlist exists
+        with (
+            patch.object(builder, "find_playlist_by_name", return_value="existing_pid"),
+            patch.object(builder, "search_track", return_value="uri:new"),
+            patch.object(builder, "get_playlist_tracks", return_value=["uri:old"]),
+            patch.object(builder, "update_playlist_details") as mock_update,
+            patch.object(builder, "clear_playlist") as mock_clear,
+            patch.object(builder, "_add_track_uris_to_playlist") as mock_add,
+        ):
+
+            builder.build_playlist_from_json("file.json")
+
+            mock_update.assert_called()
+            mock_clear.assert_called_with("existing_pid")
+            mock_add.assert_called_with("existing_pid", ["uri:new"])
