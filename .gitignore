@@ -55,3 +55,6 @@ uv.lock
 
 # playlist dir
 playlists/
+
+# backups
+backups/
