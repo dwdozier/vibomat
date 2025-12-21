@@ -1,12 +1,15 @@
+#!/usr/bin/env python3
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import json
-import sys
 import os
-import subprocess
 import difflib
+import sys
+import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Annotated
+import typer
+from enum import Enum
 
 try:
     import keyring
@@ -17,6 +20,13 @@ except ImportError:
     # Type ignore required because we are assigning None to a module name.
     keyring = None  # type: ignore
     KEYRING_AVAILABLE = False
+
+app = typer.Typer(help="Spotify Playlist Builder CLI")
+
+
+class CredentialSource(str, Enum):
+    env = "env"
+    keyring = "keyring"
 
 
 # Credential Management Functions
@@ -37,71 +47,6 @@ def get_credentials_from_env() -> tuple[str, str]:
         )
 
     return client_id, client_secret
-
-
-def list_1password_vaults() -> None:
-    """List available 1Password vaults."""
-    try:
-        result = subprocess.run(
-            "op vault list", shell=True, capture_output=True, text=True, check=False
-        )
-        if result.returncode == 0:
-            print("Available 1Password vaults:")
-            print(result.stdout)
-        else:
-            print("Error listing vaults. Make sure you're signed in: eval $(op signin)")
-    except FileNotFoundError:
-        print("1Password CLI not found. Install it at:")
-        print("https://developer.1password.com/docs/cli/get-started")
-
-
-def get_credentials_from_1password(
-    vault: str = "Private",
-    item: str = "SpotifyPlaylistBuilder",
-    id_field: str = "client_id",
-    secret_field: str = "client_secret",
-) -> tuple[str, str]:
-    """Get credentials from 1Password vault."""
-    try:
-        cmd_id = f'op read "op://{vault}/{item}/{id_field}"'
-        cmd_secret = f'op read "op://{vault}/{item}/{secret_field}"'
-
-        result_id = subprocess.run(cmd_id, shell=True, capture_output=True, text=True, check=False)
-        result_secret = subprocess.run(
-            cmd_secret, shell=True, capture_output=True, text=True, check=False
-        )
-
-        if result_id.returncode != 0 or result_secret.returncode != 0:
-            error_msg = result_id.stderr or result_secret.stderr
-            raise Exception(
-                f"Failed to fetch from 1Password vault '{vault}'.\n"
-                f"\nCommon vault names by account type:\n"
-                f"  • Individual accounts: 'Personal' or 'Private'\n"
-                f"  • Family accounts: 'Private' or 'Shared'\n"
-                f"  • Team/Business accounts: 'Employee', 'Private', or custom team vaults\n"
-                f"\nTo see your available vaults:\n"
-                f"  python spotify_playlist_builder.py --list-vaults\n"
-                f"\nThen specify the correct vault:\n"
-                f"  python spotify_playlist_builder.py playlist.json "
-                f"--source 1password --vault YourVaultName\n"
-                f"\nMake sure:\n"
-                f"  1. You're authenticated: eval $(op signin)\n"
-                f"  2. Item named '{item}' exists in vault '{vault}'\n"
-                f"  3. Fields '{id_field}' and '{secret_field}' exist on that item\n"
-                f"\nError details: {error_msg}"
-            )
-
-        # Ensure stdout is not None before stripping
-        client_id = result_id.stdout.strip()
-        client_secret = result_secret.stdout.strip()
-
-        return client_id, client_secret
-
-    except FileNotFoundError:
-        raise Exception(
-            "1Password CLI not found. Install it at:\n"
-            "https://developer.1password.com/docs/cli/get-started"
-        )
 
 
 def get_credentials_from_keyring(service: str = "spotify-playlist-builder") -> tuple[str, str]:
@@ -139,16 +84,12 @@ def store_credentials_in_keyring(
     print(f"✓ Credentials stored securely in {keyring.get_keyring().__class__.__name__}")
 
 
-def get_credentials(
-    source: str = "env", vault: str = "Private", item: str = "SpotifyPlaylistBuilder"
-) -> tuple[str, str]:
+def get_credentials(source: str = "env") -> tuple[str, str]:
     """
     Get Spotify credentials from specified source.
 
     Args:
-        source: "env" for .env file, "keyring" for OS keychain, or "1password" for 1Password vault
-        vault: 1Password vault name (default: Private)
-        item: 1Password item name (default: SpotifyPlaylistBuilder)
+        source: "env" for .env file or "keyring" for OS keychain
 
     Returns:
         Tuple of (client_id, client_secret)
@@ -157,12 +98,8 @@ def get_credentials(
         return get_credentials_from_env()
     elif source.lower() == "keyring":
         return get_credentials_from_keyring()
-    elif source.lower() == "1password":
-        return get_credentials_from_1password(vault, item)
     else:
-        raise ValueError(
-            f"Unknown credential source: {source}. Use 'env', 'keyring', or '1password'"
-        )
+        raise ValueError(f"Unknown credential source: {source}. Use 'env' or 'keyring'")
 
 
 # Spotify Playlist Builder Class
@@ -564,126 +501,150 @@ class SpotifyPlaylistBuilder:
         print(f"\nPlaylist ready: https://open.spotify.com/playlist/{playlist_id}")
 
 
-# Main Execution
-def main() -> None:
-    # Handle --list-vaults command
-    if "--list-vaults" in sys.argv:
-        list_1password_vaults()
-        return
+def get_builder(source: CredentialSource) -> SpotifyPlaylistBuilder:
+    """Helper to initialize SpotifyPlaylistBuilder with credentials."""
+    print(f"Fetching credentials from {source.value}...")
 
-    # Handle --store-credentials command
-    if "--store-credentials" in sys.argv:
-        print("Store Spotify credentials in macOS Keychain")
-        client_id = input("Enter Spotify Client ID: ").strip()
-        client_secret = input("Enter Spotify Client Secret: ").strip()
+    client_id, client_secret = get_credentials(source.value)
+    return SpotifyPlaylistBuilder(client_id, client_secret)
 
-        if client_id and client_secret:
-            try:
-                store_credentials_in_keyring(client_id, client_secret)
-                print("\nCredentials stored! You can now use: --source keyring")
-            except Exception as e:
-                print(f"Error storing credentials: {e}")
-                sys.exit(1)
-        else:
-            print("Error: Both Client ID and Client Secret are required")
-            sys.exit(1)
-        return
 
-    if len(sys.argv) < 2:
-        print(
-            "Usage: python spotify_playlist_builder.py <json_file> "
-            "[--source env|keyring|1password] [--vault VAULT_NAME] [--dry-run] "
-            "[--export PLAYLIST_NAME] "
-            "[--backup-all [DIRECTORY]]"
-        )
-        print("\nExamples:")
-        print("  python spotify_playlist_builder.py playlist.json")
-        print("  python spotify_playlist_builder.py playlist.json --source keyring")
-        print("  python spotify_playlist_builder.py playlist.json --source env")
-        print("  python spotify_playlist_builder.py playlist.json --dry-run")
-        print("  python spotify_playlist_builder.py backup.json --export 'My Playlist'")
-        print("  python spotify_playlist_builder.py --backup-all backups/")
-        print("  python spotify_playlist_builder.py playlist.json --source 1password")
-        print(
-            "  python spotify_playlist_builder.py playlist.json "
-            "--source 1password --vault Personal"
-        )
-        print("\nHelper commands:")
-        print(
-            "  python spotify_playlist_builder.py --store-credentials  "
-            "# Store credentials in macOS Keychain"
-        )
-        print(
-            "  python spotify_playlist_builder.py --list-vaults        "
-            "# List available 1Password vaults"
-        )
-        print("\nNote: The playlist will be created for the authenticated Spotify user.")
-        sys.exit(1)
-
-    json_file = sys.argv[1]
-
-    # Parse optional source argument
-    source = "env"  # Default to .env
-    if "--source" in sys.argv:
-        source_idx = sys.argv.index("--source")
-        if source_idx + 1 < len(sys.argv):
-            source = sys.argv[source_idx + 1]
-
-    # Parse optional vault argument (for 1Password)
-    vault = "Private"  # Default vault
-    if "--vault" in sys.argv:
-        vault_idx = sys.argv.index("--vault")
-        if vault_idx + 1 < len(sys.argv):
-            vault = sys.argv[vault_idx + 1]
-
-    # Parse dry-run argument
-    dry_run = "--dry-run" in sys.argv
-
-    # Parse export argument
-    export_playlist_name = None
-    if "--export" in sys.argv:
-        export_idx = sys.argv.index("--export")
-        if export_idx + 1 < len(sys.argv):
-            export_playlist_name = sys.argv[export_idx + 1]
-        else:
-            print("Error: --export requires a playlist name")
-            sys.exit(1)
-
-    # Parse backup-all argument
-    backup_dir = None
-    if "--backup-all" in sys.argv:
-        backup_idx = sys.argv.index("--backup-all")
-        if backup_idx + 1 < len(sys.argv) and not sys.argv[backup_idx + 1].startswith("-"):
-            backup_dir = sys.argv[backup_idx + 1]
-        else:
-            backup_dir = "backups"
-
-    # Validate inputs
-    if not export_playlist_name and not backup_dir and not Path(json_file).exists():
-        print(f"Error: {json_file} not found")
-        sys.exit(1)
-
+@app.command()
+def build(
+    json_file: Annotated[Path, typer.Argument(exists=True, help="Path to playlist JSON file")],
+    source: Annotated[
+        CredentialSource, typer.Option(help="Credential source")
+    ] = CredentialSource.env,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="Verify tracks without creating playlist")
+    ] = False,
+) -> None:
+    """Build or update a Spotify playlist from a JSON file."""
     try:
-        # Get credentials from specified source
-        if source.lower() == "1password":
-            print(f"Fetching credentials from {source} (vault: {vault})...")
-        else:
-            print(f"Fetching credentials from {source}...")
-        client_id, client_secret = get_credentials(source, vault=vault)
-
-        # Build playlist
-        builder = SpotifyPlaylistBuilder(client_id, client_secret)
-        if backup_dir:
-            builder.backup_all_playlists(backup_dir)
-        elif export_playlist_name:
-            builder.export_playlist_to_json(export_playlist_name, json_file)
-        else:
-            builder.build_playlist_from_json(json_file, dry_run=dry_run)
-
+        builder = get_builder(source)
+        builder.build_playlist_from_json(str(json_file), dry_run=dry_run)
     except Exception as e:
         print(f"Error: {e}")
-        sys.exit(1)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def export(
+    playlist_name: Annotated[str, typer.Argument(help="Name of the Spotify playlist to export")],
+    output_file: Annotated[Path, typer.Argument(help="Path to save the JSON file")],
+    source: Annotated[
+        CredentialSource, typer.Option(help="Credential source")
+    ] = CredentialSource.env,
+) -> None:
+    """Export an existing Spotify playlist to a JSON file."""
+    try:
+        builder = get_builder(source)
+        builder.export_playlist_to_json(playlist_name, str(output_file))
+    except Exception as e:
+        print(f"Error: {e}")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def backup(
+    output_dir: Annotated[Path, typer.Argument(help="Directory to save backup files")] = Path(
+        "backups"
+    ),
+    source: Annotated[
+        CredentialSource, typer.Option(help="Credential source")
+    ] = CredentialSource.env,
+) -> None:
+    """Backup all user playlists to JSON files."""
+    try:
+        builder = get_builder(source)
+        builder.backup_all_playlists(str(output_dir))
+    except Exception as e:
+        print(f"Error: {e}")
+        raise typer.Exit(code=1)
+
+
+@app.command("store-credentials")
+def store_credentials_cmd() -> None:
+    """Store Spotify credentials in macOS Keychain."""
+    print("Store Spotify credentials in macOS Keychain")
+    client_id = typer.prompt("Enter Spotify Client ID")
+    client_secret = typer.prompt("Enter Spotify Client Secret", hide_input=True)
+
+    if client_id and client_secret:
+        try:
+            store_credentials_in_keyring(client_id, client_secret)
+            print("\nCredentials stored! You can now use: --source keyring")
+        except Exception as e:
+            print(f"Error storing credentials: {e}")
+            raise typer.Exit(code=1)
+    else:
+        print("Error: Both Client ID and Client Secret are required")
+        raise typer.Exit(code=1)
+
+
+@app.command("install-zsh-completion")
+def install_zsh_completion() -> None:
+    """Install Zsh completion for Oh My Zsh users."""
+    omz_dir = Path.home() / ".oh-my-zsh"
+
+    if not omz_dir.exists():
+        print(f"Error: Oh My Zsh directory not found at {omz_dir}")
+        print("This command is intended for Oh My Zsh users.")
+        raise typer.Exit(code=1)
+
+    completions_dir = omz_dir / "completions"
+    completions_dir.mkdir(parents=True, exist_ok=True)
+
+    target_file = completions_dir / "_spotify-playlist-builder"
+
+    print("Generating Zsh completion script...")
+
+    # Get absolute path to this script
+    script_path = os.path.abspath(__file__)
+
+    # Run the command with --show-completion zsh to get the script
+    # We use sys.executable to run the current script with the flag
+    result = subprocess.run(
+        [sys.executable, script_path, "--show-completion", "zsh"],
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        print("Error generating completion script:")
+        print(result.stderr)
+        raise typer.Exit(code=1)
+
+    completion_script = result.stdout
+
+    if not completion_script.strip():
+        print("Error: Generated completion script is empty.")
+        raise typer.Exit(code=1)
+
+    with open(target_file, "w") as f:
+        f.write(completion_script)
+
+    print(f"✓ Completion script installed to: {target_file}")
+    print("\nTo activate changes:")
+    print("1. Run: rm -f ~/.zcompdump; compinit")
+    print("2. Restart your shell")
+
+
+@app.command("uninstall-completion")
+def uninstall_completion_cmd() -> None:
+    """Show instructions to uninstall shell completion."""
+    print("To uninstall shell completion, identify which method you used:")
+    print("\nMethod 1: Automatic Installation (e.g. --install-completion)")
+    print("  1. Open your shell config (e.g., ~/.zshrc, ~/.bashrc).")
+    print("  2. Find the block starting with '# shell completion for spotify-playlist-builder'.")
+    print("  3. Delete that entire block.")
+    print("\nMethod 2: Manual Oh-My-Zsh Installation")
+    print("  1. Remove the completion file:")
+    print("     rm ~/.oh-my-zsh/completions/_spotify-playlist-builder")
+    print("  2. Clear the completion cache:")
+    print("     rm ~/.zcompdump*")
+    print("\nAfter either method, restart your terminal.")
 
 
 if __name__ == "__main__":
-    main()
+    app()

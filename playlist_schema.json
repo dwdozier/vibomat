@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Spotify Playlist Configuration",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the playlist"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the playlist"
+    },
+    "public": {
+      "type": "boolean",
+      "description": "Whether the playlist is public (default: false)",
+      "default": false
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "artist": {
+            "type": "string",
+            "description": "Artist name"
+          },
+          "track": {
+            "type": "string",
+            "description": "Track name"
+          },
+          "album": {
+            "type": "string",
+            "description": "Album name (optional)"
+          }
+        },
+        "required": ["artist", "track"]
+      }
+    }
+  },
+  "required": ["name", "tracks"]
+}

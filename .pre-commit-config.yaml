@@ -21,5 +21,6 @@ repos:
       - id: ty
         name: ty
         entry: ty
+        args: ["check"]
         language: system
         types: [python]

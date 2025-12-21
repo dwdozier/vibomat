@@ -25,7 +25,7 @@ Use the following commands to set up the development environment.
 
 -   **Main Entry Point:** The application logic is contained entirely within `spotify_playlist_builder.py`.
 -   **Core Class:** The `SpotifyPlaylistBuilder` class orchestrates all interaction with the Spotify API, including authentication, track searching, and playlist manipulation.
--   **Credential Management:** The script can retrieve credentials from a `.env` file, the system's native keychain (via `keyring`), or 1Password. The default source is `.env`.
+-   **Credential Management:** The script can retrieve credentials from a `.env` file or the system's native keychain (via `keyring`). The default source is `.env`.
 -   **Configuration:** Project dependencies and tool settings are defined in `pyproject.toml`.
 
 ## 4. Key Commands
@@ -34,7 +34,7 @@ Use these commands to maintain code quality and run the application.
 
 -   **Run the application:**
     ```bash
-    python spotify_playlist_builder.py playlists/your-playlist.json --source [env|keyring|1password]
+    spotify-playlist-builder playlists/your-playlist.json --source [env|keyring]
     ```
 
 -   **Format code:**
@@ -45,6 +45,11 @@ Use these commands to maintain code quality and run the application.
 -   **Lint code:**
     ```bash
     ruff check .
+    ```
+
+ -   **Run tests with coverage:**
+    ```bash
+    pytest --cov=spotify_playlist_builder tests/
     ```
 
  -   **Run pre-commit manually:**
@@ -59,4 +64,5 @@ Use these commands to maintain code quality and run the application.
 -   **Docstrings:** Required for all functions and classes.
 -   **Formatter:** Black.
 -   **Linter:** Ruff.
+-   **Testing:** Unit tests required for new features. Maintain high coverage.
 -   **Type Checker:** Ty.

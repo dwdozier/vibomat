@@ -7,7 +7,7 @@ A simple Python CLI tool to programmatically create Spotify playlists from JSON 
 Feed it a JSON file with artist/track pairs, and it:
 
 - Searches Spotify for each track
-- Creates a new public playlist on your account
+- Creates a new playlist on your account
 - Adds all found tracks in order
 - Reports any tracks that couldn't be found
 
@@ -19,7 +19,6 @@ Perfect for curating playlists programmatically and versioning them in git.
 - A Spotify account
 - Spotify Developer credentials (free to create)
 - `uv` package manager: https://docs.astral.sh/uv/getting-started/
-- Optional: 1Password account for credential management
 
 ## Setup
 
@@ -49,7 +48,7 @@ This installs the project in "editable" mode along with all development dependen
 
 ### 3. Choose Credential Storage Method
 
-You can store credentials in `.env`, your system's secure keychain, or 1Password. Pick one:
+You can store credentials in `.env` or your system's secure keychain. Pick one:
 
 #### Option A: Use .env File
 
@@ -68,7 +67,7 @@ Use a helper command to securely store your credentials in your operating system
 
 **Store credentials:**
 ```bash
-python spotify_playlist_builder.py --store-credentials
+spotify-playlist-builder store-credentials
 ```
 You will be prompted to enter your Client ID and Secret.
 
@@ -114,6 +113,17 @@ To ensure code quality checks run automatically before every commit:
 pre-commit install
 ```
 
+### 5. Set Up Shell Completion (Zsh/Oh-My-Zsh)
+
+To enable tab completion for commands and options (highly recommended):
+
+```bash
+# Run the installation command
+python spotify_playlist_builder.py install-zsh-completion
+```
+
+Follow the on-screen instructions to reload your shell.
+
 ## Usage
 
 ### Create a Playlist JSON File
@@ -124,6 +134,7 @@ Create a file in `playlists/` like `my-playlist.json`:
 {
   "name": "My Awesome Playlist",
   "description": "A curated collection of tracks",
+  "public": false,
   "tracks": [
     {"artist": "Artist Name", "track": "Song Title"},
     {"artist": "Another Artist", "track": "Another Song"},
