@@ -59,10 +59,11 @@ Use these commands to maintain code quality and run the application.
 
 ## 5. Coding Standards
 
--   **Line Length:** 100 characters.
+-   **Line Length:** 100 characters (Strictly enforced).
 -   **Type Hinting:** Required for all function signatures (Python 3.11+ syntax).
 -   **Docstrings:** Required for all functions and classes.
 -   **Formatter:** Black.
 -   **Linter:** Ruff.
 -   **Testing:** Unit tests required for new features. Maintain high coverage.
 -   **Type Checker:** Ty (via pre-commit).
+-   **Pre-Commit:** **MANDATORY**: Run `black .` and `ruff check . --fix` before every code submission to prevent CI/pre-commit failures.
