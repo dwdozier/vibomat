@@ -34,7 +34,7 @@ Use these commands to maintain code quality and run the application.
 
 -   **Run the application:**
     ```bash
-    spotify-playlist-builder playlists/your-playlist.json --source [env|keyring]
+    spotify-playlist-builder build playlists/your-playlist.json --source [env|keyring]
     ```
 
 -   **Format code:**
@@ -49,7 +49,7 @@ Use these commands to maintain code quality and run the application.
 
  -   **Run tests with coverage:**
     ```bash
-    pytest --cov=spotify_playlist_builder tests/
+    pytest --cov=spotify_playlist_builder test_spotify_playlist_builder.py
     ```
 
  -   **Run pre-commit manually:**
@@ -65,4 +65,4 @@ Use these commands to maintain code quality and run the application.
 -   **Formatter:** Black.
 -   **Linter:** Ruff.
 -   **Testing:** Unit tests required for new features. Maintain high coverage.
--   **Type Checker:** Ty.
+-   **Type Checker:** Ty (via pre-commit).
