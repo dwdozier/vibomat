@@ -111,3 +111,102 @@ def test_add_tracks_to_playlist_batching(builder, mock_spotify):
 
         # Should be called twice: once for 100 tracks, once for 5 tracks
         assert mock_spotify.playlist_add_items.call_count == 2
+
+
+def test_find_playlist_by_name_found(builder, mock_spotify):
+    """Test finding a playlist that exists."""
+    mock_spotify.current_user_playlists.return_value = {
+        "items": [
+            {"name": "Other Playlist", "owner": {"id": "test_user_id"}, "id": "other_id"},
+            {"name": "My Playlist", "owner": {"id": "test_user_id"}, "id": "target_id"},
+        ],
+        "next": None,
+    }
+
+    pid = builder.find_playlist_by_name("My Playlist")
+    assert pid == "target_id"
+
+
+def test_find_playlist_by_name_pagination(builder, mock_spotify):
+    """Test finding a playlist with pagination."""
+    # Page 1: Not found
+    page1 = {
+        "items": [{"name": "P1", "owner": {"id": "test_user_id"}, "id": "id1"}],
+        "next": "http://next-page",
+    }
+    # Page 2: Found
+    page2 = {
+        "items": [{"name": "Target", "owner": {"id": "test_user_id"}, "id": "target_id"}],
+        "next": None,
+    }
+    mock_spotify.current_user_playlists.side_effect = [page1, page2]
+
+    pid = builder.find_playlist_by_name("Target")
+    assert pid == "target_id"
+    assert mock_spotify.current_user_playlists.call_count == 2
+
+
+def test_find_playlist_by_name_not_found(builder, mock_spotify):
+    """Test behavior when playlist does not exist."""
+    mock_spotify.current_user_playlists.return_value = {"items": [], "next": None}
+    pid = builder.find_playlist_by_name("Nonexistent")
+    assert pid is None
+
+
+def test_get_playlist_tracks_pagination(builder, mock_spotify):
+    """Test retrieving playlist tracks with pagination."""
+    # Page 1: 100 tracks
+    page1_items = [{"track": {"uri": f"spotify:track:{i}"}} for i in range(100)]
+    page1 = {"items": page1_items, "next": "http://next"}
+
+    # Page 2: 10 tracks
+    page2_items = [{"track": {"uri": f"spotify:track:{i+100}"}} for i in range(10)]
+    page2 = {"items": page2_items, "next": None}
+
+    mock_spotify.playlist_tracks.side_effect = [page1, page2]
+
+    tracks = builder.get_playlist_tracks("pid")
+    assert len(tracks) == 110
+    assert tracks[0] == "spotify:track:0"
+    assert tracks[-1] == "spotify:track:109"
+
+
+def test_clear_playlist(builder, mock_spotify):
+    """Test clearing all tracks from a playlist."""
+    # Mock getting 150 tracks
+    with patch.object(builder, "get_playlist_tracks") as mock_get_tracks:
+        mock_get_tracks.return_value = [f"spotify:track:{i}" for i in range(150)]
+
+        builder.clear_playlist("pid")
+
+        # Should remove in batches of 100
+        assert mock_spotify.playlist_remove_all_occurrences_of_items.call_count == 2
+
+        # Check first batch size
+        args1, _ = mock_spotify.playlist_remove_all_occurrences_of_items.call_args_list[0]
+        assert len(args1[1]) == 100
+
+        # Check second batch size
+        args2, _ = mock_spotify.playlist_remove_all_occurrences_of_items.call_args_list[1]
+        assert len(args2[1]) == 50
+
+
+def test_update_playlist_details(builder, mock_spotify):
+    """Test updating playlist details when changes are needed."""
+    # Current state: different description, different public status
+    mock_spotify.playlist.return_value = {"description": "Old Description", "public": True}
+
+    builder.update_playlist_details("pid", "New Description", public=False)
+
+    mock_spotify.playlist_change_details.assert_called_with(
+        "pid", description="New Description", public=False
+    )
+
+
+def test_update_playlist_details_no_change(builder, mock_spotify):
+    """Test that no update call is made if details match."""
+    mock_spotify.playlist.return_value = {"description": "Same Description", "public": False}
+
+    builder.update_playlist_details("pid", "Same Description", public=False)
+
+    mock_spotify.playlist_change_details.assert_not_called()
