@@ -48,6 +48,7 @@ uv.lock
 
 # cached
 .cache
+.ruff_cache
 
 # Gemini
 .gemini
