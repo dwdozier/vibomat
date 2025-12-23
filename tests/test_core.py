@@ -693,3 +693,41 @@ def test_search_track_version_preference_remaster(builder, mock_spotify):
 
     uri = builder.search_track("Artist", "Song", version="remaster")
     assert uri == "spotify:track:remaster"
+
+
+def test_search_track_with_external_verification(builder, mock_spotify):
+    """Test that external verification boosts the score."""
+    # Mock Spotify search returning two similar items
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song (Live)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Live Album"},
+                    "uri": "spotify:track:verified_live",
+                },
+                {
+                    "name": "Song",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Another Album"},
+                    "uri": "spotify:track:unverified",
+                },
+            ]
+        }
+    }
+
+    # Configure mock verifier to confirm the first track IS live
+    # It receives (artist, track_name, version)
+    def side_effect(artist, track, version):
+        return "Live" in track  # Simulate verifying based on name for this test
+
+    builder.metadata_verifier.verify_track_version.side_effect = side_effect
+
+    # Search with "live" preference
+    uri = builder.search_track("Artist", "Song", version="live")
+
+    # Should pick the one verified by metadata (and internal logic)
+    assert uri == "spotify:track:verified_live"
+    # Ensure verification was called
+    assert builder.metadata_verifier.verify_track_version.call_count >= 1

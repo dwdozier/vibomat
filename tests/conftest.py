@@ -23,8 +23,21 @@ def mock_spotify():
 @pytest.fixture
 def builder(mock_spotify):
     """Create a SpotifyPlaylistBuilder instance with mocked dependencies."""
-    with patch("spotify_playlist_builder.SpotifyOAuth"):
-        return SpotifyPlaylistBuilder("fake_client_id", "fake_client_secret")
+    with (
+        patch("spotify_playlist_builder.SpotifyOAuth"),
+        patch("spotify_playlist_builder.MetadataVerifier") as mock_verifier_cls,
+    ):
+
+        # Setup mock verifier instance
+        mock_verifier_instance = MagicMock()
+        # Default behavior: verify_track_version returns False (neutral)
+        mock_verifier_instance.verify_track_version.return_value = False
+        mock_verifier_cls.return_value = mock_verifier_instance
+
+        builder = SpotifyPlaylistBuilder("fake_client_id", "fake_client_secret")
+        # Attach the mock to the builder for test access
+        builder.metadata_verifier = mock_verifier_instance
+        return builder
 
 
 def pytest_addoption(parser):

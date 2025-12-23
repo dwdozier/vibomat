@@ -19,6 +19,7 @@ from tenacity import (
     retry_if_exception,
     before_sleep_log,
 )
+from metadata_verifier import MetadataVerifier
 
 try:
     import keyring
@@ -176,6 +177,9 @@ class SpotifyPlaylistBuilder:
             raise Exception("Failed to authenticate with Spotify: current_user() returned None")
         self.user_id = user["id"]
 
+        # Initialize Metadata Verifier
+        self.metadata_verifier = MetadataVerifier()
+
     def _similarity(self, s1: str, s2: str) -> float:
         """Calculate string similarity ratio."""
         return difflib.SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
@@ -277,6 +281,21 @@ class SpotifyPlaylistBuilder:
                         score += 20  # Remaster is better than live/remix if we want studio
                     else:
                         score += 10
+
+            # 4. External Metadata Verification (Weight: 20)
+            if version in ["live", "remix", "remaster"]:
+                try:
+                    # Use primary artist for verification
+                    primary_artist = item_artists[0] if item_artists else artist
+                    is_verified = self.metadata_verifier.verify_track_version(
+                        primary_artist, item_name, version
+                    )
+                    if is_verified:
+                        score += 20
+                        logger.debug(f"MusicBrainz verified '{item_name}' as {version}")
+                except Exception as e:
+                    # Don't fail the search if external API fails
+                    logger.debug(f"Metadata verification skipped/failed: {e}")
 
             if score > best_score:
                 best_score = score
