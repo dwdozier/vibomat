@@ -180,6 +180,25 @@ class SpotifyPlaylistBuilder:
         """Calculate string similarity ratio."""
         return difflib.SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
+    def _determine_version(self, track_name: str, album_name: str) -> str:
+        """Determine the version of a track based on its name and album."""
+        name_lower = track_name.lower()
+        album_lower = album_name.lower()
+
+        if "live" in name_lower or "live" in album_lower:
+            return "live"
+        if "remix" in name_lower or "mix" in name_lower:
+            return "remix"
+
+        compilation_keywords = ["greatest hits", "best of", "collection", "anthology"]
+        if any(k in album_lower for k in compilation_keywords):
+            return "compilation"
+
+        if "remaster" in name_lower or "remaster" in album_lower:
+            return "remaster"
+
+        return "studio"
+
     @rate_limit_retry
     def search_track(
         self, artist: str, track: str, album: str | None = None, version: str | None = None
@@ -232,26 +251,32 @@ class SpotifyPlaylistBuilder:
                 album_match = self._similarity(album, item_album)
                 score += album_match * 30
             else:
-                name_lower = item_name.lower()
-                album_lower = item_album.lower()
-
-                compilation_keywords = ["greatest hits", "best of", "collection", "anthology"]
-                is_compilation = any(k in album_lower for k in compilation_keywords)
-                is_live = "live" in name_lower or "live" in album_lower
-                is_remix = "remix" in name_lower or "mix" in name_lower
+                detected_version = self._determine_version(item_name, item_album)
 
                 if version == "live":
-                    score += 30 if is_live else 5
+                    score += 30 if detected_version == "live" else 5
                 elif version == "remix":
-                    score += 30 if is_remix else 5
+                    score += 30 if detected_version == "remix" else 5
                 elif version == "compilation":
-                    score += 30 if is_compilation else 5
-                else:
-                    # Default: Studio (prefer original, non-live, non-remix)
-                    if is_live or is_remix or is_compilation:
+                    score += 30 if detected_version == "compilation" else 5
+                elif version == "remaster":
+                    score += 30 if detected_version == "remaster" else 5
+                elif version == "original":
+                    # For original, we specifically want studio and NOT remaster
+                    if detected_version == "studio":
+                        score += 30
+                    elif detected_version == "remaster":
                         score += 10
                     else:
+                        score += 5
+                else:
+                    # Default: Studio/Original preference
+                    if detected_version == "studio":
                         score += 30
+                    elif detected_version == "remaster":
+                        score += 20  # Remaster is better than live/remix if we want studio
+                    else:
+                        score += 10
 
             if score > best_score:
                 best_score = score
@@ -411,6 +436,7 @@ class SpotifyPlaylistBuilder:
                         "artist": artist_name,
                         "track": track["name"],
                         "album": track["album"]["name"],
+                        "version": self._determine_version(track["name"], track["album"]["name"]),
                     }
                     tracks.append(track_data)
 
