@@ -75,7 +75,7 @@ class CredentialSource(str, Enum):
 
 
 # Credential Management Functions
-def get_credentials_from_env() -> tuple[str, str]:
+def get_credentials_from_env(silent: bool = False) -> tuple[str, str] | None:
     """Get credentials from .env file."""
     from dotenv import load_dotenv
 
@@ -84,6 +84,8 @@ def get_credentials_from_env() -> tuple[str, str]:
     client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 
     if not client_id or not client_secret:
+        if silent:
+            return None
         raise Exception(
             "Error: SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET not found in .env file.\n"
             "Create a .env file with:\n"
@@ -94,15 +96,21 @@ def get_credentials_from_env() -> tuple[str, str]:
     return client_id, client_secret
 
 
-def get_credentials_from_keyring(service: str = "spotify-playlist-builder") -> tuple[str, str]:
+def get_credentials_from_keyring(
+    service: str = "spotify-playlist-builder", silent: bool = False
+) -> tuple[str, str] | None:
     """Get credentials from macOS Keychain (or OS credential store)."""
     if keyring is None:
+        if silent:
+            return None
         raise Exception("keyring library not available. Install it with:\n" "  uv sync")
 
     client_id = keyring.get_password(service, "client_id")
     client_secret = keyring.get_password(service, "client_secret")
 
     if not client_id or not client_secret:
+        if silent:
+            return None
         raise Exception(
             f"Credentials not found in keychain.\n"
             f"To store credentials, run the helper command:\n"
@@ -129,20 +137,50 @@ def store_credentials_in_keyring(
     logger.info(f"✓ Credentials stored securely in {keyring.get_keyring().__class__.__name__}")
 
 
-def get_credentials(source: str = "env") -> tuple[str, str]:
+def get_credentials(source: str | None = None) -> tuple[str, str]:
     """
-    Get Spotify credentials from specified source.
+    Get Spotify credentials from specified source or auto-discover.
 
     Args:
-        source: "env" for .env file or "keyring" for OS keychain
+        source: "env", "keyring", or None (auto-discover)
 
     Returns:
         Tuple of (client_id, client_secret)
     """
-    if source.lower() == "env":
-        return get_credentials_from_env()
-    elif source.lower() == "keyring":
-        return get_credentials_from_keyring()
+    if source == "env":
+        # Explicit request, raise exception if missing
+        result = get_credentials_from_env()
+        if result is None:
+            raise Exception("Failed to load credentials from env.")
+        return result
+
+    elif source == "keyring":
+        # Explicit request, raise exception if missing
+        result = get_credentials_from_keyring()
+        if result is None:
+            raise Exception("Failed to load credentials from keyring.")
+        return result
+
+    elif source is None:
+        # Auto-discovery: Try Keyring first
+        logger.debug("Attempting to retrieve credentials from Keychain...")
+        creds = get_credentials_from_keyring(silent=True)
+        if creds:
+            return creds
+
+        # Fallback to .env
+        logger.debug("Keychain failed/empty. Falling back to .env...")
+        creds = get_credentials_from_env(silent=True)
+        if creds:
+            return creds
+
+        # If both fail
+        raise Exception(
+            "Credentials not found.\n"
+            "Please configure credentials using one of the following methods:\n"
+            "1. Run 'spotify-playlist-builder store-credentials' to use the system keychain.\n"
+            "2. Create a '.env' file with SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET."
+        )
     else:
         raise ValueError(f"Unknown credential source: {source}. Use 'env' or 'keyring'")
 
@@ -621,11 +659,12 @@ class SpotifyPlaylistBuilder:
         logger.info(f"\nPlaylist ready: https://open.spotify.com/playlist/{playlist_id}")
 
 
-def get_builder(source: CredentialSource) -> SpotifyPlaylistBuilder:
+def get_builder(source: CredentialSource | None = None) -> SpotifyPlaylistBuilder:
     """Helper to initialize SpotifyPlaylistBuilder with credentials."""
-    logger.info(f"Fetching credentials from {source.value}...")
+    source_val = source.value if source else None
+    logger.info(f"Fetching credentials (source: {source_val or 'auto'})...")
 
-    client_id, client_secret = get_credentials(source.value)
+    client_id, client_secret = get_credentials(source_val)
     return SpotifyPlaylistBuilder(client_id, client_secret)
 
 
@@ -633,8 +672,9 @@ def get_builder(source: CredentialSource) -> SpotifyPlaylistBuilder:
 def build(
     json_file: Annotated[Path, typer.Argument(exists=True, help="Path to playlist JSON file")],
     source: Annotated[
-        CredentialSource, typer.Option(help="Credential source")
-    ] = CredentialSource.env,
+        CredentialSource | None,
+        typer.Option(help="Credential source (auto-discovers if omitted)"),
+    ] = None,
     dry_run: Annotated[
         bool, typer.Option("--dry-run", help="Verify tracks without creating playlist")
     ] = False,
@@ -653,8 +693,9 @@ def export(
     playlist_name: Annotated[str, typer.Argument(help="Name of the Spotify playlist to export")],
     output_file: Annotated[Path, typer.Argument(help="Path to save the JSON file")],
     source: Annotated[
-        CredentialSource, typer.Option(help="Credential source")
-    ] = CredentialSource.env,
+        CredentialSource | None,
+        typer.Option(help="Credential source (auto-discovers if omitted)"),
+    ] = None,
 ) -> None:
     """Export an existing Spotify playlist to a JSON file."""
     try:
@@ -671,8 +712,9 @@ def backup(
         "backups"
     ),
     source: Annotated[
-        CredentialSource, typer.Option(help="Credential source")
-    ] = CredentialSource.env,
+        CredentialSource | None,
+        typer.Option(help="Credential source (auto-discovers if omitted)"),
+    ] = None,
 ) -> None:
     """Backup all user playlists to JSON files."""
     try:

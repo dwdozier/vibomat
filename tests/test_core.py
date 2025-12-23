@@ -18,7 +18,9 @@ def test_get_credentials_from_env_success():
     """Test retrieving credentials from environment variables."""
     env_vars = {"SPOTIFY_CLIENT_ID": "test_id", "SPOTIFY_CLIENT_SECRET": "test_secret"}
     with patch("dotenv.load_dotenv"), patch.dict(os.environ, env_vars):
-        cid, secret = get_credentials_from_env()
+        result = get_credentials_from_env()
+        assert result is not None
+        cid, secret = result
         assert cid == "test_id"
         assert secret == "test_secret"
 
@@ -36,7 +38,9 @@ def test_get_credentials_from_keyring_success():
     with patch("spotify_playlist_builder.keyring") as mock_keyring:
         mock_keyring.get_password.side_effect = ["my_id", "my_secret"]
 
-        cid, secret = get_credentials_from_keyring()
+        result = get_credentials_from_keyring()
+        assert result is not None
+        cid, secret = result
 
         assert cid == "my_id"
         assert secret == "my_secret"
@@ -731,3 +735,35 @@ def test_search_track_with_external_verification(builder, mock_spotify):
     assert uri == "spotify:track:verified_live"
     # Ensure verification was called
     assert builder.metadata_verifier.verify_track_version.call_count >= 1
+
+
+def test_get_credentials_auto_discovery_keyring(builder):
+    """Test auto-discovery finding credentials in keyring."""
+    with patch(
+        "spotify_playlist_builder.get_credentials_from_keyring", return_value=("id", "secret")
+    ):
+        cid, secret = get_credentials(None)
+        assert cid == "id"
+        assert secret == "secret"
+
+
+def test_get_credentials_auto_discovery_env(builder):
+    """Test auto-discovery falling back to env when keyring fails."""
+    with (
+        patch("spotify_playlist_builder.get_credentials_from_keyring", return_value=None),
+        patch("spotify_playlist_builder.get_credentials_from_env", return_value=("id", "secret")),
+    ):
+        cid, secret = get_credentials(None)
+        assert cid == "id"
+        assert secret == "secret"
+
+
+def test_get_credentials_auto_discovery_failure(builder):
+    """Test auto-discovery failing when both sources are missing."""
+    with (
+        patch("spotify_playlist_builder.get_credentials_from_keyring", return_value=None),
+        patch("spotify_playlist_builder.get_credentials_from_env", return_value=None),
+    ):
+        with pytest.raises(Exception) as exc:
+            get_credentials(None)
+        assert "Credentials not found" in str(exc.value)
