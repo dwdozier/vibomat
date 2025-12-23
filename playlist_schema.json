@@ -32,6 +32,11 @@
           "album": {
             "type": "string",
             "description": "Album name (optional)"
+          },
+          "version": {
+            "type": "string",
+            "enum": ["live", "studio", "compilation", "remix"],
+            "description": "Preferred version of the track (optional)"
           }
         },
         "required": ["artist", "track"]

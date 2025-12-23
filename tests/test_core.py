@@ -552,3 +552,81 @@ def test_build_playlist_from_json_update_existing(builder, mock_spotify):
             mock_update.assert_called()
             mock_clear.assert_called_with("existing_pid")
             mock_add.assert_called_with("existing_pid", ["uri:new"])
+
+
+def test_search_track_version_preference_live(builder, mock_spotify):
+    """Test preferring live version."""
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song (Studio)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:studio",
+                },
+                {
+                    "name": "Song (Live)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Live at Venue"},
+                    "uri": "spotify:track:live",
+                },
+            ]
+        }
+    }
+
+    # Expect live version
+    uri = builder.search_track("Artist", "Song", version="live")
+    assert uri == "spotify:track:live"
+
+
+def test_search_track_version_preference_studio(builder, mock_spotify):
+    """Test preferring studio version (default)."""
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song (Live)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Live at Venue"},
+                    "uri": "spotify:track:live",
+                },
+                {
+                    "name": "Song",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:studio",
+                },
+            ]
+        }
+    }
+
+    # Expect studio version
+    uri = builder.search_track("Artist", "Song", version="studio")
+    assert uri == "spotify:track:studio"
+
+
+def test_search_track_version_preference_remix(builder, mock_spotify):
+    """Test preferring remix version."""
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:studio",
+                },
+                {
+                    "name": "Song (Remix)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:remix",
+                },
+            ]
+        }
+    }
+
+    # Expect remix version
+    uri = builder.search_track("Artist", "Song", version="remix")
+    assert uri == "spotify:track:remix"

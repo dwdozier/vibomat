@@ -10,7 +10,9 @@
 - [ ] **Playlist Cover Art**: Allow specifying a URL or local path for a custom playlist cover image in the JSON.
 - [ ] **AI Playlist Builder**: Generate playlists based on mood, favorite artists, and other criteria using AI.
 - [ ] **External Metadata Sources**: Use non-Spotify sources to verify song/album versions for better accuracy.
-- [ ] **Version Preference**: Allow specifying song/album type (live, studio, compilation, remix) in the JSON configuration.
+- [x] **Version Preference**: Allow specifying song/album type (live, studio, compilation, remix) in the JSON configuration.
+  - [ ] **Apply Version to backup JSON files**: Try to determine the song/album type when backing up for future import.
+  - [ ] **Try to determine if original or remaster**: Let's see if the version is a remaster and let user choose preference if there is a choice.
 
 ## Technical Improvements
 

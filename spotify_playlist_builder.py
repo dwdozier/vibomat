@@ -155,12 +155,12 @@ class SpotifyPlaylistBuilder:
         redirect_uri: str = "https://127.0.0.1:8888/callback",
     ) -> None:
         """Initialize Spotify API client with OAuth authentication."""
-        scope = (
-            "playlist-modify-public"
-            "playlist-modify-private "
-            "playlist-read-private "
-            "playlist-read-collaborative"
-        )
+        scope = [
+            "playlist-modify-public",
+            "playlist-modify-private",
+            "playlist-read-private",
+            "playlist-read-collaborative",
+        ]
         self.sp = spotipy.Spotify(
             auth_manager=SpotifyOAuth(
                 client_id=client_id,
@@ -181,7 +181,9 @@ class SpotifyPlaylistBuilder:
         return difflib.SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
     @rate_limit_retry
-    def search_track(self, artist: str, track: str, album: str | None = None) -> str | None:
+    def search_track(
+        self, artist: str, track: str, album: str | None = None, version: str | None = None
+    ) -> str | None:
         """
         Search for a track on Spotify using fuzzy matching to find the best version.
 
@@ -189,6 +191,7 @@ class SpotifyPlaylistBuilder:
             artist: Artist name
             track: Track name
             album: Optional album name to prefer/filter by
+            version: Optional version preference ('live', 'studio', 'compilation', 'remix')
 
         Returns:
             Spotify URI if found, None otherwise
@@ -224,15 +227,31 @@ class SpotifyPlaylistBuilder:
             track_match = self._similarity(track, item_name)
             score += track_match * 40
 
-            # 3. Album Preference (Weight: 30)
+            # 3. Album/Version Preference (Weight: 30)
             if album:
                 album_match = self._similarity(album, item_album)
                 score += album_match * 30
             else:
-                # Prefer studio albums over compilations
+                name_lower = item_name.lower()
+                album_lower = item_album.lower()
+
                 compilation_keywords = ["greatest hits", "best of", "collection", "anthology"]
-                is_compilation = any(k in item_album.lower() for k in compilation_keywords)
-                score += 10 if is_compilation else 30
+                is_compilation = any(k in album_lower for k in compilation_keywords)
+                is_live = "live" in name_lower or "live" in album_lower
+                is_remix = "remix" in name_lower or "mix" in name_lower
+
+                if version == "live":
+                    score += 30 if is_live else 5
+                elif version == "remix":
+                    score += 30 if is_remix else 5
+                elif version == "compilation":
+                    score += 30 if is_compilation else 5
+                else:
+                    # Default: Studio (prefer original, non-live, non-remix)
+                    if is_live or is_remix or is_compilation:
+                        score += 10
+                    else:
+                        score += 30
 
             if score > best_score:
                 best_score = score
@@ -348,10 +367,13 @@ class SpotifyPlaylistBuilder:
             artist = str(track.get("artist", ""))
             track_name = str(track.get("track", ""))
             album = track.get("album")
+            version = track.get("version")
             if album:
                 album = str(album)
+            if version:
+                version = str(version)
 
-            uri = self.search_track(artist, track_name, album)
+            uri = self.search_track(artist, track_name, album, version)
 
             if uri:
                 uris.append(uri)
@@ -490,7 +512,8 @@ class SpotifyPlaylistBuilder:
             artist = track.get("artist")
             track_name = track.get("track")
             album = track.get("album")
-            uri = self.search_track(artist, track_name, album)
+            version = track.get("version")
+            uri = self.search_track(artist, track_name, album, version)
 
             if uri:
                 new_track_uris.append(uri)

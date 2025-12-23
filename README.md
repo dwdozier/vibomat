@@ -106,11 +106,19 @@ Create a file in `playlists/` like `my-playlist.json`:
   "public": false,
   "tracks": [
     {"artist": "Artist Name", "track": "Song Title"},
-    {"artist": "Another Artist", "track": "Another Song"},
-    {"artist": "Kraftwerk", "track": "The Robots"}
+    {"artist": "Another Artist", "track": "Another Song", "album": "Specific Album"},
+    {"artist": "Kraftwerk", "track": "The Robots", "version": "studio"},
+    {"artist": "The Cure", "track": "Lullaby", "version": "live"}
   ]
 }
 ```
+
+### Supported Track Fields
+
+- `artist` (required): Name of the artist.
+- `track` (required): Name of the song.
+- `album` (optional): Preferred album title.
+- `version` (optional): Version preference. Supported values: `studio` (default), `live`, `remix`, `compilation`.
 
 ### Build a Playlist
 
