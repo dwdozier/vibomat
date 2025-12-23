@@ -27,7 +27,8 @@ Perfect for curating playlists programmatically and versioning them in git.
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Log in (create a free account if needed)
 3. Click "Create an App" and agree to the terms
-4. You'll get a **Client ID** and **Client Secret**
+4. **Important:** Edit your app settings and add `https://127.0.0.1:8888/callback` to the **Redirect URIs**.
+5. You'll get a **Client ID** and **Client Secret**
 
 ### 2. Set Up Virtual Environment and Dependencies
 

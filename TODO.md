@@ -29,3 +29,4 @@
 
 - [x] **JSON Schema**: Add a JSON Schema file to validate playlist JSON files automatically.
 - [x] **Contributing Guide**: Expand on how to run tests and contribute code.
+- [ ] **App Registration Guide**: Detailed steps for creating a Spotify App, including setting the Redirect URI (`https://127.0.0.1:8888/callback`).
