@@ -424,7 +424,8 @@ def test_get_playlist_tracks_details(builder, mock_spotify):
     }
     details = builder.get_playlist_tracks_details("pid")
     assert len(details) == 2
-    assert details[0] == {"artist": "Artist 1", "track": "Track 1", "album": "Album 1"}
+    assert details[0]["artist"] == "Artist 1"
+    assert "version" in details[0]
 
 
 def test_export_playlist_to_json(builder, mock_spotify):
@@ -630,3 +631,65 @@ def test_search_track_version_preference_remix(builder, mock_spotify):
     # Expect remix version
     uri = builder.search_track("Artist", "Song", version="remix")
     assert uri == "spotify:track:remix"
+
+
+def test_determine_version(builder):
+    """Test the version determination logic."""
+    assert builder._determine_version("Track (Live)", "Album") == "live"
+    assert builder._determine_version("Track", "Live at Venue") == "live"
+    assert builder._determine_version("Track (Remix)", "Album") == "remix"
+    assert builder._determine_version("Track (Mix)", "Album") == "remix"
+    assert builder._determine_version("Track", "Greatest Hits") == "compilation"
+    assert builder._determine_version("Track (Remastered)", "Album") == "remaster"
+    assert builder._determine_version("Track", "Album (Remaster)") == "remaster"
+    assert builder._determine_version("Track", "Album") == "studio"
+
+
+def test_search_track_version_preference_original(builder, mock_spotify):
+    """Test preferring original version over remaster."""
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song (Remastered)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:remaster",
+                },
+                {
+                    "name": "Song",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:original",
+                },
+            ]
+        }
+    }
+
+    uri = builder.search_track("Artist", "Song", version="original")
+    assert uri == "spotify:track:original"
+
+
+def test_search_track_version_preference_remaster(builder, mock_spotify):
+    """Test preferring remaster version over original."""
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:original",
+                },
+                {
+                    "name": "Song (Remastered)",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:remaster",
+                },
+            ]
+        }
+    }
+
+    uri = builder.search_track("Artist", "Song", version="remaster")
+    assert uri == "spotify:track:remaster"

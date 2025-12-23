@@ -118,7 +118,7 @@ Create a file in `playlists/` like `my-playlist.json`:
 - `artist` (required): Name of the artist.
 - `track` (required): Name of the song.
 - `album` (optional): Preferred album title.
-- `version` (optional): Version preference. Supported values: `studio` (default), `live`, `remix`, `compilation`.
+- `version` (optional): Version preference. Supported values: `studio` (default), `live`, `remix`, `compilation`, `original`, `remaster`.
 
 ### Build a Playlist
 

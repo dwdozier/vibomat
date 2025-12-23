@@ -35,7 +35,7 @@
           },
           "version": {
             "type": "string",
-            "enum": ["live", "studio", "compilation", "remix"],
+            "enum": ["live", "studio", "compilation", "remix", "original", "remaster"],
             "description": "Preferred version of the track (optional)"
           }
         },
