@@ -27,6 +27,7 @@ dependencies = [
     "keyring",
     "typer",
     "tenacity",
+    "musicbrainzngs",
 ]
 
 [project.optional-dependencies]
