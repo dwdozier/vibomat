@@ -1,6 +1,7 @@
 # Spotify Playlist Builder
 
-A simple Python CLI tool to programmatically create and manage Spotify playlists from local JSON data files.
+A simple Python CLI tool to programmatically create and manage Spotify playlists from local
+JSON data files.
 
 ## What It Does
 
@@ -15,8 +16,10 @@ Perfect for curating playlists programmatically and versioning them in git.
 
 ## Getting Started
 
-1.  **Register a Spotify App**: Get your API credentials by following the [App Registration Guide](APP_REGISTRATION.md).
-2.  **Install & Configure**: Follow the [Setup Guide](SETUP.md) to install dependencies and configure your credentials.
+1. **Register a Spotify App**: Get your API credentials by following the
+   [App Registration Guide](APP_REGISTRATION.md).
+2. **Install & Configure**: Follow the [Setup Guide](SETUP.md) to install dependencies and
+   configure your credentials.
 
 ## Usage
 
@@ -43,23 +46,27 @@ Create a file in `playlists/` like `my-playlist.json`:
 - `artist` (required): Name of the artist.
 - `track` (required): Name of the song.
 - `album` (optional): Preferred album title.
-- `version` (optional): Version preference. Supported values: `studio` (default), `live`, `remix`, `compilation`, `original`, `remaster`.
+- `version` (optional): Version preference. Supported values: `studio` (default), `live`, `remix`,
+  `compilation`, `original`, `remaster`.
 
 ### 2. Build a Playlist
 
 Create or update a playlist on Spotify from a JSON file.
 
 **Basic usage:**
+
 ```bash
 spotify-playlist-builder build playlists/my-playlist.json
 ```
 
 **Options:**
+
 - `--source [env|keyring]`: Credential source (default: `env`)
 - `--dry-run`: Simulate the process without making changes to Spotify.
 - `--verbose`: Enable detailed logging.
 
 **Example with options:**
+
 ```bash
 spotify-playlist-builder build playlists/my-playlist.json --source keyring --dry-run
 ```
@@ -83,10 +90,14 @@ spotify-playlist-builder backup --output-dir backups/
 ## Tips
 
 - **Spotify Username**: Find it in your profile settings (or the URL when you visit your profile)
-- **Track Not Found**: If a track isn't found, check the spelling. Spotify's search is forgiving but works best with exact artist/track names
-- **Update Playlists**: Running the `build` command again with the same playlist name in the JSON will **update** the existing playlist (syncing tracks and description) instead of creating a duplicate.
+- **Track Not Found**: If a track isn't found, check the spelling. Spotify's search is forgiving
+  but works best with exact artist/track names
+- **Update Playlists**: Running the `build` command again with the same playlist name in the JSON
+  will **update** the existing playlist (syncing tracks and description) instead of creating
+  a duplicate.
 - **Version Control**: Keep your playlist JSON files in git to track curation changes over time
-- **Credential Security**: The system keychain is more secure than .env—credentials stay encrypted and never committed to git
+- **Credential Security**: The system keychain is more secure than .env—credentials stay
+  encrypted and never committed to git
 
 ## File Structure
 
