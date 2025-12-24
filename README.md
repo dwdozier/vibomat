@@ -92,7 +92,14 @@ spotify-playlist-builder backup --output-dir backups/
 
 ```sh
 spotify-playlist-builder/
-├── spotify_playlist_builder.py # Main script
+├── spotify_playlist_builder/ # App package
+│   ├── __init__.py
+│   ├── auth.py              # Credential management
+│   ├── cli.py               # Typer CLI commands
+│   ├── client.py            # Core Spotify logic
+│   ├── main.py              # Entry point
+│   ├── metadata.py          # Metadata verification
+│   └── utils/               # Shared utilities
 ├── pyproject.toml           # Project config & dependencies
 ├── uv.lock                  # Locked dependencies
 ├── APP_REGISTRATION.md      # Spotify App setup guide

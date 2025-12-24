@@ -23,9 +23,12 @@ Use the following commands to set up the development environment.
 
 ## 3. Core Architecture
 
--   **Main Entry Point:** The application logic is contained entirely within `spotify_playlist_builder.py`.
--   **Core Class:** The `SpotifyPlaylistBuilder` class orchestrates all interaction with the Spotify API, including authentication, track searching, and playlist manipulation.
--   **Credential Management:** The script can retrieve credentials from a `.env` file or the system's native keychain (via `keyring`). The default source is `.env`.
+-   **Modular Structure:** The application is organized as a Python package `spotify_playlist_builder`.
+    -   **`client.py`:** Contains `SpotifyPlaylistBuilder` for API interaction.
+    -   **`cli.py`:** Defines the Typer application and commands.
+    -   **`auth.py`:** Handles credential auto-discovery and storage.
+    -   **`metadata.py`:** Handles external metadata verification (MusicBrainz).
+-   **Credential Management:** Supports `.env` and system keychain, with auto-discovery logic in `auth.py`.
 -   **Configuration:** Project dependencies and tool settings are defined in `pyproject.toml`.
 
 ## 4. Key Commands
