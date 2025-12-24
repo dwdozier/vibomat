@@ -127,5 +127,44 @@ def uninstall_completion_cmd() -> None:
     logger.info("To uninstall shell completion, identify which method you used...")
 
 
+@app.command("setup-ai")
+def setup_ai_cmd() -> None:
+    """Store Gemini API Key in system keyring."""
+    logger.info("Setup Gemini API Key")
+    key = typer.prompt("Enter your Google Gemini API Key", hide_input=True)
+    if key:
+        try:
+            import keyring
+
+            keyring.set_password("spotify-playlist-builder", "gemini_api_key", key)
+            logger.info("✓ API Key stored in keyring.")
+        except ImportError:
+            logger.error("Keyring not available. Please set GEMINI_API_KEY env var.")
+        except Exception as e:
+            logger.error(f"Error: {e}")
+
+
+@app.command("generate")
+def generate_cmd(
+    prompt: Annotated[
+        str | None, typer.Option("--prompt", "-p", help="Description of playlist")
+    ] = None,
+    count: Annotated[int, typer.Option("--count", "-c", help="Number of songs")] = 20,
+) -> None:
+    """Generate a playlist using AI."""
+    from .ai import generate_playlist
+
+    if not prompt:
+        prompt = typer.prompt("Describe the playlist mood/theme")
+
+    try:
+        tracks = generate_playlist(prompt, count)
+        import json
+
+        print(json.dumps(tracks, indent=2))
+    except Exception as e:
+        logger.error(f"Generation failed: {e}")
+
+
 if __name__ == "__main__":
     app()
