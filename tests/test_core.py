@@ -485,8 +485,8 @@ def test_backup_all_playlists(builder, mock_spotify):
 
         assert mock_export.call_count == 2
         # Check filename sanitization (slashes removed/replaced)
-        mock_export.assert_any_call("Playlist 1", os.path.join("backups_dir", "Playlist 1.json"))
-        mock_export.assert_any_call("Playlist/2", os.path.join("backups_dir", "Playlist2.json"))
+        mock_export.assert_any_call("Playlist 1", os.path.join("backups_dir", "playlist_1.json"))
+        mock_export.assert_any_call("Playlist/2", os.path.join("backups_dir", "playlist_2.json"))
 
 
 def test_backup_all_playlists_exception(builder, mock_spotify):
@@ -741,7 +741,9 @@ def test_get_credentials_auto_discovery_keyring(builder):
     with patch(
         "spotify_playlist_builder.auth.get_credentials_from_keyring", return_value=("id", "secret")
     ):
-        cid, secret = get_credentials(None)
+        result = get_credentials(None)
+        assert result is not None
+        cid, secret = result
         assert cid == "id"
         assert secret == "secret"
 
@@ -754,7 +756,9 @@ def test_get_credentials_auto_discovery_env(builder):
             "spotify_playlist_builder.auth.get_credentials_from_env", return_value=("id", "secret")
         ),
     ):
-        cid, secret = get_credentials(None)
+        result = get_credentials(None)
+        assert result is not None
+        cid, secret = result
         assert cid == "id"
         assert secret == "secret"
 
@@ -768,3 +772,13 @@ def test_get_credentials_auto_discovery_failure(builder):
         with pytest.raises(Exception) as exc:
             get_credentials(None)
         assert "Credentials not found" in str(exc.value)
+
+
+def test_to_snake_case():
+    """Test the snake_case conversion utility."""
+    from spotify_playlist_builder.utils.helpers import to_snake_case
+
+    assert to_snake_case("My Awesome Playlist") == "my_awesome_playlist"
+    assert to_snake_case("Playlist-with-Dashes") == "playlist_with_dashes"
+    assert to_snake_case("  Spaces and Symbols! @# ") == "spaces_and_symbols"
+    assert to_snake_case("Multiple___Underscores") == "multiple_underscores"

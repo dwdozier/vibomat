@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from spotipy.oauth2 import SpotifyOAuth
 from .metadata import MetadataVerifier
-from .utils.helpers import _similarity, _determine_version, rate_limit_retry
+from .utils.helpers import _similarity, _determine_version, rate_limit_retry, to_snake_case
 
 logger = logging.getLogger("spotify_playlist_builder.client")
 
@@ -304,9 +304,7 @@ class SpotifyPlaylistBuilder:
                 break
             offset += limit
         for pl in playlists:
-            safe_name = "".join(
-                c for c in pl["name"] if c.isalnum() or c in (" ", "-", "_")
-            ).strip()
+            safe_name = to_snake_case(pl["name"])
             filepath = os.path.join(output_dir, f"{safe_name or pl['id']}.json")
             try:
                 self.export_playlist_to_json(pl["name"], filepath)

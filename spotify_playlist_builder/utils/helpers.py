@@ -1,5 +1,6 @@
 import difflib
 import logging
+import re
 from spotipy.exceptions import SpotifyException
 from tenacity import (
     retry,
@@ -49,3 +50,10 @@ def _determine_version(track_name: str, album_name: str) -> str:
         return "remaster"
 
     return "studio"
+
+
+def to_snake_case(text: str) -> str:
+    """Convert text to snake_case."""
+    text = re.sub(r"[^a-zA-Z0-9]", "_", text)
+    text = re.sub(r"_+", "_", text)
+    return text.lower().strip("_")
