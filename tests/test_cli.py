@@ -1,3 +1,5 @@
+import os
+import json
 from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 from spotify_playlist_builder.cli import app
@@ -119,8 +121,7 @@ def test_cli_install_completion_success():
         # Path configuration: home / .oh-my-zsh
         mock_home.return_value.__truediv__.return_value = mock_omz
         # Mock completions dir: omz / completions
-        mock_completions = MagicMock()
-        mock_omz.__truediv__.return_value = mock_completions
+        mock_omz.__truediv__.return_value = mock_completions = MagicMock()
         # Mock target file: completions / _script
         mock_target = MagicMock()
         mock_completions.__truediv__.return_value = mock_target
@@ -213,19 +214,55 @@ def test_cli_setup_ai_import_error():
 def test_cli_generate_success():
     """Test generate command."""
     mock_tracks = [{"artist": "Artist", "track": "Track", "version": "studio"}]
-    with patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks):
+    with (
+        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
+        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+    ):
         result = runner.invoke(app, ["generate", "--prompt", "test mood"])
         assert result.exit_code == 0
-        assert '"artist": "Artist"' in result.stdout
+        assert "Artist - Track" in result.stdout
+
+
+def test_cli_generate_with_output():
+    """Test generate command with --output flag."""
+    mock_tracks = [{"artist": "A", "track": "B"}]
+    with (
+        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
+        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        runner.isolated_filesystem(),
+    ):
+        result = runner.invoke(app, ["generate", "-p", "test", "-o", "out.json"])
+        assert result.exit_code == 0
+        assert os.path.exists("out.json")
+        with open("out.json") as f:
+            data = json.load(f)
+            assert data["tracks"][0]["artist"] == "A"
+
+
+def test_cli_generate_interactive_save():
+    """Test interactive saving flow in generate command."""
+    mock_tracks = [{"artist": "A", "track": "B"}]
+    with (
+        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
+        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        runner.isolated_filesystem(),
+    ):
+        # input: "y" (confirm save), "my_list.json" (filename)
+        result = runner.invoke(app, ["generate", "-p", "test"], input="y\nmy_list.json\n")
+        assert result.exit_code == 0
+        assert os.path.exists("playlists/my_list.json")
 
 
 def test_cli_generate_interactive():
     """Test generate command with interactive input."""
     mock_tracks = [{"artist": "A", "track": "B"}]
-    with patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks):
-        result = runner.invoke(app, ["generate"], input="my mood\n")
+    with (
+        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
+        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+    ):
+        result = runner.invoke(app, ["generate"], input="my mood\ny\nmy_list.json\n")
         assert result.exit_code == 0
-        assert '"artist": "A"' in result.stdout
+        assert "A - B" in result.stdout
 
 
 def test_cli_generate_failure():
@@ -235,3 +272,11 @@ def test_cli_generate_failure():
         assert result.exit_code == 0  # Typer doesn't crash, just logs error
         # Verify error log could be captured if we checked stderr/logging, but exit code 0 is what
         # we handle
+
+
+def test_cli_ai_models_success():
+    """Test ai-models command."""
+    with patch("spotify_playlist_builder.ai.list_available_models", return_value=["model1"]):
+        result = runner.invoke(app, ["ai-models"])
+        assert result.exit_code == 0
+        assert "model1" in result.stdout

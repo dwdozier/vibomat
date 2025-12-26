@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from spotify_playlist_builder.metadata import MetadataVerifier
-import musicbrainzngs
+import requests
 
 
 @pytest.fixture
@@ -11,29 +11,32 @@ def verifier():
 
 def test_search_recording_success(verifier):
     """Test successful search for a recording."""
-    mock_result = {"recording-list": [{"title": "Test Song", "id": "123"}]}
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"recordings": [{"title": "Test Song", "id": "123"}]}
+    mock_response.raise_for_status.return_value = None
 
-    with patch("musicbrainzngs.search_recordings", return_value=mock_result) as mock_search:
+    with patch("requests.get", return_value=mock_response) as mock_get:
         results = verifier.search_recording("Artist", "Track")
 
-        assert results == mock_result["recording-list"]
-        mock_search.assert_called_once()
+        assert results == [{"title": "Test Song", "id": "123"}]
+        mock_get.assert_called_once()
 
 
 def test_search_recording_api_error(verifier):
     """Test handling of MusicBrainz API errors."""
     from tenacity import RetryError
 
-    with patch(
-        "musicbrainzngs.search_recordings", side_effect=musicbrainzngs.ResponseError("API Error")
-    ):
+    with patch("requests.get", side_effect=requests.exceptions.RequestException("API Error")):
         with pytest.raises(RetryError):
             verifier.search_recording("Artist", "Track")
 
 
 def test_search_recording_unexpected_error(verifier):
-    """Test handling of unexpected errors."""
-    with patch("musicbrainzngs.search_recordings", side_effect=Exception("Boom")):
+    """Test handling of unexpected errors (json parsing failure)."""
+    mock_response = MagicMock()
+    mock_response.json.side_effect = ValueError("JSON Error")
+
+    with patch("requests.get", return_value=mock_response):
         results = verifier.search_recording("Artist", "Track")
         assert results == []
 

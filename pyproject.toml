@@ -27,7 +27,6 @@ dependencies = [
     "keyring",
     "typer",
     "tenacity",
-    "musicbrainzngs",
     "google-genai>=1.56.0",
 ]
 

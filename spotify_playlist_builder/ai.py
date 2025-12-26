@@ -5,6 +5,7 @@ from typing import Any
 from google import genai
 from google.genai import types
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from .metadata import MetadataVerifier
 
 logger = logging.getLogger("spotify_playlist_builder.ai")
 
@@ -62,7 +63,6 @@ def generate_content_with_retry(client, model, contents, config):
 
 def get_gemini_model_name() -> str:
     """Get the Gemini model name from env or default."""
-    # Updated default to 2.0-flash as 1.5-flash availability varies
     return os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 
@@ -137,3 +137,35 @@ def generate_playlist(description: str, count: int = 20) -> list[dict[str, Any]]
                 logger.info("Set GEMINI_MODEL environment variable to one of the above.")
         logger.error(f"AI Generation failed: {e}")
         raise
+
+
+def verify_ai_tracks(tracks: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """Verify AI-generated tracks against MusicBrainz."""
+    verifier = MetadataVerifier()
+    verified_tracks = []
+    rejected_tracks = []
+
+    logger.info(f"Verifying {len(tracks)} tracks against MusicBrainz...")
+
+    for item in tracks:
+        artist = item.get("artist")
+        track = item.get("track")
+        version = item.get("version")
+
+        if not artist or not track:
+            continue
+
+        try:
+            # We use verify_track_version which checks for existence + version
+            # If version is None or 'studio', it just checks existence
+            if verifier.verify_track_version(artist, track, version or "studio"):
+                verified_tracks.append(item)
+            else:
+                rejected_tracks.append(f"{artist} - {track}")
+        except Exception as e:
+            logger.debug(f"Verification failed for {artist} - {track}: {e}")
+            # If API fails, we lean towards keeping it but maybe warning?
+            # For now, let's keep it if MB is down, but reject if MB says no.
+            verified_tracks.append(item)
+
+    return verified_tracks, rejected_tracks

@@ -104,3 +104,26 @@ def test_list_available_models():
 
         models = list_available_models()
         assert "models/gemini-1.5-flash" in models
+
+
+def test_verify_ai_tracks():
+    """Test verification logic for AI tracks."""
+    tracks = [
+        {"artist": "Valid", "track": "Song", "version": "studio"},
+        {"artist": "Invalid", "track": "Fake", "version": "studio"},
+    ]
+
+    with patch("spotify_playlist_builder.ai.MetadataVerifier") as mock_verifier_cls:
+        mock_verifier = MagicMock()
+        # Mock first track as verified, second as rejected
+        mock_verifier.verify_track_version.side_effect = [True, False]
+        mock_verifier_cls.return_value = mock_verifier
+
+        from spotify_playlist_builder.ai import verify_ai_tracks
+
+        verified, rejected = verify_ai_tracks(tracks)
+
+        assert len(verified) == 1
+        assert verified[0]["artist"] == "Valid"
+        assert len(rejected) == 1
+        assert "Invalid - Fake" in rejected

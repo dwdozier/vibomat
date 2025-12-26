@@ -164,18 +164,65 @@ def generate_cmd(
         str | None, typer.Option("--prompt", "-p", help="Description of playlist")
     ] = None,
     count: Annotated[int, typer.Option("--count", "-c", help="Number of songs")] = 20,
+    output: Annotated[
+        Path | None, typer.Option("--output", "-o", help="Path to save the JSON file")
+    ] = None,
 ) -> None:
-    """Generate a playlist using AI."""
-    from .ai import generate_playlist
+    """Generate a playlist using AI and verify tracks."""
+    from .ai import generate_playlist, verify_ai_tracks
+    import json
 
     if not prompt:
         prompt = typer.prompt("Describe the playlist mood/theme")
 
     try:
-        tracks = generate_playlist(prompt, count)
-        import json
+        raw_tracks = generate_playlist(prompt, count)
 
-        print(json.dumps(tracks, indent=2))
+        verified, rejected = verify_ai_tracks(raw_tracks)
+
+        logger.info("\nVerification Results:")
+        logger.info(f"✓ {len(verified)} tracks verified.")
+        if rejected:
+            logger.warning(f"✗ {len(rejected)} tracks could not be verified (rejected).")
+            for r in rejected:
+                logger.debug(f"  - {r}")
+
+        if not verified:
+            logger.error("No tracks were verified. Try a different prompt.")
+            return
+
+        # Prepare JSON data
+        playlist_data = {
+            "name": f"AI: {prompt[:30]}...",
+            "description": f"AI generated playlist based on: {prompt}",
+            "tracks": verified,
+        }
+
+        if output:
+            # One-shot mode with output file
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with open(output, "w") as f:
+                json.dump(playlist_data, f, indent=2)
+            logger.info(f"\n✓ Playlist saved to {output}")
+        else:
+            # Interactive review
+            logger.info("\nProposed Playlist:")
+            for i, t in enumerate(verified, 1):
+                print(f"{i}. {t['artist']} - {t['track']} ({t.get('version', 'studio')})")
+
+            if typer.confirm("\nSave this playlist?"):
+                filename = typer.prompt(
+                    "Enter filename", default=f"{prompt[:20].strip().replace(' ', '_')}.json"
+                )
+                if not filename.endswith(".json"):
+                    filename += ".json"
+                out_path = Path("playlists") / filename
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(out_path, "w") as f:
+                    json.dump(playlist_data, f, indent=2)
+                logger.info(f"✓ Saved to {out_path}")
+                logger.info(f"Run 'spotify-playlist-builder build {out_path}' to create it!")
+
     except Exception as e:
         logger.error(f"Generation failed: {e}")
 
