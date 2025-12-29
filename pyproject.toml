@@ -34,6 +34,10 @@ dependencies = [
     "alembic",
     "aiosqlite",
     "fastapi-users[sqlalchemy]",
+    "taskiq",
+    "taskiq-redis",
+    "redis",
+    "asyncpg",
 ]
 
 [project.optional-dependencies]
@@ -47,7 +51,6 @@ dev = [
     "httpx",  # For TestClient
     "pytest-asyncio",
     "pytest-playwright",
-    "taskiq-redis",
 ]
 
 [project.scripts]
