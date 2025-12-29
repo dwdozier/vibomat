@@ -187,3 +187,11 @@ def test_generate_playlist_404_handling():
             generate_playlist("mood")
         # Ensure list_available_models was called to provide suggestions
         # We can't easily assert on log output without caplog fixture, but coverage will count it
+
+
+def test_get_best_flash_model_latest_alias():
+    """Test prioritization of gemini-flash-latest."""
+    mock_client = MagicMock()
+    with patch("spotify_playlist_builder.ai.list_available_models") as mock_list:
+        mock_list.return_value = ["models/gemini-2.0-flash", "models/gemini-flash-latest"]
+        assert get_best_flash_model(mock_client) == "gemini-flash-latest"

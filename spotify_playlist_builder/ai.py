@@ -89,6 +89,7 @@ def get_best_flash_model(client: genai.Client) -> str:
 
     # Known models in order of preference (latest first)
     known_models = [
+        "gemini-flash-latest",
         "gemini-2.0-flash",
         "gemini-2.0-flash-exp",
         "gemini-1.5-flash",
@@ -107,7 +108,7 @@ def get_best_flash_model(client: genai.Client) -> str:
         # If no known flash model found, try to find *any* model with 'flash' in name
         flash_models = [m for m in available if "flash" in m.lower()]
         if flash_models:
-            # Sort to pick the one that looks "newest" (highest number)
+            # Sort to pick the one that looks "newest" (highest number/version)
             flash_models.sort(reverse=True)
             return flash_models[0].replace("models/", "")
 
