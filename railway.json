@@ -25,6 +25,7 @@
     },
     "backend": {
       "name": "vibomat-api",
+      "rootDirectory": "/",
       "dockerfilePath": "backend/Dockerfile",
       "source": {
         "repo": "https://github.com/dwdozier/vibomat"
@@ -52,6 +53,7 @@
     },
     "worker": {
       "name": "vibomat-worker",
+      "rootDirectory": "/",
       "dockerfilePath": "backend/Dockerfile",
       "source": {
         "repo": "https://github.com/dwdozier/vibomat"
@@ -67,7 +69,8 @@
     },
     "frontend": {
       "name": "vibomat-ui",
-      "dockerfilePath": "frontend/Dockerfile",
+      "rootDirectory": "/frontend",
+      "dockerfilePath": "Dockerfile",
       "source": {
         "repo": "https://github.com/dwdozier/vibomat"
       },
