@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from typing import List
 from backend.app.schemas.playlist import (
     GenerationRequest,
     VerificationRequest,
     VerificationResponse,
     TrackCreate,
+    PlaylistCreate,
 )
 from backend.app.services.ai_service import AIService
 
@@ -45,3 +46,17 @@ async def verify_tracks_endpoint(
         return {"verified": verified, "rejected": rejected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/export")
+async def export_playlist(playlist: PlaylistCreate):
+    """
+    Export a playlist schema to a downloadable JSON file.
+    """
+    content = playlist.model_dump_json(indent=2)
+    filename = playlist.name.lower().replace(" ", "_")
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}.json"},
+    )

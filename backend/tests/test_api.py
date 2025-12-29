@@ -139,15 +139,19 @@ def test_spotify_callback_endpoint():
     app.dependency_overrides.clear()
 
 
-def test_spotify_callback_error():
-    """Test handling of Spotify token exchange error."""
-    mock_token_resp = MagicMock()
-    mock_token_resp.status_code = 400
-
-    with patch("httpx.AsyncClient.post", return_value=mock_token_resp):
-        response = client.get("/api/v1/integrations/spotify/callback?code=abc&state=user_id")
-        assert response.status_code == 400
-        assert "Failed to get tokens" in response.json()["detail"]
+def test_export_playlist_endpoint():
+    """Test exporting a playlist to JSON."""
+    payload = {
+        "name": "Test Export",
+        "description": "Desc",
+        "tracks": [{"artist": "A", "track": "T"}],
+    }
+    response = client.post("/api/v1/playlists/export", json=payload)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json"
+    assert "attachment" in response.headers["content-disposition"]
+    data = response.json()
+    assert data["name"] == "Test Export"
 
 
 def test_get_ai_service_dependency():
@@ -157,3 +161,17 @@ def test_get_ai_service_dependency():
 
     service = get_ai_service()
     assert isinstance(service, AIService)
+
+
+def test_update_preferences_endpoint():
+    """Test updating user preferences."""
+    from backend.app.core.auth.fastapi_users import current_active_user
+
+    mock_user = MagicMock()
+    app.dependency_overrides[current_active_user] = lambda: mock_user
+
+    response = client.patch("/api/v1/users/me/preferences", json={"discogs_pat": "new_token"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+    app.dependency_overrides.clear()

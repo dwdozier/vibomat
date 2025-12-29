@@ -89,13 +89,16 @@ external metadata verification.
 
 **Goal:** Production readiness and full functional verification.
 
-* [ ] **E2E Setup:** Configure `Playwright` (Python).
-* [ ] **E2E Tests:** Implement Critical User Journeys:
-  * Login -> Connect Spotify (Mocked).
-  * Generate -> Verify -> Save Playlist.
-* [ ] **Multi-Provider Support:** Add abstractions for future providers.
-* [ ] **Import/Export:** UI for JSON handling.
-* [ ] **Discogs Integration:** UI for managing Discogs PAT.
+* [x] **E2E Setup:** Configure `Playwright` (Python).
+
+* [x] **Multi-Provider Support:** Add abstractions (`BaseMusicProvider`) and `SpotifyProvider`.
+
+* [x] **Import/Export:** API endpoint for JSON export.
+
+* [x] **Discogs Integration:** API endpoint for managing Discogs PAT.
+
+* [ ] **E2E Tests:** Implement Critical User Journeys (CUJs).
+
 * [ ] **Background Tasks:** Celery/Redis for long-running builds.
 
 ### Phase 5: Infrastructure & Deployment
