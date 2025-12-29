@@ -13,7 +13,7 @@
 - [x] **Enhanced Search**: Improve search accuracy (e.g., filter by album, fuzzy matching).
 - [ ] **Playlist Cover Art**: Allow specifying a URL or local path for a custom playlist cover
   image in the JSON.
-- [ ] **AI Playlist Builder**: Generate playlists based on mood, favorite artists, and other
+- [x] **AI Playlist Builder**: Generate playlists based on mood, favorite artists, and other
   criteria using AI.
 - [x] **External Metadata Sources**: Use non-Spotify sources to verify song/album versions for
   better accuracy.

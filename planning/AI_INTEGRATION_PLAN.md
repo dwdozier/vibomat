@@ -117,11 +117,11 @@ key. Users can choose to store it in:
 
 ### Phase 2: Verification
 
-* [ ] Create branch `feature/ai-verification`.
-* [ ] Connect `ai.py` output to `MetadataVerifier` in `metadata.py`.
-* [ ] Filter out hallucinations (songs not found in MusicBrainz).
-* [ ] Parse AI JSON into strict schema format.
-* [ ] Implement file saving to `playlists/`.
+* [x] Create branch `feature/ai-verification`.
+* [x] Connect `ai.py` output to `MetadataVerifier` in `metadata.py`.
+* [x] Filter out hallucinations (songs not found in MusicBrainz).
+* [x] Parse AI JSON into strict schema format.
+* [x] Implement file saving to `playlists/`.
 
 ### Phase 3: UX & Polish
 

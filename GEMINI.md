@@ -92,3 +92,7 @@ Use these commands to maintain code quality and run the application.
   collaboration. It should only be used as a last resort and REQUIRES explicit user approval.
   Prefer accumulating multiple commits within an open PR, as they will be squash-merged upon
   completion.
+- **CRITICAL RULE:** Feature branches should always branch off of the latest `main` branch,
+  unless directed otherwise. If a PR has been created for a branch and there are subsequent
+  changes and bug fixes, they should stay with the unmerged PR's branch and not spawn a new
+  branch until the current working PR has been merged to `main`
