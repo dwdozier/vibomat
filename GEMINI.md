@@ -92,6 +92,9 @@ Use these commands to maintain code quality and run the application.
   collaboration. It should only be used as a last resort and REQUIRES explicit user approval.
   Prefer accumulating multiple commits within an open PR, as they will be squash-merged upon
   completion.
+- **CRITICAL RULE: No Rule Bypassing:** Never bypass security rules, branch protections, or
+  verification failures (linting, testing, etc.) without explicit user approval. Always employ the
+  Pull Request workflow unless specifically directed to push to `main`.
 - **CRITICAL RULE: Branching Strategy:** Feature branches must always branch off the latest `main`
   branch.
   - **No Chaining:** Never create a feature branch from another unmerged feature branch. This
