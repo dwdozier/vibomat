@@ -20,7 +20,7 @@ def main(
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
-        format="%(message)s" if not verbose else "% (levelname)s: %(message)s",
+        format="%(message)s" if not verbose else "%(levelname)s: %(message)s",
         force=True,
     )
 
