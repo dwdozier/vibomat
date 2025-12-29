@@ -1,9 +1,7 @@
-import pytest
 from unittest.mock import MagicMock, patch
 from backend.app.core.tasks import create_playlist_task
 
 
-@pytest.mark.asyncio
 async def test_create_playlist_task():
     """Test the create_playlist_task background worker."""
     from unittest.mock import AsyncMock

@@ -1,10 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, patch
 from backend.app.main import lifespan
 from fastapi import FastAPI
 
 
-@pytest.mark.asyncio
 async def test_lifespan():
     """Test the application lifespan events."""
     app = FastAPI()
@@ -21,7 +19,6 @@ async def test_lifespan():
         mock_broker.shutdown.assert_awaited_once()
 
 
-@pytest.mark.asyncio
 async def test_lifespan_worker_process():
     """Test lifespan when in a worker process."""
     app = FastAPI()
