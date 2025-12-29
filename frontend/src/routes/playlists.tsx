@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { playlistService, type Track } from '../api/playlist'
 import { useState } from 'react'
-import { Loader2, Plus, Check, X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 
 export const Route = createFileRoute('/playlists')({
   component: Playlists,

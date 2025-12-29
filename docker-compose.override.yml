@@ -1,0 +1,23 @@
+services:
+  backend:
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app/backend
+      - ./pyproject.toml:/app/pyproject.toml
+
+  worker:
+    volumes:
+      - ./backend:/app/backend
+      - ./pyproject.toml:/app/pyproject.toml
+
+  frontend:
+    build:
+      target: build-stage
+    command: npm run dev -- --host
+    ports:
+      - "80:5173"
+    environment:
+      - VITE_API_TARGET=http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

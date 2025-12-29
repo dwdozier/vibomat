@@ -32,11 +32,15 @@ Follow the [SETUP.md](SETUP.md) for detailed platform-specific installation.
 
 ### 3. Run with Docker
 
+The Docker setup is pre-configured for development with hot-reloading enabled.
+
 ```bash
 docker-compose up --build
 ```
 
-Open [http://localhost:80](http://localhost:80) to start building.
+- Open [http://localhost:80](http://localhost:80) to start building.
+- Changes to your local code will automatically reflect in the running containers.
+- To stop the stack: `docker-compose down`.
 
 ## Development & Contribution
 

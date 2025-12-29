@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Route } from '../routes/playlists'
-import { playlistService } from '../api/playlist'
+import { playlistService, type Track } from '../api/playlist'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
 // Mock the API service

@@ -82,16 +82,27 @@ To interact with Spotify, you must register an application:
 
 ## 4. Running the Application
 
-### Option A: Docker Compose (Easiest)
+### Option A: Docker Compose (Recommended)
 
 This starts the Database, Redis, Backend, Worker, and Frontend in one command.
+
+**Development Mode (Default):**
+The default configuration is now optimized for local development. It enables hot-reloading for
+both the backend (FastAPI) and frontend (Vite), and mounts your local code into the containers.
 
 ```bash
 docker-compose up --build
 ```
 
-- API: `http://localhost:8000`
-- Web UI: `http://localhost:80`
+- **API:** `http://localhost:8000` (Updates automatically on code changes)
+- **Web UI:** `http://localhost:80` (Updates automatically on code changes)
+
+**Tearing Down:**
+To stop and remove all containers, networks, and volumes:
+
+```bash
+docker-compose down
+```
 
 ### Option B: Manual (Development)
 
