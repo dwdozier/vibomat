@@ -1,10 +1,12 @@
+import os
 from fastapi_users.authentication import (
     AuthenticationBackend,
     CookieTransport,
     JWTStrategy,
 )
 
-SECRET = "SECRET"  # TODO: Load from env
+SECRET = os.getenv("FASTAPI_SECRET", "DEVELOPMENT_SECRET_CHANGE_ME")
+
 
 cookie_transport = CookieTransport(cookie_max_age=3600)
 

@@ -18,12 +18,9 @@ Spotify Developer Dashboard. This will provide you with the necessary credential
     - Click the **"Create app"** button.
     - **App Name**: Enter a name for your application (e.g., `My Playlist Builder`).
     - **App Description**: Enter a brief description (e.g., `CLI tool for managing playlists`).
-    - **Redirect URI**: This is a critical step for OAuth authentication.
-      You **must** add the following URI:
-
-      ```text
-      https://127.0.0.1:8888/callback
-      ```
+    - **Redirect URIs**:
+        - `https://127.0.0.1:8888/callback` (Required for CLI)
+        - `http://localhost:8000/api/v1/integrations/spotify/callback` (Required for Web API)
 
     - Check the box to agree to the Developer Terms of Service.
     - Click **"Save"**.

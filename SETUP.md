@@ -1,7 +1,7 @@
 # Setup and Installation
 
 This guide covers the prerequisites, installation, and configuration required to run the
-Spotify Playlist Builder.
+Playlist Builder (CLI and Web API).
 
 ## Prerequisites
 
@@ -24,8 +24,6 @@ Spotify Playlist Builder.
     ```bash
     uv venv
     source .venv/bin/activate  # macOS/Linux
-    # or
-    .venv\Scripts\activate  # Windows
     ```
 
 3. **Install dependencies:**
@@ -34,74 +32,60 @@ Spotify Playlist Builder.
     uv pip install -e .[dev]
     ```
 
-    This installs the project in "editable" mode along with all development dependencies.
-
 ## Configuration
 
-You need to provide your Spotify credentials to the application. You can do this using either a
-`.env` file (easier) or your system's secure keychain (more secure).
+### 1. Environment Variables (.env)
 
-### 1. Spotify Credentials
+Create a `.env` file in the project root:
 
-#### Option A: Use .env File (Default)
+```env
+# Spotify Credentials
+SPOTIFY_CLIENT_ID=your_id_here
+SPOTIFY_CLIENT_SECRET=your_secret_here
 
-1. Create a `.env` file in the project root:
+# Web API Configuration
+SPOTIFY_REDIRECT_URI=http://localhost:8000/api/v1/integrations/spotify/callback
+FASTAPI_SECRET=your_random_secret_here
 
-    ```bash
-    touch .env
-    ```
+# AI Features (Optional)
+GEMINI_API_KEY=your_gemini_key_here
 
-2. Add your credentials to the file:
+# Database (Optional, defaults to local sqlite)
+# DATABASE_URL=postgresql+asyncpg://user:pass@localhost/dbname
+```
 
-    ```env
-    SPOTIFY_CLIENT_ID=your_client_id_here
-    SPOTIFY_CLIENT_SECRET=your_client_secret_here
-    ```
+### 2. Database Migrations
 
-    **Note:** The `.env` file is ignored by git to protect your secrets.
+Initialize the database using Alembic:
 
-#### Option B: Use System Keychain (Secure)
+```bash
+PYTHONPATH=. alembic upgrade head
+```
 
-This method stores your credentials encrypted in your operating system's default keychain
-(e.g., macOS Keychain, Windows Credential Manager).
+## Running the App
 
-1. Run the helper command:
+### Web API
 
-    ```bash
-    spotify-playlist-builder store-credentials
-    ```
+```bash
+uv run uvicorn backend.app.main:app --reload
+```
 
-2. Enter your **Client ID** and **Client Secret** when prompted.
+### CLI Tool
 
-### 2. AI Configuration (Optional)
-
-To enable AI playlist generation features using Google Gemini:
-
-1. Obtain a free API Key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Run the setup command:
-
-    ```bash
-    spotify-playlist-builder setup-ai
-    ```
-
-See the [AI Setup Guide](AI_SETUP.md) for more details.
+```bash
+spotify-playlist-builder build playlists/your-file.json
+```
 
 ## Optional Setup
 
 ### Pre-commit Hooks
 
-To ensure code quality checks run automatically before every commit:
-
 ```bash
 pre-commit install
 ```
 
-### Shell Completion (Zsh/Oh-My-Zsh)
-
-To enable tab completion for commands and options:
+### Shell Completion (CLI)
 
 ```bash
 spotify-playlist-builder install-zsh-completion
 ```
-
-Follow the on-screen instructions to reload your shell.
