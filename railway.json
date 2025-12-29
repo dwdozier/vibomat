@@ -1,0 +1,80 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "sleepApplication": true,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "services": {
+    "redis": {
+      "image": "redis:7-alpine",
+      "name": "redis"
+    },
+    "db": {
+      "image": "postgres:16-alpine",
+      "name": "postgres",
+      "env": {
+        "POSTGRES_USER": "${{POSTGRES_USER}}",
+        "POSTGRES_PASSWORD": "${{POSTGRES_PASSWORD}}",
+        "POSTGRES_DB": "${{POSTGRES_DB}}"
+      }
+    },
+    "backend": {
+      "name": "vibomat-api",
+      "dockerfilePath": "backend/Dockerfile",
+      "source": {
+        "repo": "https://github.com/dwdozier/vibomat"
+      },
+      "env": {
+        "DATABASE_URL": "${{postgres.DATABASE_URL}}",
+        "REDIS_URL": "redis://${{redis.REDIS_HOST}}:${{redis.REDIS_PORT}}",
+        "SPOTIFY_CLIENT_ID": {
+          "description": "Your Spotify Client ID"
+        },
+        "SPOTIFY_CLIENT_SECRET": {
+          "description": "Your Spotify Client Secret"
+        },
+        "FASTAPI_SECRET": {
+          "description": "Random string for session security",
+          "generator": "SECRET"
+        },
+        "GEMINI_API_KEY": {
+          "description": "Google Gemini API Key",
+          "required": false
+        },
+        "PORT": "8000"
+      },
+      "startCommand": "uvicorn backend.app.main:app --host 0.0.0.0 --port 8000"
+    },
+    "worker": {
+      "name": "vibomat-worker",
+      "dockerfilePath": "backend/Dockerfile",
+      "source": {
+        "repo": "https://github.com/dwdozier/vibomat"
+      },
+      "env": {
+        "DATABASE_URL": "${{postgres.DATABASE_URL}}",
+        "REDIS_URL": "redis://${{redis.REDIS_HOST}}:${{redis.REDIS_PORT}}",
+        "SPOTIFY_CLIENT_ID": "${{backend.SPOTIFY_CLIENT_ID}}",
+        "SPOTIFY_CLIENT_SECRET": "${{backend.SPOTIFY_CLIENT_SECRET}}",
+        "GEMINI_API_KEY": "${{backend.GEMINI_API_KEY}}"
+      },
+      "startCommand": "taskiq worker backend.app.core.tasks:broker"
+    },
+    "frontend": {
+      "name": "vibomat-ui",
+      "dockerfilePath": "frontend/Dockerfile",
+      "source": {
+        "repo": "https://github.com/dwdozier/vibomat"
+      },
+      "env": {
+        "VITE_API_TARGET": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}",
+        "PORT": "80"
+      }
+    }
+  }
+}
