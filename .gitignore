@@ -43,9 +43,6 @@ wheels/
 .coverage
 htmlcov/
 
-# uv
-uv.lock
-
 # cached
 .cache
 .ruff_cache
