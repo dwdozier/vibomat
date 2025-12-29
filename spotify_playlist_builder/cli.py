@@ -144,6 +144,23 @@ def setup_ai_cmd() -> None:
             logger.error(f"Error: {e}")
 
 
+@app.command("setup-discogs")
+def setup_discogs_cmd() -> None:
+    """Store Discogs Personal Access Token in system keyring."""
+    logger.info("Setup Discogs Personal Access Token")
+    token = typer.prompt("Enter your Discogs Personal Access Token", hide_input=True)
+    if token:
+        try:
+            import keyring
+
+            keyring.set_password("spotify-playlist-builder", "discogs_pat", token)
+            logger.info("✓ Discogs Token stored in keyring.")
+        except ImportError:
+            logger.error("Keyring not available. Please set DISCOGS_PAT env var.")
+        except Exception as e:
+            logger.error(f"Error: {e}")
+
+
 @app.command("ai-models")
 def ai_models_cmd() -> None:
     """List available Gemini models for your API key."""

@@ -17,6 +17,7 @@
   criteria using AI.
 - [x] **External Metadata Sources**: Use non-Spotify sources to verify song/album versions for
   better accuracy.
+  - [ ] **Discogs Fallback**: Use Discogs API as a fallback when MusicBrainz fails or yields no results.
 - [x] **Version Preference**: Allow specifying song/album type (live, studio, compilation, remix)
   in the JSON configuration.
   - [x] **Apply Version to backup JSON files**: Try to determine the song/album type when backing up

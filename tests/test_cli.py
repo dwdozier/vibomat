@@ -198,18 +198,15 @@ def test_cli_setup_ai_success():
         )
 
 
-def test_cli_setup_ai_import_error():
-    """Test setup-ai when keyring is missing."""
-    # Simulate ImportError
-    with patch.dict("sys.modules", {"keyring": None}):
-        # We need to ensure the import raises ImportError.
-        # Setting to None might cause AttributeError if accessed.
-        # Let's use side_effect on a patched import if possible, but inside-function imports are
-        # tricky.
-        # Alternative: The real keyring might be installed in the test env.
-        # Let's try to mock the import mechanism or just trust the manual check.
-        pass
-        # Skipping tricky ImportError test for now, focusing on success path.
+def test_cli_setup_discogs_success():
+    """Test setup-discogs command success."""
+    mock_keyring = MagicMock()
+    with patch.dict("sys.modules", {"keyring": mock_keyring}):
+        result = runner.invoke(app, ["setup-discogs"], input="my_token\n")
+        assert result.exit_code == 0
+        mock_keyring.set_password.assert_called_with(
+            "spotify-playlist-builder", "discogs_pat", "my_token"
+        )
 
 
 def test_cli_generate_success():
