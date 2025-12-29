@@ -18,16 +18,28 @@ Feed it a JSON file with artist/track pairs, or use the web interface to:
    [App Registration Guide](APP_REGISTRATION.md).
 2. **Setup AI (Optional)**: To use AI features, follow the [AI Setup Guide](AI_SETUP.md).
 3. **Install & Configure**: Follow the [Setup Guide](SETUP.md) to install dependencies and
-   configure your database and credentials.
+   configure your database, Redis, and credentials.
 
 ## Usage
 
-### 1. Web API (FastAPI)
+### 1. Web API & UI
 
 Start the backend server:
 
 ```bash
 uv run uvicorn backend.app.main:app --reload
+```
+
+Start the background worker (for playlist builds):
+
+```bash
+PYTHONPATH=. uv run taskiq worker backend.app.core.tasks:broker
+```
+
+Start the frontend development server:
+
+```bash
+cd frontend && npm run dev
 ```
 
 Access the interactive API documentation at [http://localhost:8000/docs](http://localhost:8000/docs).

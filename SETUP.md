@@ -6,6 +6,8 @@ Playlist Builder (CLI and Web API).
 ## Prerequisites
 
 - **Python 3.11+**
+- **Node.js & npm** (for Frontend)
+- **Redis** (Required for background tasks)
 - **uv package manager**: [Installation Instructions](https://docs.astral.sh/uv/getting-started/)
 - **Spotify Developer Credentials**: Follow the [App Registration Guide](APP_REGISTRATION.md) to
   get your Client ID and Client Secret.
@@ -26,10 +28,16 @@ Playlist Builder (CLI and Web API).
     source .venv/bin/activate  # macOS/Linux
     ```
 
-3. **Install dependencies:**
+3. **Install Backend dependencies:**
 
     ```bash
     uv pip install -e .[dev]
+    ```
+
+4. **Install Frontend dependencies:**
+
+    ```bash
+    cd frontend && npm install && cd ..
     ```
 
 ## Configuration
@@ -50,8 +58,9 @@ FASTAPI_SECRET=your_random_secret_here
 # AI Features (Optional)
 GEMINI_API_KEY=your_gemini_key_here
 
-# Database (Optional, defaults to local sqlite)
+# Infrastructure (Optional defaults)
 # DATABASE_URL=postgresql+asyncpg://user:pass@localhost/dbname
+# REDIS_URL=redis://localhost:6379
 ```
 
 ### 2. Database Migrations
@@ -64,16 +73,54 @@ PYTHONPATH=. alembic upgrade head
 
 ## Running the App
 
-### Web API
+### Web API (Backend)
 
 ```bash
 uv run uvicorn backend.app.main:app --reload
+```
+
+### Background Worker (TaskIQ)
+
+In a separate terminal:
+
+```bash
+PYTHONPATH=. uv run taskiq worker backend.app.core.tasks:broker
+```
+
+### Web UI (Frontend)
+
+In a separate terminal:
+
+```bash
+cd frontend && npm run dev
 ```
 
 ### CLI Tool
 
 ```bash
 spotify-playlist-builder build playlists/your-file.json
+```
+
+## Testing
+
+### Backend & Core
+
+```bash
+PYTHONPATH=. pytest backend/tests/
+```
+
+### Frontend
+
+```bash
+cd frontend && npm test
+```
+
+### End-to-End (Playwright)
+
+Ensure both Frontend and Backend are running, then:
+
+```bash
+PYTHONPATH=. pytest backend/tests/e2e/
 ```
 
 ## Optional Setup
