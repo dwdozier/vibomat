@@ -4,7 +4,7 @@ import time
 import os
 from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
 
-logger = logging.getLogger("spotify_playlist_builder.metadata")
+logger = logging.getLogger("backend.core.metadata")
 
 
 def get_discogs_token() -> str | None:

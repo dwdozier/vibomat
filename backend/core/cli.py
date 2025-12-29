@@ -6,7 +6,7 @@ from typing import Annotated
 import typer
 from .auth import CredentialSource, get_builder, store_credentials_in_keyring
 
-logger = logging.getLogger("spotify_playlist_builder")
+logger = logging.getLogger("backend.core")
 app = typer.Typer(help="Spotify Playlist Builder CLI")
 
 
@@ -103,7 +103,7 @@ def install_zsh_completion() -> None:
     target_file = completions_dir / "_spotify-playlist-builder"
     logger.info("Generating Zsh completion script...")
     result = subprocess.run(
-        [sys.executable, "-m", "spotify_playlist_builder.cli", "--show-completion", "zsh"],
+        [sys.executable, "-m", "backend.core.cli", "--show-completion", "zsh"],
         capture_output=True,
         text=True,
     )

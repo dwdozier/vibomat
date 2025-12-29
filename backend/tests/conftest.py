@@ -6,13 +6,13 @@ from unittest.mock import MagicMock, patch
 # Ensure we can import the script from the parent directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from spotify_playlist_builder.client import SpotifyPlaylistBuilder
+from backend.core.client import SpotifyPlaylistBuilder
 
 
 @pytest.fixture
 def mock_spotify():
     """Mock the spotipy.Spotify client."""
-    with patch("spotify_playlist_builder.client.spotipy.Spotify") as mock_cls:
+    with patch("backend.core.client.spotipy.Spotify") as mock_cls:
         instance = MagicMock()
         mock_cls.return_value = instance
         # Mock successful authentication
@@ -24,8 +24,8 @@ def mock_spotify():
 def builder(mock_spotify):
     """Create a SpotifyPlaylistBuilder instance with mocked dependencies."""
     with (
-        patch("spotify_playlist_builder.client.SpotifyOAuth"),
-        patch("spotify_playlist_builder.client.MetadataVerifier") as mock_verifier_cls,
+        patch("backend.core.client.SpotifyOAuth"),
+        patch("backend.core.client.MetadataVerifier") as mock_verifier_cls,
     ):
         # Setup mock verifier instance
         mock_verifier_instance = MagicMock()

@@ -8,7 +8,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from .metadata import MetadataVerifier
 from .utils.helpers import _similarity, _determine_version, rate_limit_retry, to_snake_case
 
-logger = logging.getLogger("spotify_playlist_builder.client")
+logger = logging.getLogger("backend.core.client")
 
 
 class SpotifyPlaylistBuilder:

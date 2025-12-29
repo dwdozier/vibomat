@@ -7,7 +7,7 @@ from google.genai import types
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 from .metadata import MetadataVerifier
 
-logger = logging.getLogger("spotify_playlist_builder.ai")
+logger = logging.getLogger("backend.core.ai")
 
 SYSTEM_PROMPT = """
 You are a professional music curator. Your goal is to generate a list of songs based on the user's

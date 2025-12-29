@@ -1,7 +1,8 @@
 import pytest
 import os
+import time
 from unittest.mock import MagicMock, patch
-from spotify_playlist_builder.metadata import MetadataVerifier
+from backend.core.metadata import MetadataVerifier
 import requests
 
 
@@ -97,7 +98,7 @@ def test_verify_track_version_no_match(verifier):
 def test_get_discogs_token_env():
     """Test retrieving Discogs token from env."""
     with patch.dict(os.environ, {"DISCOGS_PAT": "env_token"}):
-        from spotify_playlist_builder.metadata import get_discogs_token
+        from backend.core.metadata import get_discogs_token
 
         assert get_discogs_token() == "env_token"
 
@@ -110,7 +111,7 @@ def test_get_discogs_token_keyring():
         patch.dict(os.environ, {}, clear=True),
         patch.dict("sys.modules", {"keyring": mock_keyring}),
     ):
-        from spotify_playlist_builder.metadata import get_discogs_token
+        from backend.core.metadata import get_discogs_token
 
         assert get_discogs_token() == "keyring_token"
 
@@ -123,16 +124,16 @@ def test_get_discogs_token_error():
         patch.dict(os.environ, {}, clear=True),
         patch.dict("sys.modules", {"keyring": mock_keyring}),
     ):
-        from spotify_playlist_builder.metadata import get_discogs_token
+        from backend.core.metadata import get_discogs_token
 
         assert get_discogs_token() is None
 
 
 def test_discogs_search_recording_success():
     """Test DiscogsVerifier.search_recording logic."""
-    from spotify_playlist_builder.metadata import DiscogsVerifier
+    from backend.core.metadata import DiscogsVerifier
 
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value="init_token"):
+    with patch("backend.core.metadata.get_discogs_token", return_value="init_token"):
         verifier = DiscogsVerifier()
 
     mock_resp = MagicMock()
@@ -149,9 +150,9 @@ def test_discogs_search_recording_success():
 
 def test_discogs_search_recording_api_error():
     """Test DiscogsVerifier handles API errors gracefully."""
-    from spotify_playlist_builder.metadata import DiscogsVerifier
+    from backend.core.metadata import DiscogsVerifier
 
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value="t"):
+    with patch("backend.core.metadata.get_discogs_token", return_value="t"):
         verifier = DiscogsVerifier()
 
     with patch("requests.get", side_effect=requests.exceptions.RequestException("API Error")):
@@ -161,9 +162,9 @@ def test_discogs_search_recording_api_error():
 
 def test_discogs_search_recording_unexpected_error():
     """Test DiscogsVerifier handles unexpected errors gracefully."""
-    from spotify_playlist_builder.metadata import DiscogsVerifier
+    from backend.core.metadata import DiscogsVerifier
 
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value="t"):
+    with patch("backend.core.metadata.get_discogs_token", return_value="t"):
         verifier = DiscogsVerifier()
 
     mock_resp = MagicMock()
@@ -175,9 +176,9 @@ def test_discogs_search_recording_unexpected_error():
 
 def test_discogs_verify_track_version_match():
     """Test DiscogsVerifier.verify_track_version logic."""
-    from spotify_playlist_builder.metadata import DiscogsVerifier
+    from backend.core.metadata import DiscogsVerifier
 
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value="t"):
+    with patch("backend.core.metadata.get_discogs_token", return_value="t"):
         verifier = DiscogsVerifier()
 
     # Test Live match
@@ -202,19 +203,19 @@ def test_discogs_verify_track_version_match():
 
 @pytest.fixture
 def mock_mb_search():
-    with patch("spotify_playlist_builder.metadata.MetadataVerifier.search_recording") as mock:
+    with patch("backend.core.metadata.MetadataVerifier.search_recording") as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_discogs_search():
-    with patch("spotify_playlist_builder.metadata.DiscogsVerifier.search_recording") as mock:
+    with patch("backend.core.metadata.DiscogsVerifier.search_recording") as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_discogs_token():
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value="fake_token"):
+    with patch("backend.core.metadata.get_discogs_token", return_value="fake_token"):
         yield
 
 
@@ -268,7 +269,7 @@ def test_verify_track_both_fail(mock_mb_search, mock_discogs_search, mock_discog
 
 def test_verify_track_discogs_no_token(mock_mb_search, mock_discogs_search):
     """Test that Discogs is skipped if no token is present."""
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value=None):
+    with patch("backend.core.metadata.get_discogs_token", return_value=None):
         verifier = MetadataVerifier()
 
         mock_mb_search.return_value = []
@@ -281,17 +282,33 @@ def test_verify_track_discogs_no_token(mock_mb_search, mock_discogs_search):
 
 def test_discogs_search_no_token():
     """Test search returns empty list if no token."""
-    from spotify_playlist_builder.metadata import DiscogsVerifier
+    from backend.core.metadata import DiscogsVerifier
 
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value=None):
+    with patch("backend.core.metadata.get_discogs_token", return_value=None):
         verifier = DiscogsVerifier()
         assert verifier.search_recording("Artist", "Track") == []
 
 
 def test_discogs_verify_no_token():
     """Test verify returns False if no token."""
-    from spotify_playlist_builder.metadata import DiscogsVerifier
+    from backend.core.metadata import DiscogsVerifier
 
-    with patch("spotify_playlist_builder.metadata.get_discogs_token", return_value=None):
+    with patch("backend.core.metadata.get_discogs_token", return_value=None):
         verifier = DiscogsVerifier()
         assert verifier.verify_track_version("Artist", "Track", "studio") is False
+
+
+def test_metadata_verifier_rate_limit(verifier):
+    """Test the rate limit enforcement in MetadataVerifier."""
+    verifier.last_request_time = time.time()
+    # This should trigger the sleep branch logic
+    verifier._enforce_rate_limit()
+
+
+def test_discogs_verifier_rate_limit():
+    """Test the rate limit enforcement in DiscogsVerifier."""
+    from backend.core.metadata import DiscogsVerifier
+
+    v = DiscogsVerifier()
+    v.last_request_time = time.time()
+    v._enforce_rate_limit()

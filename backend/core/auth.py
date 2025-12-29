@@ -10,7 +10,7 @@ try:
 except ImportError:
     KEYRING_AVAILABLE = False
 
-logger = logging.getLogger("spotify_playlist_builder.auth")
+logger = logging.getLogger("backend.core.auth")
 
 
 class CredentialSource(str, Enum):

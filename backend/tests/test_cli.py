@@ -2,14 +2,14 @@ import os
 import json
 from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
-from spotify_playlist_builder.cli import app
+from backend.core.cli import app
 
 runner = CliRunner()
 
 
 def test_cli_build_success():
     """Test the build command."""
-    with patch("spotify_playlist_builder.cli.get_builder") as mock_get_builder:
+    with patch("backend.core.cli.get_builder") as mock_get_builder:
         mock_builder = MagicMock()
         mock_get_builder.return_value = mock_builder
         # Create a dummy file for the argument
@@ -23,7 +23,7 @@ def test_cli_build_success():
 
 def test_cli_build_error():
     """Test the build command handling errors."""
-    with patch("spotify_playlist_builder.cli.get_builder") as mock_get_builder:
+    with patch("backend.core.cli.get_builder") as mock_get_builder:
         mock_builder = MagicMock()
         mock_builder.build_playlist_from_json.side_effect = Exception("Build failed")
         mock_get_builder.return_value = mock_builder
@@ -37,7 +37,7 @@ def test_cli_build_error():
 
 def test_cli_export_success():
     """Test the export command."""
-    with patch("spotify_playlist_builder.cli.get_builder") as mock_get_builder:
+    with patch("backend.core.cli.get_builder") as mock_get_builder:
         mock_builder = MagicMock()
         mock_get_builder.return_value = mock_builder
         result = runner.invoke(app, ["export", "My Playlist", "out.json"])
@@ -47,7 +47,7 @@ def test_cli_export_success():
 
 def test_cli_export_error():
     """Test export command error handling."""
-    with patch("spotify_playlist_builder.cli.get_builder") as mock_get_builder:
+    with patch("backend.core.cli.get_builder") as mock_get_builder:
         mock_builder = MagicMock()
         mock_builder.export_playlist_to_json.side_effect = Exception("Export failed")
         mock_get_builder.return_value = mock_builder
@@ -57,7 +57,7 @@ def test_cli_export_error():
 
 def test_cli_backup_success():
     """Test the backup command."""
-    with patch("spotify_playlist_builder.cli.get_builder") as mock_get_builder:
+    with patch("backend.core.cli.get_builder") as mock_get_builder:
         mock_builder = MagicMock()
         mock_get_builder.return_value = mock_builder
         result = runner.invoke(app, ["backup", "backups_dir"])
@@ -67,7 +67,7 @@ def test_cli_backup_success():
 
 def test_cli_backup_error():
     """Test backup command error handling."""
-    with patch("spotify_playlist_builder.cli.get_builder") as mock_get_builder:
+    with patch("backend.core.cli.get_builder") as mock_get_builder:
         mock_builder = MagicMock()
         mock_builder.backup_all_playlists.side_effect = Exception("Backup failed")
         mock_get_builder.return_value = mock_builder
@@ -77,7 +77,7 @@ def test_cli_backup_error():
 
 def test_cli_store_credentials():
     """Test storing credentials interactively."""
-    with patch("spotify_playlist_builder.cli.store_credentials_in_keyring") as mock_store:
+    with patch("backend.core.cli.store_credentials_in_keyring") as mock_store:
         # Simulate user input: client_id, then client_secret
         result = runner.invoke(app, ["store-credentials"], input="my_id\nmy_secret\n")
         assert result.exit_code == 0
@@ -93,7 +93,7 @@ def test_cli_store_credentials_missing_input():
 def test_cli_store_credentials_exception():
     """Test exception handling in store-credentials command."""
     with patch(
-        "spotify_playlist_builder.cli.store_credentials_in_keyring",
+        "backend.core.cli.store_credentials_in_keyring",
         side_effect=Exception("Keyring error"),
     ):
         result = runner.invoke(app, ["store-credentials"], input="user\npass\n")
@@ -213,8 +213,8 @@ def test_cli_generate_success():
     """Test generate command."""
     mock_tracks = [{"artist": "Artist", "track": "Track", "version": "studio"}]
     with (
-        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
-        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        patch("backend.core.ai.generate_playlist", return_value=mock_tracks),
+        patch("backend.core.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
     ):
         result = runner.invoke(app, ["generate", "--prompt", "test mood"], input="\n")
         assert result.exit_code == 0
@@ -226,8 +226,8 @@ def test_cli_generate_with_output():
     """Test generate command with --output flag."""
     mock_tracks = [{"artist": "A", "track": "B"}]
     with (
-        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
-        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        patch("backend.core.ai.generate_playlist", return_value=mock_tracks),
+        patch("backend.core.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
         runner.isolated_filesystem(),
     ):
         result = runner.invoke(app, ["generate", "-p", "test", "-o", "out.json"])
@@ -242,8 +242,8 @@ def test_cli_generate_interactive_save():
     """Test interactive saving flow in generate command."""
     mock_tracks = [{"artist": "A", "track": "B"}]
     with (
-        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
-        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        patch("backend.core.ai.generate_playlist", return_value=mock_tracks),
+        patch("backend.core.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
         runner.isolated_filesystem(),
     ):
         # input: Artist (empty) -> Confirm Save (y) -> Filename (default)
@@ -257,8 +257,8 @@ def test_cli_generate_interactive():
     """Test generate command with interactive input."""
     mock_tracks = [{"artist": "A", "track": "B"}]
     with (
-        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
-        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        patch("backend.core.ai.generate_playlist", return_value=mock_tracks),
+        patch("backend.core.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
     ):
         # Mood -> Artist -> Save (y) -> Filename
         result = runner.invoke(app, ["generate"], input="my mood\nMy Artist\ny\nmy_list.json\n")
@@ -268,7 +268,7 @@ def test_cli_generate_interactive():
 
 def test_cli_generate_failure():
     """Test generate command failure."""
-    with patch("spotify_playlist_builder.ai.generate_playlist", side_effect=Exception("AI Error")):
+    with patch("backend.core.ai.generate_playlist", side_effect=Exception("AI Error")):
         # Mood -> Artist (empty)
         result = runner.invoke(app, ["generate", "--prompt", "fail"], input="\n")
         assert result.exit_code == 0  # Typer doesn't crash, just logs error
@@ -278,7 +278,7 @@ def test_cli_generate_failure():
 
 def test_cli_ai_models_success():
     """Test ai-models command."""
-    with patch("spotify_playlist_builder.ai.list_available_models", return_value=["model1"]):
+    with patch("backend.core.ai.list_available_models", return_value=["model1"]):
         result = runner.invoke(app, ["ai-models"])
         assert result.exit_code == 0
         assert "model1" in result.stdout
@@ -288,11 +288,73 @@ def test_cli_generate_chain_build():
     """Test generate command chained with build."""
     mock_tracks = [{"artist": "A", "track": "B"}]
     with (
-        patch("spotify_playlist_builder.ai.generate_playlist", return_value=mock_tracks),
-        patch("spotify_playlist_builder.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
-        patch("spotify_playlist_builder.cli.build") as mock_build,
+        patch("backend.core.ai.generate_playlist", return_value=mock_tracks),
+        patch("backend.core.ai.verify_ai_tracks", return_value=(mock_tracks, [])),
+        patch("backend.core.cli.build") as mock_build,
         runner.isolated_filesystem(),
     ):
         result = runner.invoke(app, ["generate", "-p", "test", "-o", "out.json", "--build"])
         assert result.exit_code == 0
         mock_build.assert_called_once()
+
+
+def test_cli_generate_no_verified_tracks():
+    """Test generate command when no tracks are verified."""
+    with (
+        patch(
+            "backend.core.ai.generate_playlist",
+            return_value=[{"artist": "A", "track": "T"}],
+        ),
+        patch("backend.core.ai.verify_ai_tracks", return_value=([], ["Rejected"])),
+    ):
+        # Provide empty input for the artists prompt
+        result = runner.invoke(app, ["generate", "--prompt", "test"], input="\n")
+        assert result.exit_code == 0
+        assert "No tracks were verified" in result.output
+
+
+def test_cli_generate_with_rejections():
+    """Test generate command showing rejections."""
+    mock_tracks = [{"artist": "A", "track": "T"}]
+    with (
+        patch("backend.core.ai.generate_playlist", return_value=mock_tracks),
+        patch(
+            "backend.core.ai.verify_ai_tracks",
+            return_value=(mock_tracks, ["Rejected - Song"]),
+        ),
+        runner.isolated_filesystem(),
+    ):
+        result = runner.invoke(app, ["generate", "--prompt", "test", "--output", "out.json"])
+        assert result.exit_code == 0
+        assert "1 tracks could not be verified" in result.output
+
+
+def test_cli_ai_models_error():
+    """Test ai-models command failure."""
+    with patch(
+        "backend.core.ai.list_available_models",
+        side_effect=Exception("API Error"),
+    ):
+        result = runner.invoke(app, ["ai-models"])
+        assert result.exit_code == 0
+        assert "Error fetching models" in result.output
+
+
+def test_cli_setup_ai_error():
+    """Test setup-ai command failure."""
+    mock_keyring = MagicMock()
+    mock_keyring.set_password.side_effect = Exception("Keyring error")
+    with patch.dict("sys.modules", {"keyring": mock_keyring}):
+        result = runner.invoke(app, ["setup-ai"], input="key\n")
+        assert result.exit_code == 0
+        assert "Error: Keyring error" in result.output
+
+
+def test_cli_setup_discogs_error():
+    """Test setup-discogs command failure."""
+    mock_keyring = MagicMock()
+    mock_keyring.set_password.side_effect = Exception("Keyring error")
+    with patch.dict("sys.modules", {"keyring": mock_keyring}):
+        result = runner.invoke(app, ["setup-discogs"], input="token\n")
+        assert result.exit_code == 0
+        assert "Error: Keyring error" in result.output

@@ -10,7 +10,7 @@ from tenacity import (
     before_sleep_log,
 )
 
-logger = logging.getLogger("spotify_playlist_builder")
+logger = logging.getLogger("backend.core")
 
 
 def is_rate_limit_error(exception: BaseException) -> bool:
