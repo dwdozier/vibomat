@@ -24,8 +24,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
 
     # Relationships
     service_connections: Mapped[List["ServiceConnection"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
+        "ServiceConnection", back_populates="user", cascade="all, delete-orphan"
     )
     playlists: Mapped[List["Playlist"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
+        "Playlist", back_populates="user", cascade="all, delete-orphan"
     )

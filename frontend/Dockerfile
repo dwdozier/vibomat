@@ -17,9 +17,10 @@ FROM nginx:stable-alpine
 # Copy the build output to Nginx's html directory
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config if needed (for SPA routing)
+# Copy custom nginx config
 RUN echo 'server {\
     listen 80;\
+    server_name localhost;\
     location / {\
         root /usr/share/nginx/html;\
         index index.html index.htm;\
@@ -27,8 +28,10 @@ RUN echo 'server {\
     }\
     location /api {\
         proxy_pass http://backend:8000;\
-        proxy_set_header Host $host;\
+        proxy_set_header Host $http_host;\
         proxy_set_header X-Real-IP $remote_addr;\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\
+        proxy_set_header X-Forwarded-Proto $scheme;\
     }\
 }' > /etc/nginx/conf.d/default.conf
 

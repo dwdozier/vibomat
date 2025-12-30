@@ -3,7 +3,7 @@ import os
 from typing import Optional
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, UUIDIDMixin
-from backend.app.models.user import User
+from backend.app.models.user import User, OAuthAccount
 from backend.app.db.session import get_async_session
 from fastapi_users.db import SQLAlchemyUserDatabase
 from backend.app.core.utils.email import send_email
@@ -42,7 +42,7 @@ border-radius: 10px; background-color: #FFFDF5;">
 
 
 async def get_user_db(session=Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(session, User)
+    yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):

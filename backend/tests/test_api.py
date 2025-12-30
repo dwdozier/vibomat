@@ -167,10 +167,13 @@ def test_update_preferences_endpoint():
     """Test updating user preferences."""
     from backend.app.core.auth.fastapi_users import current_active_user
 
-    mock_user = MagicMock()
-    app.dependency_overrides[current_active_user] = lambda: mock_user
+    # Mock current_active_user to bypass auth
+    app.dependency_overrides[current_active_user] = lambda: MagicMock()
 
-    response = client.patch("/api/v1/users/me/preferences", json={"discogs_pat": "new_token"})
+    response = client.patch(
+        "/api/v1/profile/me/preferences",
+        json={"discogs_pat": "test_token"},
+    )
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 

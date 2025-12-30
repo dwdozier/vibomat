@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from backend.app.api.v1.endpoints import playlists, integrations, users
+from backend.app.api.v1.endpoints import playlists, integrations, users as users_endpoints
 from backend.app.core.auth.fastapi_users import fastapi_users
 from backend.app.core.auth.backend import auth_backend
-from backend.app.schemas.user import UserRead, UserCreate
+from backend.app.schemas.user import UserRead, UserCreate, UserUpdate
 from backend.app.core.auth.oauth import (
     google_oauth_client,
     github_oauth_client,
@@ -23,6 +23,13 @@ api_router.include_router(
     tags=["auth"],
 )
 
+# User management (Provides /me)
+api_router.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
+
 # OAuth Routes
 api_router.include_router(
     fastapi_users.get_oauth_router(
@@ -30,6 +37,7 @@ api_router.include_router(
         auth_backend,
         os.getenv("FASTAPI_SECRET", "devsecret"),
         associate_by_email=True,
+        is_verified_by_default=True,
     ),
     prefix="/auth/google",
     tags=["auth"],
@@ -68,4 +76,4 @@ api_router.include_router(
 # Application routes
 api_router.include_router(playlists.router, prefix="/playlists", tags=["playlists"])
 api_router.include_router(integrations.router, prefix="/integrations", tags=["integrations"])
-api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(users_endpoints.router, prefix="/profile", tags=["users"])

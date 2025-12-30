@@ -9,6 +9,7 @@ export default defineConfig({
     TanStackRouterVite(),
   ],
   server: {
+    allowedHosts: ['app.vibomat.com'],
     proxy: {
       '/api': {
         target: process.env.VITE_API_TARGET || 'http://localhost:8000',
