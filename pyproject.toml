@@ -38,6 +38,8 @@ dependencies = [
     "taskiq-redis",
     "redis",
     "asyncpg",
+    "aiosmtplib",
+    "httpx-oauth",
 ]
 
 [project.optional-dependencies]

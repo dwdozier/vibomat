@@ -21,7 +21,7 @@ async def test_user_model(db_session: AsyncSession):
     await db_session.commit()
 
     result = await db_session.execute(select(User).filter(User.email == "test@example.com"))  # type: ignore
-    db_user = result.scalar_one()
+    db_user = result.unique().scalar_one()
     assert db_user.email == "test@example.com"
     assert isinstance(db_user.id, uuid.UUID)
 
