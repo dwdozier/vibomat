@@ -25,14 +25,15 @@
     {
       "name": "vibomat-api",
       "rootDirectory": "/",
-      "dockerfilePath": "backend/Dockerfile",
       "build": {
-        "builder": "DOCKERFILE"
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "backend/Dockerfile"
       },
       "source": {
         "repo": "https://github.com/dwdozier/vibomat"
       },
       "env": {
+        "RAILWAY_DOCKERFILE_PATH": "backend/Dockerfile",
         "DATABASE_URL": "${{postgres.DATABASE_URL}}",
         "REDIS_URL": "redis://${{redis.REDIS_HOST}}:${{redis.REDIS_PORT}}",
         "SPOTIFY_CLIENT_ID": {
@@ -56,14 +57,15 @@
     {
       "name": "vibomat-worker",
       "rootDirectory": "/",
-      "dockerfilePath": "backend/Dockerfile",
       "build": {
-        "builder": "DOCKERFILE"
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "backend/Dockerfile"
       },
       "source": {
         "repo": "https://github.com/dwdozier/vibomat"
       },
       "env": {
+        "RAILWAY_DOCKERFILE_PATH": "backend/Dockerfile",
         "DATABASE_URL": "${{postgres.DATABASE_URL}}",
         "REDIS_URL": "redis://${{redis.REDIS_HOST}}:${{redis.REDIS_PORT}}",
         "SPOTIFY_CLIENT_ID": "${{vibomat-api.SPOTIFY_CLIENT_ID}}",
@@ -75,14 +77,15 @@
     {
       "name": "vibomat-ui",
       "rootDirectory": "/frontend",
-      "dockerfilePath": "Dockerfile",
       "build": {
-        "builder": "DOCKERFILE"
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "Dockerfile"
       },
       "source": {
         "repo": "https://github.com/dwdozier/vibomat"
       },
       "env": {
+        "RAILWAY_DOCKERFILE_PATH": "Dockerfile",
         "VITE_API_TARGET": "https://${{vibomat-api.RAILWAY_PUBLIC_DOMAIN}}",
         "PORT": "80"
       }
