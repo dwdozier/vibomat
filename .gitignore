@@ -56,3 +56,6 @@ playlists/
 # backups
 backups/
 backups_dir/
+
+# temporary files
+tmp/
