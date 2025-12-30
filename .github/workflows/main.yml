@@ -14,6 +14,11 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+      mailpit:
+        image: axllent/mailpit
+        ports:
+          - 8025:8025
+          - 1025:1025
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
