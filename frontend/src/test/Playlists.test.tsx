@@ -37,8 +37,8 @@ describe('Playlists Component', () => {
 
   it('renders the AI Generator form', () => {
     renderWithClient(<PlaylistsComponent />)
-    expect(screen.getByText('AI Generator')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/Late night synthwave/)).toBeInTheDocument()
+    expect(screen.getByText('Vib-O-Matic')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Midnight coffee/)).toBeInTheDocument()
   })
 
   it('submits the prompt and shows generated tracks', async () => {
@@ -54,32 +54,32 @@ describe('Playlists Component', () => {
 
     renderWithClient(<PlaylistsComponent />)
 
-    const input = screen.getByPlaceholderText(/Late night synthwave/)
+    const input = screen.getByPlaceholderText(/Midnight coffee/)
     fireEvent.change(input, { target: { value: 'Synthwave mood' } })
 
-    const button = screen.getByRole('button', { name: /Generate Playlist/ })
+    const button = screen.getByRole('button', { name: /INSERT COIN & START/ })
     fireEvent.click(button)
 
     // Check loading state with waitFor to handle React state updates
     await waitFor(() => {
       expect(button).toBeDisabled()
-      expect(screen.getByText(/Generating.../)).toBeInTheDocument()
+      expect(screen.getByText(/CRUNCHING DATA.../)).toBeInTheDocument()
     })
 
     // Resolve the promise
     resolveMock!(mockTracks)
 
     await waitFor(() => {
-      expect(screen.getByText('Review Generated Tracks')).toBeInTheDocument()
+      expect(screen.getByText('OUTPUT RESULTS')).toBeInTheDocument()
     })
 
     expect(screen.getByText('The Midnight')).toBeInTheDocument()
-    expect(screen.getByText('Deep Blue')).toBeInTheDocument()
+    expect(screen.getByText(/"Deep Blue"/)).toBeInTheDocument()
   })
 
   it('does not submit if prompt is empty', () => {
     renderWithClient(<PlaylistsComponent />)
-    const button = screen.getByRole('button', { name: /Generate Playlist/ })
+    const button = screen.getByRole('button', { name: /INSERT COIN & START/ })
     fireEvent.click(button)
     expect(playlistService.generate).not.toHaveBeenCalled()
   })

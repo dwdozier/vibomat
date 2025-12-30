@@ -1,13 +1,42 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Righteous&family=Varela+Round&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-retro-teal: #50C8C6;
+  --color-retro-pink: #FF9AA2;
+  --color-retro-cream: #FFFDF5;
+  --color-retro-chrome: #E0E0E0;
+  --color-retro-dark: #2D3436;
+  --color-retro-yellow: #FFECB3;
+
+  --font-display: "Righteous", cursive;
+  --font-body: "Varela Round", sans-serif;
+
+  --shadow-retro: 4px 4px 0px 0px rgba(45, 52, 54, 1);
+  --shadow-retro-sm: 2px 2px 0px 0px rgba(45, 52, 54, 1);
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility font-body {
+  font-family: var(--font-body);
+}
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
+  background-color: var(--color-retro-cream);
+  color: var(--color-retro-dark);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
 }
