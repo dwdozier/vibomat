@@ -6,7 +6,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqladmin import Admin
 from backend.app.db.session import engine
-from backend.app.admin.views import UserAdmin, PlaylistAdmin, ServiceConnectionAdmin
+from backend.app.admin.views import UserAdmin, PlaylistAdmin, ServiceConnectionAdmin, BackToAppView
 from backend.app.admin.auth import admin_auth
 from backend.app.core.auth.backend import SECRET
 
@@ -33,7 +33,15 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET)  # type: ignore
 
 # Initialize Admin
 
-admin = Admin(app, engine, authentication_backend=admin_auth, base_url="/admin")
+admin = Admin(
+    app,
+    engine,
+    authentication_backend=admin_auth,
+    base_url="/admin",
+    title="VIB-O-MAT Control",
+)
+
+admin.add_view(BackToAppView)
 
 admin.add_view(UserAdmin)
 
