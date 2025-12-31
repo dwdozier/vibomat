@@ -105,3 +105,6 @@ Use these commands to maintain code quality and run the application.
   - **Unrelated Changes:** For new, unrelated features or tasks, always return to `main`, pull the
       latest changes, and create a new branch. If the new work depends on an unmerged PR, inform the
       user and wait for the merge or seek explicit approval to branch off the feature.
+- **CRITICAL RULE: Security:** Always approach production code from a security standpoint,
+      security rules can be relaxed when debugging, but must be enforced after the debugging
+      session has ended to maintain security in our app

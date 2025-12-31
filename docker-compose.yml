@@ -56,6 +56,7 @@ services:
       - APPLE_OAUTH_CLIENT_ID=${APPLE_OAUTH_CLIENT_ID}
       - APPLE_OAUTH_CLIENT_SECRET=${APPLE_OAUTH_CLIENT_SECRET}
       - BASE_URL=${BASE_URL:-http://localhost}
+      - ADMIN_EMAILS=${ADMIN_EMAILS}
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
     ports:
@@ -87,6 +88,7 @@ services:
       - APPLE_OAUTH_CLIENT_ID=${APPLE_OAUTH_CLIENT_ID}
       - APPLE_OAUTH_CLIENT_SECRET=${APPLE_OAUTH_CLIENT_SECRET}
       - BASE_URL=${BASE_URL:-http://localhost}
+      - ADMIN_EMAILS=${ADMIN_EMAILS}
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
 

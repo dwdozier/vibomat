@@ -10,12 +10,16 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   const [isAuth, setIsAuth] = useState(false)
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     // Check auth status once on mount
     const checkStatus = async () => {
-      const authenticated = await authService.checkAuth()
-      setIsAuth(authenticated)
+      // Use getCurrentUser which probes /users/me once
+      const userData = await authService.getCurrentUser()
+      console.log("DEBUG: Root Auth Check", userData)
+      setIsAuth(!!userData)
+      setUser(userData)
     }
 
     checkStatus()
@@ -59,6 +63,14 @@ function RootLayout() {
                 <UserCheck className="w-4 h-4" />
                 Verified Citizen
               </div>
+            )}
+            {user?.is_superuser && (
+              <a
+                href="/admin"
+                className="font-display text-xl uppercase text-retro-pink hover:text-retro-teal transition-colors"
+              >
+                Admin Console
+              </a>
             )}
             <Link
               to="/settings"

@@ -14,6 +14,10 @@ export default defineConfig({
       '/api': {
         target: process.env.VITE_API_TARGET || 'http://localhost:8000',
         changeOrigin: true,
+      },
+      '/admin': {
+        target: process.env.VITE_API_TARGET || 'http://localhost:8000',
+        changeOrigin: false,
       }
     }
   }

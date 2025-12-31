@@ -33,6 +33,13 @@ RUN echo 'server {\
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\
         proxy_set_header X-Forwarded-Proto $scheme;\
     }\
+    location /admin/ {\
+        proxy_pass http://backend:8000/admin/;\
+        proxy_set_header Host $http_host;\
+        proxy_set_header X-Real-IP $remote_addr;\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\
+        proxy_set_header X-Forwarded-Proto $scheme;\
+    }\
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

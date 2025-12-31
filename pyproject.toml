@@ -40,6 +40,8 @@ dependencies = [
     "asyncpg",
     "aiosmtplib",
     "httpx-oauth",
+    "sqladmin",
+    "itsdangerous",
 ]
 
 [project.optional-dependencies]
