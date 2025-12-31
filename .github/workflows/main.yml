@@ -10,6 +10,20 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
     services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: vibomat_test
+        ports:
+          - 5432:5432
+        # Wait for postgres to be ready
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       redis:
         image: redis:7-alpine
         ports:
@@ -32,6 +46,8 @@ jobs:
       - name: Install Playwright Browsers
         run: uv run playwright install chromium --with-deps
       - name: Run tests with coverage
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://user:pass@localhost:5432/vibomat_test
         run: |
           PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/
 
