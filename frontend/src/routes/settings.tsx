@@ -20,13 +20,13 @@ export const Route = createFileRoute('/settings')({
 
 function Settings() {
   const queryClient = useQueryClient()
-  const { context } = Route.useContext()
+  const { auth } = Route.useRouteContext()
   const [newArtist, setNewArtist] = useState('')
   const [newAlbum, setNewAlbum] = useState({ name: '', artist: '' })
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['me'],
-    queryFn: () => context.auth.getCurrentUser()
+    queryFn: () => auth.getCurrentUser()
   })
 
   const updateMutation = useMutation({

@@ -1,7 +1,6 @@
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { authService, type User } from '../api/auth'
-import { useEffect, useState } from 'react'
+import { authService } from '../api/auth'
 import { UserCheck } from 'lucide-react'
 
 interface MyRouterContext {
@@ -9,28 +8,19 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+  loader: async ({ context }) => {
+    const user = await context.auth.getCurrentUser()
+    return { user }
+  },
   component: RootLayout,
 })
 
 function RootLayout() {
-  const [isAuth, setIsAuth] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    // Check auth status once on mount
-    const checkStatus = async () => {
-      // Use getCurrentUser which probes /users/me once
-      const userData = await authService.getCurrentUser()
-      setIsAuth(!!userData)
-      setUser(userData)
-    }
-
-    checkStatus()
-  }, [])
+  const { user } = Route.useLoaderData()
+  const isAuth = !!user
 
   const handleLogout = () => {
     authService.logout()
-    setIsAuth(false)
   }
 
   return (

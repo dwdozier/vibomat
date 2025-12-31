@@ -52,7 +52,7 @@ function Login() {
         setMessage(`Error: ${error.detail || 'Access Denied'}`)
       }
     } catch {
-      setError('Connection refused. Is the system online?')
+      setMessage('Error: Connection refused. Is the system online?')
     } finally {
       setIsLoading(false)
     }
