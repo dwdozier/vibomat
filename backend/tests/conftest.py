@@ -37,11 +37,7 @@ async def test_db(event_loop):
 async def db_session(test_db):
     connection = await test_db.connect()
     transaction = await connection.begin()
-    async_session = async_sessionmaker(
-        bind=connection,
-        expire_on_commit=False,
-        class_=AsyncSession
-    )
+    async_session = async_sessionmaker(bind=connection, expire_on_commit=False, class_=AsyncSession)
     session = async_session()
 
     yield session
