@@ -105,6 +105,23 @@ Use these commands to maintain code quality and run the application.
   - **Unrelated Changes:** For new, unrelated features or tasks, always return to `main`, pull the
       latest changes, and create a new branch. If the new work depends on an unmerged PR, inform the
       user and wait for the merge or seek explicit approval to branch off the feature.
-- **CRITICAL RULE: Security:** Always approach production code from a security standpoint,
-      security rules can be relaxed when debugging, but must be enforced after the debugging
-      session has ended to maintain security in our app
+
+## 7. Documentation Automation
+
+A **Documentation Agent** (CI/CD service) automatically monitors code changes and updates
+project documentation.
+
+- **Workflow:**
+  - Detects changes in code, configuration, or specifications.
+  - Runs `agent_docs.py` using Gemini.
+  - Updates **`README.md`**, **`CONTRIBUTING.md`**, and **`SETUP.md`** to keep them synchronized.
+  - Generates/Updates usage guides in `docs/guides/`.
+  - Generates a PR for human review.
+- **Style Guide:**
+  - Adheres to **Google Developer Documentation Style**.
+  - **Voice:** Active, present tense.
+  - **Tone:** Professional, objective, helpful (no "please" or "simply").
+  - **Format:** Sentence case headings, clear procedures.
+- **Developer Responsibility:**
+  - Review auto-generated documentation PRs for technical accuracy and style compliance.
+  - Merge documentation PRs promptly to keep guides in sync with code.
