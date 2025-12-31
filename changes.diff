@@ -1,0 +1,11 @@
+diff --git a/.github/workflows/doc-agent.yml b/.github/workflows/doc-agent.yml
+index c5b6938..706c405 100644
+--- a/.github/workflows/doc-agent.yml
++++ b/.github/workflows/doc-agent.yml
+@@ -1,5 +1,6 @@
+ name: Documentation Agent
+ 
++# Triggering a new run to verify PR creation permissions
+ on:
+   push:
+     branches:
