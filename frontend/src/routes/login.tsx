@@ -42,7 +42,7 @@ function Login() {
         if (isLogin) {
           setMessage('Access Granted! Teleporting...')
           // Use window.location to ensure fresh state/cookies are picked up
-          window.location.href = '/'
+          window.location.href = '/playlists'
         } else {
           setMessage('Registration Successful! You may now authenticate.')
           setIsLogin(true)

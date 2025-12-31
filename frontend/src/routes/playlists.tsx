@@ -60,6 +60,23 @@ function Playlists() {
           </div>
         </div>
 
+        <div className="mb-10 p-6 bg-retro-cream/50 rounded-xl border-4 border-retro-dark border-dashed space-y-4">
+          <p className="font-body text-xl text-retro-dark font-bold leading-relaxed">
+            Welcome, Citizen. The <span className="text-retro-pink">Vib-O-Matic</span> uses advanced social-synthesis AI to curate high-fidelity playlists. Simply describe your desired mood, activity, or theme below.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <span className="font-display text-sm uppercase tracking-widest text-retro-teal">Simple Transmission</span>
+              <p className="font-body text-sm italic text-retro-dark/70">"A 90s alternative rock workout."</p>
+            </div>
+            <div className="space-y-2">
+              <span className="font-display text-sm uppercase tracking-widest text-retro-pink">Complex Broadcast</span>
+              <p className="font-body text-sm italic text-retro-dark/70">"Melancholic jazz for a lonely rainy night in Tokyo, featuring saxophone and piano, no vocals."</p>
+            </div>
+          </div>
+        </div>
+
         <form onSubmit={handleGenerate} className="space-y-8">
           <div className="space-y-3">
             <label className="block text-2xl font-display text-retro-dark uppercase tracking-wide">
