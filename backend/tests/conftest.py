@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import pytest
@@ -16,7 +17,15 @@ TEST_DATABASE_URL = os.getenv(
 
 
 @pytest.fixture(scope="session")
-async def test_db():
+def event_loop():
+    """Create a session-scoped event loop."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
+async def test_db(event_loop):
     engine = create_async_engine(TEST_DATABASE_URL)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -26,10 +35,20 @@ async def test_db():
 
 @pytest.fixture
 async def db_session(test_db):
-    async_session = async_sessionmaker(test_db, expire_on_commit=False, class_=AsyncSession)
-    async with async_session() as session:
-        yield session
-        await session.rollback()
+    connection = await test_db.connect()
+    transaction = await connection.begin()
+    async_session = async_sessionmaker(
+        bind=connection,
+        expire_on_commit=False,
+        class_=AsyncSession
+    )
+    session = async_session()
+
+    yield session
+
+    await session.close()
+    await transaction.rollback()
+    await connection.close()
 
 
 @pytest.fixture
