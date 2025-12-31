@@ -14,6 +14,7 @@
 
   --shadow-retro: 4px 4px 0px 0px rgba(45, 52, 54, 1);
   --shadow-retro-sm: 2px 2px 0px 0px rgba(45, 52, 54, 1);
+  --shadow-retro-xs: 1px 1px 0px 0px rgba(45, 52, 54, 1);
 }
 
 @utility font-display {
