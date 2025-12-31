@@ -15,46 +15,30 @@ TEST_DATABASE_URL = os.getenv(
 )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def test_db():
-
+    """Create a fresh database for each test to ensure event loop consistency."""
     engine = create_async_engine(TEST_DATABASE_URL)
-
     async with engine.begin() as conn:
-
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine
 
+    # Cleanup: Drop tables to keep the DB clean for the next test
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 
 @pytest.fixture
 async def db_session(test_db):
-
-    async with test_db.connect() as connection:
-
-        # Start a transaction for the test
-
-        transaction = await connection.begin()
-
-        # Bind the session to the connection
-
-        async_session = async_sessionmaker(
-            bind=connection, expire_on_commit=False, class_=AsyncSession
-        )
-
-        session = async_session()
-
+    """Create a fresh session for each test."""
+    async_session = async_sessionmaker(test_db, expire_on_commit=False, class_=AsyncSession)
+    async with async_session() as session:
         yield session
-
-        # Roll back everything after the test
-
-        await session.close()
-
-        if transaction.is_active:
-
-            await transaction.rollback()
+        # Transaction is automatically handled by the async with block
+        # but we rollback just in case
+        await session.rollback()
 
 
 @pytest.fixture
