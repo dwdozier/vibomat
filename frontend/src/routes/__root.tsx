@@ -34,12 +34,6 @@ function RootLayout() {
             VIB-O-MAT
           </Link>
           <div className="flex gap-6 mt-2">
-            <Link
-              to="/"
-              className="px-4 py-2 font-display text-xl uppercase hover:text-retro-teal [&.active]:text-retro-teal transition-colors"
-            >
-              Home
-            </Link>
             {isAuth && (
               <Link
                 to="/playlists"
