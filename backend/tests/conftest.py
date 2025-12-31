@@ -18,8 +18,6 @@ TEST_DATABASE_URL = os.getenv(
 @pytest.fixture(scope="session")
 async def test_db():
 
-    # Standard engine setup
-
     engine = create_async_engine(TEST_DATABASE_URL)
 
     async with engine.begin() as conn:
@@ -34,17 +32,29 @@ async def test_db():
 @pytest.fixture
 async def db_session(test_db):
 
-    # Use sessionmaker to create a fresh session for each test
+    async with test_db.connect() as connection:
 
-    async_session = async_sessionmaker(test_db, expire_on_commit=False, class_=AsyncSession)
+        # Start a transaction for the test
 
-    async with async_session() as session:
+        transaction = await connection.begin()
+
+        # Bind the session to the connection
+
+        async_session = async_sessionmaker(
+            bind=connection, expire_on_commit=False, class_=AsyncSession
+        )
+
+        session = async_session()
 
         yield session
 
-        # Ensure cleanup is within the async with block
+        # Roll back everything after the test
 
-        await session.rollback()
+        await session.close()
+
+        if transaction.is_active:
+
+            await transaction.rollback()
 
 
 @pytest.fixture
