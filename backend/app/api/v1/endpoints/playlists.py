@@ -8,6 +8,8 @@ from backend.app.schemas.playlist import (
     PlaylistCreate,
 )
 from backend.app.services.ai_service import AIService
+from backend.app.core.auth.fastapi_users import current_active_user
+from backend.app.models.user import User
 
 router = APIRouter()
 
@@ -18,7 +20,9 @@ def get_ai_service():
 
 @router.post("/generate", response_model=List[TrackCreate])
 async def generate_playlist_endpoint(
-    request: GenerationRequest, ai_service: AIService = Depends(get_ai_service)
+    request: GenerationRequest,
+    ai_service: AIService = Depends(get_ai_service),
+    user: User = Depends(current_active_user),
 ):
     """
     Generate a playlist based on a prompt and optional artists.
@@ -34,7 +38,9 @@ async def generate_playlist_endpoint(
 
 @router.post("/verify", response_model=VerificationResponse)
 async def verify_tracks_endpoint(
-    request: VerificationRequest, ai_service: AIService = Depends(get_ai_service)
+    request: VerificationRequest,
+    ai_service: AIService = Depends(get_ai_service),
+    user: User = Depends(current_active_user),
 ):
     """
     Verify a list of tracks against metadata sources (MusicBrainz/Discogs).
@@ -49,7 +55,10 @@ async def verify_tracks_endpoint(
 
 
 @router.post("/export")
-async def export_playlist(playlist: PlaylistCreate):
+async def export_playlist(
+    playlist: PlaylistCreate,
+    user: User = Depends(current_active_user),
+):
     """
     Export a playlist schema to a downloadable JSON file.
     """

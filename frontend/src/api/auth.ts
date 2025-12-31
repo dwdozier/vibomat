@@ -1,3 +1,19 @@
+export interface Album {
+  name: string
+  artist: string
+}
+
+export interface User {
+  id: string
+  email: string
+  is_active: boolean
+  is_superuser: boolean
+  is_verified: boolean
+  is_public: boolean
+  favorite_artists: string[]
+  unskippable_albums: Album[]
+}
+
 export const authService = {
   logout: async () => {
     try {

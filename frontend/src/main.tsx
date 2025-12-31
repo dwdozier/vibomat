@@ -10,7 +10,12 @@ import { routeTree } from './routeTree.gen'
 const queryClient = new QueryClient()
 
 // Create a new router instance
-const router = createRouter({ routeTree })
+const router = createRouter({
+  routeTree,
+  context: {
+    auth: undefined! // We'll inject this in the RouterProvider
+  }
+})
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
@@ -19,10 +24,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} context={{ auth: authService }} />
+    </QueryClientProvider>
+  )
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <App />
   </React.StrictMode>,
 )

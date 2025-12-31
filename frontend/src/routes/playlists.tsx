@@ -1,10 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { playlistService, type Track } from '../api/playlist'
 import { useState } from 'react'
 import { Loader2, X, Music2, Zap } from 'lucide-react'
 
 export const Route = createFileRoute('/playlists')({
+  beforeLoad: async ({ context, location }) => {
+    const user = await context.auth.getCurrentUser()
+    if (!user) {
+      throw redirect({
+        to: '/login',
+        search: {
+          redirect: location.href,
+        },
+      })
+    }
+  },
   component: Playlists,
 })
 

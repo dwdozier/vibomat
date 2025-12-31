@@ -51,8 +51,8 @@ function Login() {
         const error = await response.json()
         setMessage(`Error: ${error.detail || 'Access Denied'}`)
       }
-    } catch (err) {
-      setMessage('System Error: Communications failure.')
+    } catch {
+      setError('Connection refused. Is the system online?')
     } finally {
       setIsLoading(false)
     }

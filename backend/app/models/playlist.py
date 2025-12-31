@@ -25,3 +25,9 @@ class Playlist(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="playlists")
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("playlist.id", ondelete="SET NULL"), nullable=True
+    )
+    source_playlist: Mapped["Playlist"] = relationship(
+        remote_side=[id], backref="derived_playlists"
+    )

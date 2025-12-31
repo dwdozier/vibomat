@@ -1,16 +1,20 @@
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { authService } from '../api/auth'
+import { authService, type User } from '../api/auth'
 import { useEffect, useState } from 'react'
 import { UserCheck } from 'lucide-react'
 
-export const Route = createRootRoute({
+interface MyRouterContext {
+  auth: typeof authService
+}
+
+export const Route = createRootRoute<MyRouterContext>()({
   component: RootLayout,
 })
 
 function RootLayout() {
   const [isAuth, setIsAuth] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     // Check auth status once on mount
@@ -70,6 +74,15 @@ function RootLayout() {
               >
                 Admin Console
               </a>
+            )}
+            {user && (
+              <Link
+                to="/profile/$userId"
+                params={{ userId: user.id }}
+                className="font-display text-xl uppercase hover:text-retro-teal [&.active]:text-retro-teal transition-colors"
+              >
+                Profile
+              </Link>
             )}
             <Link
               to="/settings"
