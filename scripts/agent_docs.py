@@ -78,11 +78,14 @@ def update_readme(
 {diff_content}
 
 **Instructions:**
-1. Check "pyproject.toml" or "package.json" in the diff for **Tech Stack** updates.
+1. Check "pyproject.toml" or "package.json" in the diff for **Tech Stack** or
+   **Project Description** updates.
 2. Check "backend/app" or "frontend/src" for new **Core Features**.
 3. Check "docker-compose.yml" or "SETUP.md" for **Quick Start** instructions.
-4. If no relevant changes are found for README.md, return the **Current Content** exactly as is.
-5. If changes are needed, integrate them seamlessly.
+4. Integrate all changes found into the README. If the project description in pyproject.toml
+   changed, ensure the README's introductory section reflects it.
+5. If absolutely no relevant changes are found for README.md, return the **Current Content**
+   exactly as is.
 """
 
     _generate_and_save(prompt, readme_path)
