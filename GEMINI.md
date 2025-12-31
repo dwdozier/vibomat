@@ -79,6 +79,11 @@ Use these commands to maintain code quality and run the application.
 - **Formatter:** Black.
 - **Linter:** Ruff.
 - **Testing:** Unit tests required for new features. Maintain high coverage.
+- **Clean Code & Idiomatic Solutions:** ALWAYS prioritize "Pythonic," clean, and maintainable
+  solutions over fragile workarounds, "hacks," or monkeypatching. If a library has a bug, seek a
+  declarative or structural fix within the project's code first. Do not sacrifice code quality for
+  speed; aim for standard solutions that are easy to reason about, even if they require multiple
+  iterations to perfect.
 - **Type Checker:** Ty (via pre-commit).
 - **Pre-Commit:** **MANDATORY**: Run `black .` and `ruff check . --fix` before every code submission
   to prevent CI/pre-commit failures.

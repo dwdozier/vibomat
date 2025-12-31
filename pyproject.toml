@@ -32,7 +32,6 @@ dependencies = [
     "uvicorn",
     "sqlalchemy[asyncio]",
     "alembic",
-    "aiosqlite",
     "fastapi-users[sqlalchemy]",
     "taskiq",
     "taskiq-redis",

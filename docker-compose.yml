@@ -4,6 +4,7 @@ services:
     container_name: vibomat-db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+      - ./scripts/docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     environment:
       - POSTGRES_DB=vibomat
       - POSTGRES_USER=user
