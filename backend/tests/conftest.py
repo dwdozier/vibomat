@@ -3,7 +3,7 @@ import os
 import sys
 import pytest
 from unittest.mock import MagicMock, patch
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.pool import NullPool
 from backend.app.db.session import Base
 
@@ -18,16 +18,9 @@ TEST_DATABASE_URL = os.getenv(
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    """Create a session-scoped event loop."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
-async def test_db(event_loop):
+async def test_db():
     """Create a session-scoped engine and tables."""
+    # Using NullPool to avoid connection sharing issues across tests
     engine = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -39,11 +32,18 @@ async def test_db(event_loop):
 async def db_session(test_db):
     """Create a fresh session for each test using a nested transaction."""
     async with test_db.connect() as connection:
+        # Create a transaction
         transaction = await connection.begin()
-        session = AsyncSession(bind=connection, expire_on_commit=False)
+
+        # Create a session bound to this connection
+        async_session = async_sessionmaker(
+            bind=connection, expire_on_commit=False, class_=AsyncSession
+        )
+        session = async_session()
 
         yield session
 
+        # Cleanup
         await session.close()
         await transaction.rollback()
 
