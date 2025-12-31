@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "vibomat"
 version = "0.1.0"
-description = "Universal music platform to generate and manage playlists using AI"
+description = "Universal music platform for AI-powered playlist generation and multi-service management"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
