@@ -8,6 +8,11 @@ testing, and clean architecture.
 - **Type Safety**: We use Pydantic for Backend schemas and TanStack Router/Query for Frontend types.
 - **Decoupling**: Identity is decoupled from service providers (Spotify).
 - **Quality**: We maintain **95% minimum test coverage** for all new logic.
+- **Clean Code & Idiomatic Solutions:** ALWAYS prioritize "Pythonic," clean, and maintainable
+  solutions over fragile workarounds, "hacks," or monkeypatching. If a library has a bug, seek a
+  declarative or structural fix within the project's code first. Do not sacrifice code quality for
+  speed; aim for standard solutions that are easy to reason about, even if they require multiple
+  iterations to perfect.
 
 ## 2. Setting Up for Development
 
