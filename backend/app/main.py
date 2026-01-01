@@ -12,6 +12,7 @@ from backend.app.admin.views import (
     UserAdmin,
     PlaylistAdmin,
     ServiceConnectionAdmin,
+    DashboardView,
 )
 from backend.app.admin.auth import admin_auth
 from backend.app.core.auth.backend import SECRET
@@ -55,8 +56,10 @@ admin = Admin(
     authentication_backend=admin_auth,
     base_url="/admin",
     title="VIB-O-MAT",
-    logo_url="/",  # Clicking the logo/title returns to the main app
+    templates_dir="backend/app/templates",
 )
+
+admin.add_view(DashboardView)
 
 admin.add_view(UserAdmin)
 

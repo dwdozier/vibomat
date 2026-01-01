@@ -1,13 +1,33 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from backend.app.admin.auth import AdminAuth
-from backend.app.models.user import User
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from fastapi.testclient import TestClient
+from backend.app.admin.auth import AdminAuth
+from backend.app.admin.views import DashboardView
+from backend.app.models.user import User
 from backend.app.main import app
 
 client = TestClient(app)
+
+
+@pytest.mark.asyncio
+async def test_dashboard_view():
+    """Test the admin dashboard view."""
+    view = DashboardView()
+    mock_request = MagicMock(spec=Request)
+
+    # Mock templates.TemplateResponse on the instance using patch
+    with patch.object(view, "templates") as mock_templates:
+        mock_templates.TemplateResponse = AsyncMock()
+
+        func = getattr(view.index, "__wrapped__", view.index)
+        await func(view, mock_request)
+
+        mock_templates.TemplateResponse.assert_called_once()
+        args, kwargs = mock_templates.TemplateResponse.call_args
+        assert args[1] == "admin_dashboard.html"
+        assert "title" in kwargs["context"]
 
 
 def test_custom_admin_logout_route():

@@ -1,7 +1,27 @@
-from sqladmin import ModelView
+from sqladmin import ModelView, BaseView, expose
 from backend.app.models.user import User
 from backend.app.models.playlist import Playlist
 from backend.app.models.service_connection import ServiceConnection
+
+
+class DashboardView(BaseView):
+    name = "Dashboard"
+    icon = "fa-solid fa-house"
+
+    @expose("/", methods=["GET"])
+    async def index(self, request):
+        return await self.templates.TemplateResponse(
+            request,
+            "admin_dashboard.html",
+            context={
+                "title": "VIB-O-MAT Control Center",
+                "description": (
+                    "Welcome to the Series 2000 Administrative Interface. From here, you can "
+                    "manage Citizens, monitor shared Playlists, and oversee Relay Station "
+                    "connections."
+                ),
+            },
+        )
 
 
 class UserAdmin(ModelView, model=User):

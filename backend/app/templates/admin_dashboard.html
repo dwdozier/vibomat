@@ -1,0 +1,47 @@
+{% extends "sqladmin/layout.html" %}
+{% block content %}
+<div class="col-md-12">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-5 text-center">
+            <div class="mb-4">
+                <i class="fa-solid fa-server fa-4x text-primary"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">{{ title }}</h1>
+            <p class="lead text-muted mb-5">{{ description }}</p>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded-3 h-100">
+                        <i class="fa-solid fa-users fa-2x mb-3 text-secondary"></i>
+                        <h3>Citizens</h3>
+                        <p>Manage user accounts, verify clearance levels, and toggle public visibility.</p>
+                        <a href="{{ url_for('admin:list', identity='user') }}" class="btn btn-outline-primary mt-3">Manage Users</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded-3 h-100">
+                        <i class="fa-solid fa-music fa-2x mb-3 text-secondary"></i>
+                        <h3>Archives</h3>
+                        <p>Monitor broadcasted playlists and track original sources for proper attribution.</p>
+                        <a href="{{ url_for('admin:list', identity='playlist') }}" class="btn btn-outline-primary mt-3">Browse Playlists</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 bg-light rounded-3 h-100">
+                        <i class="fa-solid fa-link fa-2x mb-3 text-secondary"></i>
+                        <h3>Relay Stations</h3>
+                        <p>Oversee active connections to external streaming services and check token health.</p>
+                        <a href="{{ url_for('admin:list', identity='serviceconnection') }}" class="btn btn-outline-primary mt-3">View Connections</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 pt-4 border-top">
+                <a href="{{ url_for('root') }}" class="btn btn-lg btn-success">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Return to Main Interface
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
