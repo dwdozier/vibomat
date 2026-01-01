@@ -4,41 +4,33 @@ from backend.app.admin.auth import AdminAuth
 from backend.app.models.user import User
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
-from backend.app.admin.views import GlobalLogoutView
+from fastapi.testclient import TestClient
+from backend.app.main import app
+
+client = TestClient(app)
 
 
-@pytest.mark.asyncio
-async def test_global_logout_view():
-    """Test the redirect and cookie deletion in GlobalLogoutView."""
-    view = GlobalLogoutView()
-    mock_request = MagicMock(spec=Request)
-    mock_request.session = MagicMock()
-
-    # Try to call the method directly, bypassing any potential sqladmin wrapping
-    func = getattr(view.full_logout, "__wrapped__", view.full_logout)
-    if hasattr(view.full_logout, "__wrapped__"):
-        response = await func(view, mock_request)
-    else:
-        response = await func(mock_request)
-
+def test_custom_admin_logout_route():
+    """Test the custom /admin/logout route clears cookies."""
+    response = client.get("/admin/logout", follow_redirects=False)
     assert response.status_code == 307 or response.status_code == 302
     assert response.headers["location"] == "/login"
-    # Check if delete_cookie was called (it sets a Set-Cookie header with expired date)
-    assert "fastapiusersauth=" in str(response.headers)
-    assert "Max-Age=0" in str(response.headers)
+    # Check if cookie is deleted (Max-Age=0)
+    assert 'fastapiusersauth="";' in response.headers.get("set-cookie", "")
+    assert "Max-Age=0" in response.headers.get("set-cookie", "")
 
 
 @pytest.mark.asyncio
 async def test_admin_auth_logout():
     """Test admin logout clears session."""
     mock_request = MagicMock(spec=Request)
-    mock_request.session = {"token": "some_token"}
+    mock_request.session = MagicMock()
 
     auth_backend = AdminAuth(secret_key="secret")
     result = await auth_backend.logout(mock_request)
 
     assert result is True
-    assert "token" not in mock_request.session
+    mock_request.session.clear.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -76,7 +68,7 @@ async def test_admin_auth_success():
 
 @pytest.mark.asyncio
 async def test_admin_auth_fail_not_superuser():
-    """Test admin authentication failure for non-superuser."""
+    """Test admin authentication failure for non-superuser redirects to root."""
     mock_request = MagicMock(spec=Request)
     mock_request.cookies = {"fastapiusersauth": "valid_token"}
 
@@ -97,7 +89,7 @@ async def test_admin_auth_fail_not_superuser():
             result = await auth_backend.authenticate(mock_request)
 
             assert isinstance(result, RedirectResponse)
-            assert result.headers["location"] == "/login"
+            assert result.headers["location"] == "/"
 
 
 @pytest.mark.asyncio

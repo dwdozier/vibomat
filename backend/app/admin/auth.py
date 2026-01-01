@@ -21,12 +21,17 @@ class AdminAuth(AuthenticationBackend):
 
     async def authenticate(self, request: Request) -> Union[Response, bool]:
         user = await self._get_current_user(request)
-        if user and user.is_superuser:
-            # Set a session variable to satisfy any internal checks or state
-            # 'token' is the default key used by sqladmin
-            request.session.update({"token": "valid_superuser"})
-            return True
+        if user:
+            if user.is_superuser:
+                # Logged in as admin, grant access
+                request.session.update({"token": "valid_superuser"})
+                return True
+            else:
+                # Logged in but NOT an admin.
+                # Redirect to home with a clear indication of insufficient access
+                return RedirectResponse("/")
 
+        # Not logged in at all
         return RedirectResponse("/login")
 
     async def _get_current_user(self, request: Request) -> Optional[User]:

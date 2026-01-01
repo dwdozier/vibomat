@@ -1,32 +1,7 @@
-from sqladmin import ModelView, BaseView, expose
-from starlette.responses import RedirectResponse
+from sqladmin import ModelView
 from backend.app.models.user import User
 from backend.app.models.playlist import Playlist
 from backend.app.models.service_connection import ServiceConnection
-
-
-class BackToAppView(BaseView):
-    name = "Return to Vib-O-Mat"
-    icon = "fa-solid fa-arrow-left"
-
-    @expose("/exit", methods=["GET"])
-    async def exit_admin(self, request):
-        return RedirectResponse(url=str(request.base_url))
-
-
-class GlobalLogoutView(BaseView):
-    name = "Full System Logout"
-    icon = "fa-solid fa-sign-out-alt"
-
-    @expose("/logout", methods=["GET"])
-    async def full_logout(self, request):
-        # Clear the admin session
-        request.session.clear()
-        # Redirect to the main app login page
-        response = RedirectResponse(url="/login")
-        # Explicitly clear the main app auth cookie
-        response.delete_cookie("fastapiusersauth")
-        return response
 
 
 class UserAdmin(ModelView, model=User):
