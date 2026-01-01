@@ -30,6 +30,7 @@ function RootLayout() {
           {/* Brand - The heart of the machine */}
           <Link
             to="/"
+            data-play="nav-brand"
             className="font-display text-5xl tracking-widest text-retro-pink transform -rotate-2 hover:rotate-0 transition-transform cursor-pointer drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] flex items-center gap-3"
           >
             VIB-O-MAT
@@ -40,6 +41,7 @@ function RootLayout() {
             <div className="flex gap-4 items-center border-l-4 border-retro-teal/30 pl-8 h-12 mt-2">
               <Link
                 to="/playlists"
+                data-play="nav-generator"
                 className="flex items-center gap-2 px-4 py-2 font-display text-xl uppercase hover:text-retro-teal [&.active]:text-retro-teal [&.active]:bg-retro-teal/10 rounded-lg transition-all"
               >
                 <Cpu className="w-5 h-5" />
@@ -59,6 +61,7 @@ function RootLayout() {
                   <Link
                     to="/profile/$userId"
                     params={{ userId: user.id }}
+                    data-play="nav-profile"
                     className="flex items-center gap-2 px-3 py-1 bg-retro-teal text-retro-dark rounded-xl font-display text-sm uppercase hover:bg-teal-400 transition-colors"
                   >
                     <User className="w-4 h-4" />
@@ -75,6 +78,7 @@ function RootLayout() {
                   {user?.is_superuser && (
                     <Link
                       to="/admin"
+                      data-play="nav-admin"
                       className="flex items-center gap-2 px-4 py-2 bg-retro-yellow text-retro-dark font-display text-sm uppercase rounded-xl border-2 border-retro-dark hover:bg-yellow-400 transition-all shadow-retro-xs active:shadow-none translate-y-[-1px] active:translate-y-[1px]"
                     >
                       <ShieldAlert className="w-4 h-4" />
@@ -84,6 +88,7 @@ function RootLayout() {
 
                   <Link
                     to="/settings"
+                    data-play="nav-settings"
                     className="text-retro-cream hover:text-retro-teal transition-colors p-2 hover:bg-retro-teal/10 rounded-full"
                     title="Control Panel"
                   >
@@ -92,6 +97,7 @@ function RootLayout() {
 
                   <button
                     onClick={handleLogout}
+                    data-play="nav-logout"
                     className="flex items-center gap-2 px-6 py-2 rounded-full bg-retro-pink text-retro-dark text-lg font-display uppercase border-4 border-retro-dark hover:bg-red-400 transition-all shadow-retro-sm active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
                   >
                     <LogOut className="w-5 h-5" />
@@ -102,6 +108,7 @@ function RootLayout() {
             ) : (
               <Link
                 to="/login"
+                data-play="nav-login"
                 className="px-10 py-3 rounded-full bg-retro-teal text-retro-dark text-2xl font-display uppercase border-4 border-retro-dark hover:bg-retro-pink transition-all shadow-retro-sm active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
               >
                 Identification Login
