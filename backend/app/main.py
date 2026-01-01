@@ -41,13 +41,13 @@ admin = Admin(
     title="VIB-O-MAT Control",
 )
 
-admin.add_view(BackToAppView)
-
 admin.add_view(UserAdmin)
 
 admin.add_view(PlaylistAdmin)
 
 admin.add_view(ServiceConnectionAdmin)
+
+admin.add_view(BackToAppView)
 
 
 # Trust the headers from Nginx

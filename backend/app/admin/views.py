@@ -9,7 +9,7 @@ class BackToAppView(BaseView):
     name = "Return to Vib-O-Mat"
     icon = "fa-solid fa-arrow-left"
 
-    @expose("/", methods=["GET"])
+    @expose("/exit", methods=["GET"])
     async def exit_admin(self, request):
         return RedirectResponse(url=str(request.base_url))
 
