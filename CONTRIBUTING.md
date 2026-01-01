@@ -56,6 +56,9 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+**Note:** Proactively wrap your documentation text to 100 characters to prevent `markdownlint`
+failures during the commit process.
+
 ## 5. Pull Requests
 
 - Provide a clear description of the change.

@@ -87,6 +87,8 @@ Use these commands to maintain code quality and run the application.
 - **Type Checker:** Ty (via pre-commit).
 - **Pre-Commit Hooks:** Use `uv run <tool>` (e.g., `uv run ty`) in `.pre-commit-config.yaml` to
   ensure the correct project environment is used regardless of the user's shell state.
+- **Documentation Linting:** Proactively verify `markdownlint` conformance (especially the
+  100-character line length limit) before every commit to ensure CI efficiency.
 
 ## 6. Architecture & Implementation Patterns
 
