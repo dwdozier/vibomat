@@ -31,7 +31,7 @@ Follow the [SETUP.md](SETUP.md) guide to get your environment running.
 We use `pytest`. All logic in `backend/core` and `backend/app` must be tested.
 
 ```bash
-PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/
+PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/ -m 'not ci'
 ```
 
 ### Frontend (TypeScript)
