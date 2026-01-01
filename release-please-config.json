@@ -1,0 +1,17 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "vibomat",
+      "changelog-path": "CHANGELOG.md",
+      "draft": false,
+      "prerelease": false
+    }
+  },
+  "plugins": [
+    {
+      "type": "sentence-case"
+    }
+  ],
+  "bootstrap-sha": "f548d0958b31dc4593c90df2d72bae2954a134b0"
+}
