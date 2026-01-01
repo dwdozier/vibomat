@@ -142,8 +142,8 @@ function Profile() {
             <div className="grid grid-cols-1 gap-6">
               {playlistsLoading ? (
                 <Disc className="animate-spin w-8 h-8 mx-auto" />
-              ) : playlists?.length > 0 ? (
-                playlists.map((playlist: PublicPlaylist) => (
+              ) : (playlists?.length ?? 0) > 0 ? (
+                playlists?.map((playlist: PublicPlaylist) => (
                   <div key={playlist.id} className="bg-white p-6 rounded-xl border-4 border-retro-dark shadow-retro-sm hover:shadow-retro transition-all group">
                     <div className="flex justify-between items-start">
                       <div>
@@ -176,8 +176,8 @@ function Profile() {
             <div className="grid grid-cols-1 gap-6">
               {favoritesLoading ? (
                 <Disc className="animate-spin w-8 h-8 mx-auto" />
-              ) : favorites?.length > 0 ? (
-                favorites.map((playlist: PublicPlaylist) => (
+              ) : (favorites?.length ?? 0) > 0 ? (
+                favorites?.map((playlist: PublicPlaylist) => (
                   <div key={playlist.id} className="bg-retro-cream p-6 rounded-xl border-4 border-retro-dark shadow-retro-sm hover:shadow-retro transition-all group">
                     <div className="flex justify-between items-start">
                       <div>

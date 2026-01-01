@@ -1,7 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Settings as SettingsIcon, Link2, Shield, User, Globe, Lock, Trash2, Plus, Disc } from 'lucide-react'
+import { Settings as SettingsIcon, Link2, Shield, User as UserIcon, Globe, Lock, Trash2, Plus, Disc } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { type User, type Album } from '../api/auth'
 
 export const Route = createFileRoute('/settings')({
   beforeLoad: async ({ context, location }) => {
@@ -24,7 +25,7 @@ function Settings() {
   const [newArtist, setNewArtist] = useState('')
   const [newAlbum, setNewAlbum] = useState({ name: '', artist: '' })
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => auth.getCurrentUser()
   })
@@ -77,7 +78,7 @@ function Settings() {
     updateMutation.mutate({ unskippable_albums: albums })
   }
 
-  if (isLoading) return <div className="p-20 text-center font-display uppercase">Booting Systems...</div>
+  if (isLoading || !user) return <div className="p-20 text-center font-display uppercase">Booting Systems...</div>
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
@@ -128,7 +129,7 @@ function Settings() {
       {/* Cultural Preferences */}
       <section className="bg-retro-yellow p-8 rounded-2xl border-8 border-retro-dark shadow-retro">
         <h3 className="text-3xl font-display text-retro-dark mb-8 flex items-center gap-4 uppercase border-b-4 border-retro-dark pb-4 border-dashed">
-          <User className="h-8 w-8" />
+          <UserIcon className="h-8 w-8" />
           Citizen Dossier
         </h3>
 
@@ -183,7 +184,7 @@ function Settings() {
               </div>
             </form>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              {user.unskippable_albums?.map((album, i: number) => (
+              {user.unskippable_albums?.map((album: Album, i: number) => (
                 <div key={i} className="flex items-center justify-between bg-white p-4 rounded-lg border-2 border-retro-dark">
                   <div className="flex items-center gap-3">
                     <Disc className="w-6 h-6 text-retro-dark" />
