@@ -11,7 +11,7 @@ class BackToAppView(BaseView):
 
     @expose("/", methods=["GET"])
     async def exit_admin(self, request):
-        return RedirectResponse(url=request.url_for("root"))
+        return RedirectResponse(url=str(request.base_url))
 
 
 class UserAdmin(ModelView, model=User):

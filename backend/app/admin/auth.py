@@ -16,6 +16,7 @@ class AdminAuth(AuthenticationBackend):
         return user is not None and user.is_superuser
 
     async def logout(self, request: Request) -> bool:
+        request.session.clear()
         return True
 
     async def authenticate(self, request: Request) -> Union[Response, bool]:
