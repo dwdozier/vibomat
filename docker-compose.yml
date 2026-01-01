@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:16-alpine
     container_name: vibomat-db
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - ./scripts/docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh

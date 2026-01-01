@@ -1,10 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { playlistService, type Track } from '../api/playlist'
 import { useState } from 'react'
 import { Loader2, X, Music2, Zap } from 'lucide-react'
 
 export const Route = createFileRoute('/playlists')({
+  beforeLoad: async ({ context, location }) => {
+    const user = await context.auth.getCurrentUser()
+    if (!user) {
+      throw redirect({
+        to: '/login',
+        search: {
+          redirect: location.href,
+        },
+      })
+    }
+  },
   component: Playlists,
 })
 
@@ -46,6 +57,23 @@ function Playlists() {
               Vib-O-Matic
             </h2>
             <p className="font-display text-retro-teal text-xl tracking-widest">SERIES 2000 • FULLY AUTOMATED</p>
+          </div>
+        </div>
+
+        <div className="mb-10 p-6 bg-retro-cream/50 rounded-xl border-4 border-retro-dark border-dashed space-y-4">
+          <p className="font-body text-xl text-retro-dark font-bold leading-relaxed">
+            Welcome, Citizen. The <span className="text-retro-pink">Vib-O-Matic</span> uses advanced social-synthesis AI to curate high-fidelity playlists. Simply describe your desired mood, activity, or theme below.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <span className="font-display text-sm uppercase tracking-widest text-retro-teal">Simple Transmission</span>
+              <p className="font-body text-sm italic text-retro-dark/70">"A 90s alternative rock workout."</p>
+            </div>
+            <div className="space-y-2">
+              <span className="font-display text-sm uppercase tracking-widest text-retro-pink">Complex Broadcast</span>
+              <p className="font-body text-sm italic text-retro-dark/70">"Melancholic jazz for a lonely rainy night in Tokyo, featuring saxophone and piano, no vocals."</p>
+            </div>
           </div>
         </div>
 

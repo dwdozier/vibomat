@@ -42,7 +42,7 @@ function Login() {
         if (isLogin) {
           setMessage('Access Granted! Teleporting...')
           // Use window.location to ensure fresh state/cookies are picked up
-          window.location.href = '/'
+          window.location.href = '/playlists'
         } else {
           setMessage('Registration Successful! You may now authenticate.')
           setIsLogin(true)
@@ -51,8 +51,8 @@ function Login() {
         const error = await response.json()
         setMessage(`Error: ${error.detail || 'Access Denied'}`)
       }
-    } catch (err) {
-      setMessage('System Error: Communications failure.')
+    } catch {
+      setMessage('Error: Connection refused. Is the system online?')
     } finally {
       setIsLoading(false)
     }

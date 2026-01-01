@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 
 export const Route = createFileRoute('/auth/callback')({
@@ -8,21 +8,15 @@ export const Route = createFileRoute('/auth/callback')({
 
 function AuthCallback() {
   const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
+  const search = Route.useSearch() as { error?: string }
+  const error = search.error || null
 
   useEffect(() => {
-    // With CookieTransport, the backend sets the cookie on the callback request.
-    // We just need to check if we arrived here successfully.
-    const params = new URLSearchParams(window.location.search)
-    const errorParam = params.get('error')
-
-    if (errorParam) {
-      setError(errorParam)
-    } else {
+    if (!search.error) {
       // Success! Cookie should be set.
       navigate({ to: '/' })
     }
-  }, [navigate])
+  }, [search.error, navigate])
 
   if (error) {
     return (

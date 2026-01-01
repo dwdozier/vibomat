@@ -2,10 +2,16 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { Sparkles, Zap, ShieldCheck, ArrowRight } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
+  loader: async ({ context }) => {
+    const user = await context.auth.getCurrentUser()
+    return { isAuth: !!user }
+  },
   component: Index,
 })
 
 function Index() {
+  const { isAuth } = Route.useLoaderData()
+
   return (
     <div className="space-y-24 py-16">
       {/* Hero Section */}
@@ -23,12 +29,23 @@ function Index() {
           Modern Science™ and Artificial Intelligence.
         </p>
         <div className="pt-12">
-          <Link
-            to="/playlists"
-            className="inline-flex items-center gap-4 px-12 py-6 bg-retro-pink hover:bg-pink-400 text-retro-dark text-4xl font-display rounded-2xl border-8 border-retro-dark shadow-retro hover:scale-105 active:shadow-none active:translate-x-2 active:translate-y-2 transition-all group"
-          >
-            START GENERATING <ArrowRight className="w-12 h-12 group-hover:translate-x-2 transition-transform" />
-          </Link>
+          {isAuth ? (
+            <Link
+              to="/playlists"
+              data-play="hero-cta-generator"
+              className="inline-flex items-center gap-4 px-12 py-6 bg-retro-pink hover:bg-pink-400 text-retro-dark text-4xl font-display rounded-2xl border-8 border-retro-dark shadow-retro hover:scale-105 active:shadow-none active:translate-x-2 active:translate-y-2 transition-all group"
+            >
+              START GENERATING <ArrowRight className="w-12 h-12 group-hover:translate-x-2 transition-transform" />
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              data-play="hero-cta-login"
+              className="inline-flex items-center gap-4 px-12 py-6 bg-retro-teal hover:bg-teal-400 text-retro-dark text-4xl font-display rounded-2xl border-8 border-retro-dark shadow-retro hover:scale-105 active:shadow-none active:translate-x-2 active:translate-y-2 transition-all group"
+            >
+              JOIN THE FUTURE <ArrowRight className="w-12 h-12 group-hover:translate-x-2 transition-transform" />
+            </Link>
+          )}
         </div>
 
         {/* Decorative elements */}

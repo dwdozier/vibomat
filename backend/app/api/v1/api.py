@@ -1,5 +1,10 @@
 from fastapi import APIRouter
-from backend.app.api.v1.endpoints import playlists, integrations, users as users_endpoints
+from backend.app.api.v1.endpoints import (
+    playlists,
+    integrations,
+    admin as admin_endpoints,
+    users as users_endpoints,
+)
 from backend.app.core.auth.fastapi_users import fastapi_users
 from backend.app.core.auth.backend import auth_backend
 from backend.app.schemas.user import UserRead, UserCreate, UserUpdate
@@ -76,4 +81,5 @@ api_router.include_router(
 # Application routes
 api_router.include_router(playlists.router, prefix="/playlists", tags=["playlists"])
 api_router.include_router(integrations.router, prefix="/integrations", tags=["integrations"])
+api_router.include_router(admin_endpoints.router, prefix="/admin", tags=["admin"])
 api_router.include_router(users_endpoints.router, prefix="/profile", tags=["users"])

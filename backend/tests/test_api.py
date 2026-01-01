@@ -2,8 +2,14 @@ from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
 from backend.app.main import app
 from backend.app.api.v1.endpoints.playlists import get_ai_service
+from backend.app.core.auth.fastapi_users import current_active_user
 
 client = TestClient(app)
+
+# Helper to mock a user
+mock_user = MagicMock()
+mock_user.id = "user_id"
+mock_user.email = "test@example.com"
 
 
 def test_health_check():
@@ -24,6 +30,7 @@ def test_generate_playlist_endpoint():
     mock_service.generate.return_value = mock_tracks
 
     app.dependency_overrides[get_ai_service] = lambda: mock_service
+    app.dependency_overrides[current_active_user] = lambda: mock_user
 
     response = client.post("/api/v1/playlists/generate", json={"prompt": "test prompt", "count": 1})
 
@@ -44,6 +51,7 @@ def test_verify_tracks_endpoint():
     mock_service.verify_tracks.return_value = (mock_verified, mock_rejected)
 
     app.dependency_overrides[get_ai_service] = lambda: mock_service
+    app.dependency_overrides[current_active_user] = lambda: mock_user
 
     response = client.post(
         "/api/v1/playlists/verify",
@@ -64,6 +72,7 @@ def test_generate_playlist_error():
     mock_service.generate.side_effect = Exception("AI Error")
 
     app.dependency_overrides[get_ai_service] = lambda: mock_service
+    app.dependency_overrides[current_active_user] = lambda: mock_user
 
     response = client.post("/api/v1/playlists/generate", json={"prompt": "fail"})
 
@@ -79,6 +88,7 @@ def test_verify_tracks_error():
     mock_service.verify_tracks.side_effect = Exception("Verify Error")
 
     app.dependency_overrides[get_ai_service] = lambda: mock_service
+    app.dependency_overrides[current_active_user] = lambda: mock_user
 
     response = client.post(
         "/api/v1/playlists/verify", json={"tracks": [{"artist": "A", "track": "T"}]}
@@ -92,12 +102,6 @@ def test_verify_tracks_error():
 
 def test_spotify_login_endpoint():
     """Test the Spotify login redirect URL generation."""
-    # We need a mocked user for Depends(current_active_user)
-    from backend.app.core.auth.fastapi_users import current_active_user
-
-    mock_user = MagicMock()
-    mock_user.id = "user_id"
-
     app.dependency_overrides[current_active_user] = lambda: mock_user
 
     response = client.get("/api/v1/integrations/spotify/login")
@@ -146,12 +150,14 @@ def test_export_playlist_endpoint():
         "description": "Desc",
         "tracks": [{"artist": "A", "track": "T"}],
     }
+    app.dependency_overrides[current_active_user] = lambda: mock_user
     response = client.post("/api/v1/playlists/export", json=payload)
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
     assert "attachment" in response.headers["content-disposition"]
     data = response.json()
     assert data["name"] == "Test Export"
+    app.dependency_overrides.clear()
 
 
 def test_get_ai_service_dependency():

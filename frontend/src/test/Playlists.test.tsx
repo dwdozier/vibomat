@@ -37,7 +37,7 @@ describe('Playlists Component', () => {
 
   it('renders the AI Generator form', () => {
     renderWithClient(<PlaylistsComponent />)
-    expect(screen.getByText('Vib-O-Matic')).toBeInTheDocument()
+    expect(screen.getAllByText('Vib-O-Matic').length).toBeGreaterThan(0)
     expect(screen.getByPlaceholderText(/Midnight coffee/)).toBeInTheDocument()
   })
 

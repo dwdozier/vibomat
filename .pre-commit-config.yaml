@@ -25,14 +25,20 @@ repos:
     hooks:
       - id: ty
         name: ty
-        entry: ty
+        entry: uv run ty
         args: ["check"]
         language: system
         types: [python]
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: bash -c "PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/"
+        entry: bash -c "PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/ -m 'not ci'"
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: e2e-sanity
+        name: e2e-sanity
+        entry: bash -c "PYTHONPATH=. uv run pytest backend/tests/e2e/test_sanity.py -m ci"
         language: system
         types: [python]
         pass_filenames: false

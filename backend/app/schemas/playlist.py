@@ -1,5 +1,6 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field
+import uuid
+from typing import List, Optional, Any, Dict
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class TrackBase(BaseModel):
@@ -31,6 +32,15 @@ class PlaylistCreate(PlaylistBase):
 
 class Playlist(PlaylistBase):
     tracks: List[Track]
+
+
+class PlaylistRead(PlaylistBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    content_json: Dict[str, Any]
+    source_id: Optional[uuid.UUID] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GenerationRequest(BaseModel):
