@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Disc } from 'lucide-react'
+import { DataTable } from '../components/DataTable'
+import { type ColumnDef } from '@tanstack/react-table'
 
 export const Route = createFileRoute('/admin/connections')({
   component: AdminConnections,
@@ -23,6 +25,35 @@ function AdminConnections() {
     }
   })
 
+  const columns: ColumnDef<AdminConnection>[] = [
+    {
+      accessorKey: 'provider_name',
+      header: 'Provider',
+      cell: (info) => (
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white rounded-lg border-2 border-retro-dark text-retro-yellow font-bold">
+            {(info.getValue() as string).charAt(0).toUpperCase()}
+          </div>
+          <div className="font-display uppercase text-retro-dark">{info.getValue() as string}</div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'user_id',
+      header: 'Citizen ID',
+      cell: (info) => <span className="font-body text-xs text-retro-dark/60">{info.getValue() as string}</span>
+    },
+    {
+      accessorKey: 'expires_at',
+      header: 'Expiration',
+      cell: (info) => (
+        <span className="font-body text-sm text-retro-dark">
+          {info.getValue() ? new Date(info.getValue() as string).toLocaleString() : 'N/A'}
+        </span>
+      )
+    }
+  ]
+
   if (isLoading) return <div className="flex justify-center p-20"><Disc className="animate-spin w-12 h-12 text-retro-teal" /></div>
 
   return (
@@ -31,37 +62,12 @@ function AdminConnections() {
         Relay Station Control
       </h2>
 
-      <div className="bg-white rounded-2xl border-8 border-retro-dark overflow-hidden shadow-retro">
-        <table className="min-w-full divide-y-4 divide-retro-dark">
-          <thead className="bg-retro-yellow">
-            <tr>
-              <th className="px-6 py-4 text-left font-display text-retro-dark uppercase tracking-widest border-r-4 border-retro-dark">Provider</th>
-              <th className="px-6 py-4 text-left font-display text-retro-dark uppercase tracking-widest border-r-4 border-retro-dark">Citizen ID</th>
-              <th className="px-6 py-4 text-left font-display text-retro-dark uppercase tracking-widest">Expiration</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y-4 divide-retro-dark bg-retro-cream">
-            {connections?.map((conn) => (
-              <tr key={conn.id} className="hover:bg-retro-yellow/10 transition-colors">
-                <td className="px-6 py-4 border-r-4 border-retro-dark">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg border-2 border-retro-dark text-retro-yellow font-bold">
-                      {conn.provider_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="font-display uppercase text-retro-dark">{conn.provider_name}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 border-r-4 border-retro-dark font-body text-xs text-retro-dark/60">
-                  {conn.user_id}
-                </td>
-                <td className="px-6 py-4 font-body text-sm text-retro-dark">
-                  {conn.expires_at ? new Date(conn.expires_at).toLocaleString() : 'N/A'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        data={connections ?? []}
+        columns={columns}
+        searchPlaceholder="Monitor relay stations..."
+        accentColor="yellow"
+      />
     </div>
   )
 }
