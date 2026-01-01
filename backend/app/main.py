@@ -58,6 +58,12 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])  # type: ignore
 app.include_router(api_router, prefix="/api/v1")
 
 
+@app.get("/", name="root")
+def root():
+    """Root redirect or info."""
+    return {"message": "Vib-O-Mat API Series 2000"}
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint."""

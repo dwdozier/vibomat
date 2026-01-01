@@ -10,8 +10,8 @@ class BackToAppView(BaseView):
     icon = "fa-solid fa-arrow-left"
 
     @expose("/", methods=["GET"])
-    async def index(self, request):
-        return RedirectResponse(url="/")
+    async def exit_admin(self, request):
+        return RedirectResponse(url=request.url_for("root"))
 
 
 class UserAdmin(ModelView, model=User):
