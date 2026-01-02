@@ -152,6 +152,23 @@ def test_spotify_callback_invalid_uuid():
     assert response.json()["detail"] == "Invalid state parameter (User ID)"
 
 
+def test_spotify_callback_token_error_with_details():
+    """Test Spotify callback handling when token exchange fails with details."""
+    mock_token_resp = MagicMock()
+    mock_token_resp.status_code = 400
+    mock_token_resp.json.return_value = {
+        "error": "invalid_grant",
+        "error_description": "Invalid code",
+    }
+
+    with patch("httpx.AsyncClient.post", return_value=mock_token_resp):
+        response = client.get(
+            f"/api/v1/integrations/spotify/callback?code=abc&state={mock_user.id}"
+        )
+        assert response.status_code == 400
+        assert "Invalid code" in response.json()["detail"]
+
+
 def test_export_playlist_endpoint():
     """Test exporting a playlist to JSON."""
     payload = {

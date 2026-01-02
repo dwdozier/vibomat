@@ -13,7 +13,7 @@ SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 SPOTIFY_REDIRECT_URI = os.getenv(
     "SPOTIFY_REDIRECT_URI",
-    "http://localhost:8000/api/v1/integrations/spotify/callback",
+    "http://localhost/api/v1/integrations/spotify/callback",
 )
 
 
@@ -62,7 +62,14 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
             },
         )
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to get tokens from Spotify")
+            error_data = response.json()
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Failed to get tokens from Spotify: "
+                    f"{error_data.get('error_description', error_data.get('error'))}"
+                ),
+            )
 
         token_data = response.json()
 
