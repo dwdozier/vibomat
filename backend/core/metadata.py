@@ -169,8 +169,9 @@ class MetadataVerifier:
                         # For 'studio' or unspecified, simple existence in MB is enough
                         # provided we aren't looking for a specific alternate version
                         return True
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"MusicBrainz verification failed for {artist} - {track}: {e}")
+            # Continue to Discogs fallback
 
         # 2. Fallback to Discogs if MusicBrainz didn't confirm the specific version
         # OR if MusicBrainz didn't find the track at all.
