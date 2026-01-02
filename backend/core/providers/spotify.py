@@ -12,7 +12,16 @@ class SpotifyProvider(BaseMusicProvider):
     def __init__(self, auth_token: str):
         self.sp = spotipy.Spotify(auth=auth_token)
         self.metadata_verifier = MetadataVerifier()
-        self.user_id = self.sp.current_user()["id"]
+        self._user_id = None
+
+    @property
+    def user_id(self) -> str:
+        if self._user_id is None:
+            user = self.sp.current_user()
+            if user is None:
+                raise Exception("Failed to authenticate with Spotify")
+            self._user_id = user["id"]
+        return self._user_id
 
     async def search_track(
         self, artist: str, track: str, album: Optional[str] = None, version: Optional[str] = None

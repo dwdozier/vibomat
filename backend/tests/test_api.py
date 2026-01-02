@@ -104,6 +104,14 @@ def test_verify_tracks_error():
 
 def test_spotify_login_endpoint():
     """Test the Spotify login redirect URL generation."""
+    from backend.app.db.session import get_async_session
+
+    mock_db = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    app.dependency_overrides[get_async_session] = lambda: mock_db
     app.dependency_overrides[current_active_user] = lambda: mock_user
 
     response = client.get("/api/v1/integrations/spotify/login")
@@ -225,7 +233,14 @@ def test_build_playlist_endpoint_success():
         "tracks": [{"artist": "A", "track": "T"}],
     }
 
-    with patch("backend.app.api.v1.endpoints.playlists.SpotifyPlaylistBuilder") as mock_builder_cls:
+    with (
+        patch("backend.app.api.v1.endpoints.playlists.SpotifyPlaylistBuilder") as mock_builder_cls,
+        patch(
+            "backend.app.api.v1.endpoints.playlists.IntegrationsService.get_valid_spotify_token",
+            new_callable=AsyncMock,
+        ) as mock_get_token,
+    ):
+        mock_get_token.return_value = "fake_token"
         mock_builder = MagicMock()
         mock_builder.create_playlist.return_value = "new_pid"
         mock_builder.add_tracks_to_playlist.return_value = ([], [])
@@ -364,10 +379,17 @@ def test_build_playlist_endpoint_failure():
 
     payload = {"name": "Fail", "tracks": []}
 
-    with patch(
-        "backend.app.api.v1.endpoints.playlists.SpotifyPlaylistBuilder",
-        side_effect=Exception("Build Error"),
+    with (
+        patch(
+            "backend.app.api.v1.endpoints.playlists.SpotifyPlaylistBuilder",
+            side_effect=Exception("Build Error"),
+        ),
+        patch(
+            "backend.app.api.v1.endpoints.playlists.IntegrationsService.get_valid_spotify_token",
+            new_callable=AsyncMock,
+        ) as mock_get_token,
     ):
+        mock_get_token.return_value = "fake_token"
         response = client.post("/api/v1/playlists/build", json=payload)
         assert response.status_code == 500
         assert "Failed to build playlist" in response.json()["detail"]

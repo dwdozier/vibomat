@@ -44,11 +44,17 @@ class SpotifyPlaylistBuilder:
                 )
             )
 
-        user = self.sp.current_user()
-        if user is None:
-            raise Exception("Failed to authenticate with Spotify")
-        self.user_id = user["id"]
+        self._user_id = None
         self.metadata_verifier = MetadataVerifier()
+
+    @property
+    def user_id(self) -> str:
+        if self._user_id is None:
+            user = self.sp.current_user()
+            if user is None:
+                raise Exception("Failed to authenticate with Spotify")
+            self._user_id = user["id"]
+        return self._user_id
 
     def _similarity(self, s1: str, s2: str) -> float:
         """Proxy to similarity helper."""

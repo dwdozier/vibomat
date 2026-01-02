@@ -13,6 +13,7 @@ from backend.app.schemas.playlist import (
     BuildResponse,
 )
 from backend.app.services.ai_service import AIService
+from backend.app.services.integrations_service import IntegrationsService
 from backend.app.core.auth.fastapi_users import current_active_user
 from backend.app.models.user import User
 from backend.core.client import SpotifyPlaylistBuilder
@@ -85,9 +86,16 @@ async def build_playlist_endpoint(
             status_code=400, detail="Spotify relay station not connected. Please go to Settings."
         )
 
-    # 2. Use the token to build the playlist
+    # 2. Ensure token is valid
+    integrations_service = IntegrationsService(db)
     try:
-        builder = SpotifyPlaylistBuilder(access_token=conn.access_token)
+        access_token = await integrations_service.get_valid_spotify_token(conn)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to refresh Spotify token: {str(e)}")
+
+    # 3. Use the token to build the playlist
+    try:
+        builder = SpotifyPlaylistBuilder(access_token=access_token)
         # Convert Pydantic tracks to dicts for the core logic
         tracks_dict = [t.model_dump() for t in playlist.tracks]
 

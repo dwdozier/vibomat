@@ -6,7 +6,7 @@ This plan outlines the steps to stabilize the Vibomat MVP for initial release.
 
 ## Phase 1: Backend & Relay Stabilization
 
-- [ ] **Task 1: Audit Spotify Relay & Auth**
+- [~] **Task 1: Audit Spotify Relay & Auth**
   - [ ] Write tests for Spotify OAuth flow and relay synchronization.
   - [ ] Implement fixes for detected authentication or sync issues.
 - [ ] **Task 2: Verify Metadata Enrichment Service**

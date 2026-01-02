@@ -350,8 +350,8 @@ function Settings() {
                 onClick={handleConnectSpotify}
                 disabled={!spotifyConn?.client_id}
                 className={`px-8 py-3 font-display text-xl uppercase rounded-xl border-4 border-retro-dark shadow-retro-sm transition-all flex items-center gap-2 ${
-                  spotifyConn?.is_connected 
-                    ? 'bg-retro-teal hover:bg-teal-400 text-retro-dark' 
+                  spotifyConn?.is_connected
+                    ? 'bg-retro-teal hover:bg-teal-400 text-retro-dark'
                     : 'bg-retro-pink hover:bg-pink-400 text-retro-dark disabled:opacity-50 disabled:grayscale'
                 }`}
               >

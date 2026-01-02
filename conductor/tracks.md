@@ -5,6 +5,6 @@ respective folder.
 
 ---
 
-## [ ] Track: Stabilize Core Functionality and MVP Release
+## [~] Track: Stabilize Core Functionality and MVP Release
 
 *Link: [./conductor/tracks/stabilize_core_20260102/](./conductor/tracks/stabilize_core_20260102/)*

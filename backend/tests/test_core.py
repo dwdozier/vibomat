@@ -79,9 +79,10 @@ def test_init_auth_failure():
     ):
         # Mock auth returning None
         mock_spotify.return_value.current_user.return_value = None
+        builder = SpotifyPlaylistBuilder(client_id="id", client_secret="secret")
         with pytest.raises(Exception) as exc:
-            SpotifyPlaylistBuilder("id", "secret")
-        assert "Failed to authenticate" in str(exc.value)
+            _ = builder.user_id
+        assert "Failed to authenticate with Spotify" in str(exc.value)
 
 
 def test_similarity(builder):
