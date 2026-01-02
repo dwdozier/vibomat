@@ -9,7 +9,7 @@ This plan outlines the steps to stabilize the Vibomat MVP for initial release.
 - [x] **Task 1: Audit Spotify Relay & Auth** <!-- 58b851b -->
   - [ ] Write tests for Spotify OAuth flow and relay synchronization.
   - [ ] Implement fixes for detected authentication or sync issues.
-- [ ] **Task 2: Verify Metadata Enrichment Service**
+- [x] **Task 2: Verify Metadata Enrichment Service** <!-- 13e1012 -->
   - [ ] Write tests for MusicBrainz and Discogs verification logic.
   - [ ] Refactor `metadata_service.py` to handle edge cases and "no match" scenarios.
 - [ ] **Task 3: AI Service Prompt Optimization**
