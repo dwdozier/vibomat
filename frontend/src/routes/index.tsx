@@ -3,6 +3,7 @@ import { Sparkles, Zap, ShieldCheck, ArrowRight } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   loader: async ({ context }) => {
+    // Force a fresh check of the current user
     const user = await context.auth.getCurrentUser()
     return { isAuth: !!user }
   },
@@ -28,7 +29,7 @@ function Index() {
           High-fidelity playlist generation powered by the wonders of <br className="hidden md:block" />
           Modern Science™ and Artificial Intelligence.
         </p>
-        <div className="pt-12">
+        <div className="pt-12" key={isAuth ? 'auth' : 'pub'}>
           {isAuth ? (
             <Link
               to="/playlists"
