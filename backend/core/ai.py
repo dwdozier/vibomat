@@ -31,29 +31,24 @@ def is_retryable_error(e: BaseException) -> bool:
 
 def get_ai_api_key() -> str:
     """Retrieve the AI API Key from keyring or env."""
+    # 1. Check env first (Highest priority and most reliable in Docker)
+    key = os.getenv("GEMINI_API_KEY")
+    if key:
+        return key
+
+    # 2. Check keyring (if available and configured)
     try:
-        # Check env first
-        key = os.getenv("GEMINI_API_KEY")
+        import keyring
+
+        key = keyring.get_password("spotify-playlist-builder", "gemini_api_key")
         if key:
             return key
+    except (ImportError, Exception) as e:
+        # Gracefully skip if keyring is missing or fails (common in Docker)
+        logger.debug(f"Keyring not available or failed: {e}")
 
-        # Check keyring (if available)
-        try:
-            import keyring
-
-            key = keyring.get_password("spotify-playlist-builder", "gemini_api_key")
-            if key:
-                return key
-        except ImportError:
-            pass
-
-        raise ValueError(
-            "Gemini API Key not found. Run 'spotify-playlist-builder setup-ai' or set "
-            "GEMINI_API_KEY."
-        )
-
-    except Exception as e:
-        raise ValueError(f"Failed to retrieve API Key: {e}")
+    # 3. Final failure if no key found
+    raise ValueError("Gemini API Key not found. Please set GEMINI_API_KEY in your environment.")
 
 
 @retry(
