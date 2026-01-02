@@ -192,9 +192,47 @@ class MetadataVerifier:
             logger.info(f"Verified {artist} - {track} ({version}) via Discogs.")
             return True
 
-        # If MB found it but we were looking for a specific version (e.g. remix)
-        # and didn't find it in MB, we still fell through to Discogs.
-        # If Discogs also failed, we return False.
-        # However, if we just wanted 'studio' (default) and MB found it, we returned True above.
-
         return False
+
+    @retry(
+        retry=retry_if_exception_type(requests.RequestException),
+        wait=wait_fixed(2),
+        stop=stop_after_attempt(3),
+    )
+    def search_artist(self, artist_name: str) -> dict | None:
+        """Search MusicBrainz for artist metadata."""
+        self._enforce_rate_limit()
+        url = "https://musicbrainz.org/ws/2/artist"
+        params = {"query": f'artist:"{artist_name}"', "fmt": "json", "limit": 1}
+        try:
+            response = requests.get(url, headers=self.headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            artists = data.get("artists", [])
+            if artists:
+                return artists[0]
+        except Exception as e:
+            logger.debug(f"Failed to fetch artist metadata for {artist_name}: {e}")
+        return None
+
+    @retry(
+        retry=retry_if_exception_type(requests.RequestException),
+        wait=wait_fixed(2),
+        stop=stop_after_attempt(3),
+    )
+    def search_album(self, artist_name: str, album_name: str) -> dict | None:
+        """Search MusicBrainz for album (release-group) metadata."""
+        self._enforce_rate_limit()
+        url = "https://musicbrainz.org/ws/2/release-group"
+        query = f'artist:"{artist_name}" AND releasegroup:"{album_name}"'
+        params = {"query": query, "fmt": "json", "limit": 1}
+        try:
+            response = requests.get(url, headers=self.headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            groups = data.get("release-groups", [])
+            if groups:
+                return groups[0]
+        except Exception as e:
+            logger.debug(f"Failed to fetch album metadata for {artist_name} - {album_name}: {e}")
+        return None

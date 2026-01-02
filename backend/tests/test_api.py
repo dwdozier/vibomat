@@ -8,7 +8,7 @@ client = TestClient(app)
 
 # Helper to mock a user
 mock_user = MagicMock()
-mock_user.id = "user_id"
+mock_user.id = "550e8400-e29b-41d4-a716-446655440000"
 mock_user.email = "test@example.com"
 
 
@@ -136,11 +136,20 @@ def test_spotify_callback_endpoint():
         patch("httpx.AsyncClient.get", return_value=mock_user_resp),
     ):
 
-        response = client.get("/api/v1/integrations/spotify/callback?code=abc&state=user_id")
+        response = client.get(
+            f"/api/v1/integrations/spotify/callback?code=abc&state={mock_user.id}"
+        )
         assert response.status_code == 200
         assert response.json()["status"] == "success"
 
     app.dependency_overrides.clear()
+
+
+def test_spotify_callback_invalid_uuid():
+    """Test Spotify callback with an invalid UUID string."""
+    response = client.get("/api/v1/integrations/spotify/callback?code=abc&state=not-a-uuid")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid state parameter (User ID)"
 
 
 def test_export_playlist_endpoint():

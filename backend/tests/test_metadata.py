@@ -298,6 +298,52 @@ def test_discogs_verify_no_token():
         assert verifier.verify_track_version("Artist", "Track", "studio") is False
 
 
+def test_search_artist_success(verifier):
+    """Test successful artist search."""
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"artists": [{"name": "Test Artist", "id": "123"}]}
+    mock_response.raise_for_status.return_value = None
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        result = verifier.search_artist("Test Artist")
+        assert result["name"] == "Test Artist"
+        mock_get.assert_called_once()
+
+
+def test_search_artist_not_found(verifier):
+    """Test artist search when no artist is found."""
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"artists": []}
+    mock_response.raise_for_status.return_value = None
+
+    with patch("requests.get", return_value=mock_response):
+        result = verifier.search_artist("Unknown Artist")
+        assert result is None
+
+
+def test_search_album_success(verifier):
+    """Test successful album search."""
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"release-groups": [{"title": "Test Album", "id": "456"}]}
+    mock_response.raise_for_status.return_value = None
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        result = verifier.search_album("Artist", "Album")
+        assert result["title"] == "Test Album"
+        mock_get.assert_called_once()
+
+
+def test_search_album_not_found(verifier):
+    """Test album search when no album is found."""
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"release-groups": []}
+    mock_response.raise_for_status.return_value = None
+
+    with patch("requests.get", return_value=mock_response):
+        result = verifier.search_album("Artist", "Unknown")
+        assert result is None
+
+
 def test_metadata_verifier_rate_limit(verifier):
     """Test the rate limit enforcement in MetadataVerifier."""
     verifier.last_request_time = time.time()

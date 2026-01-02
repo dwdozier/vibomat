@@ -50,11 +50,27 @@ function Settings() {
     }
   }
 
-  const handleAddArtist = (e: React.FormEvent) => {
+  const handleAddArtist = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newArtist || !user) return
-    const artists = [...(user.favorite_artists || []), newArtist]
-    updateMutation.mutate({ favorite_artists: artists })
+
+    // Attempt to enrich artist metadata
+    try {
+      const enrichRes = await fetch('/api/v1/profile/me/enrich/artist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artist_name: newArtist }),
+      })
+
+      const artistName = enrichRes.ok ? (await enrichRes.json()).name : newArtist
+      const artists = [...(user.favorite_artists || []), artistName]
+      updateMutation.mutate({ favorite_artists: artists })
+    } catch (err) {
+      console.error("Enrichment failed", err)
+      const artists = [...(user.favorite_artists || []), newArtist]
+      updateMutation.mutate({ favorite_artists: artists })
+    }
+
     setNewArtist('')
   }
 
@@ -64,12 +80,40 @@ function Settings() {
     updateMutation.mutate({ favorite_artists: artists })
   }
 
-  const handleAddAlbum = (e: React.FormEvent) => {
+  const handleAddAlbum = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newAlbum.name || !newAlbum.artist || !user) return
-    const albums = [...(user.unskippable_albums || []), newAlbum]
-    updateMutation.mutate({ unskippable_albums: albums })
+
+    // Attempt to enrich album metadata
+    try {
+      const enrichRes = await fetch('/api/v1/profile/me/enrich/album', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artist_name: newAlbum.artist, album_name: newAlbum.name }),
+      })
+
+      const enrichedAlbum = enrichRes.ok ? await enrichRes.json() : newAlbum
+      const albums = [...(user.unskippable_albums || []), enrichedAlbum]
+      updateMutation.mutate({ unskippable_albums: albums })
+    } catch (err) {
+      console.error("Album enrichment failed", err)
+      const albums = [...(user.unskippable_albums || []), newAlbum]
+      updateMutation.mutate({ unskippable_albums: albums })
+    }
+
     setNewAlbum({ name: '', artist: '' })
+  }
+
+  const handleConnectSpotify = async () => {
+    try {
+      const res = await fetch('/api/v1/integrations/spotify/login')
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error("Failed to initiate Spotify connection", err)
+    }
   }
 
   const handleRemoveAlbum = (index: number) => {
@@ -220,7 +264,10 @@ function Settings() {
                 <p className="font-body text-retro-dark/60 italic">High-fidelity playlist broadcasting.</p>
               </div>
             </div>
-            <button className="px-8 py-3 bg-retro-teal text-retro-dark font-display text-xl uppercase rounded-xl border-4 border-retro-dark shadow-retro-sm hover:bg-teal-400 transition-all">
+            <button
+              onClick={handleConnectSpotify}
+              className="px-8 py-3 bg-retro-teal text-retro-dark font-display text-xl uppercase rounded-xl border-4 border-retro-dark shadow-retro-sm hover:bg-teal-400 transition-all"
+            >
               Connect
             </button>
           </div>

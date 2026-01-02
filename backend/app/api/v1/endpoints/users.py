@@ -7,6 +7,7 @@ from backend.app.models.user import User, user_favorite_playlists
 from backend.app.models.playlist import Playlist
 from backend.app.schemas.user import UserPublic
 from backend.app.schemas.playlist import PlaylistRead
+from backend.app.services.metadata_service import MetadataService
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import uuid
@@ -14,8 +15,21 @@ import uuid
 router = APIRouter()
 
 
+def get_metadata_service():
+    return MetadataService()
+
+
 class UserPreferencesUpdate(BaseModel):
     discogs_pat: Optional[str] = Field(None, description="Discogs Personal Access Token")
+
+
+class ArtistEnrichRequest(BaseModel):
+    artist_name: str
+
+
+class AlbumEnrichRequest(BaseModel):
+    artist_name: str
+    album_name: str
 
 
 @router.patch("/me/preferences")
@@ -30,6 +44,36 @@ async def update_preferences(
     # Note: User model needs a field for preferences or discogs_pat
     # For now, we'll just mock the update as we need a migration to add the field
     return {"status": "success", "message": "Preferences updated (Mocked)"}
+
+
+@router.post("/me/enrich/artist")
+async def enrich_artist(
+    request: ArtistEnrichRequest,
+    metadata_service: MetadataService = Depends(get_metadata_service),
+    user: User = Depends(current_active_user),
+):
+    """
+    Fetch enriched metadata for an artist.
+    """
+    info = metadata_service.get_artist_info(request.artist_name)
+    if not info:
+        raise HTTPException(status_code=404, detail="Artist metadata not found")
+    return info
+
+
+@router.post("/me/enrich/album")
+async def enrich_album(
+    request: AlbumEnrichRequest,
+    metadata_service: MetadataService = Depends(get_metadata_service),
+    user: User = Depends(current_active_user),
+):
+    """
+    Fetch enriched metadata for an album.
+    """
+    info = metadata_service.get_album_info(request.artist_name, request.album_name)
+    if not info:
+        raise HTTPException(status_code=404, detail="Album metadata not found")
+    return info
 
 
 @router.get("/{user_id}", response_model=UserPublic)

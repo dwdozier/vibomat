@@ -21,14 +21,29 @@ def test_ai_service_verify():
         mock_verify.assert_called_once_with([{"artist": "A"}])
 
 
-def test_metadata_service_verify():
+def test_metadata_service_enrich_artist():
     with patch("backend.app.services.metadata_service.MetadataVerifier") as mock_verifier_cls:
         mock_verifier = MagicMock()
         mock_verifier_cls.return_value = mock_verifier
-        mock_verifier.verify_track_version.return_value = True
+        mock_verifier.search_artist.return_value = {"name": "Enriched", "id": "123"}
 
         service = MetadataService()
-        result = service.verify_track("Artist", "Track", "live")
+        result = service.get_artist_info("Artist")
 
-        assert result is True
-        mock_verifier.verify_track_version.assert_called_once_with("Artist", "Track", "live")
+        assert result is not None
+        assert result["name"] == "Enriched"
+        mock_verifier.search_artist.assert_called_once_with("Artist")
+
+
+def test_metadata_service_enrich_album():
+    with patch("backend.app.services.metadata_service.MetadataVerifier") as mock_verifier_cls:
+        mock_verifier = MagicMock()
+        mock_verifier_cls.return_value = mock_verifier
+        mock_verifier.search_album.return_value = {"title": "Album", "id": "456"}
+
+        service = MetadataService()
+        result = service.get_album_info("Artist", "Album")
+
+        assert result is not None
+        assert result["name"] == "Album"
+        mock_verifier.search_album.assert_called_once_with("Artist", "Album")

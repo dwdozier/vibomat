@@ -145,6 +145,10 @@ def generate_playlist(description: str, count: int = 20) -> list[dict[str, Any]]
 
     logger.info("Received response from Gemini.")
 
+    if not response or not hasattr(response, "text") or not response.text:
+        logger.error(f"Invalid or empty response from Gemini. Response: {response}")
+        raise ValueError("AI failed to generate a valid response. Please try a different prompt.")
+
     text = response.text.strip()
 
     # Clean up response text if it accidentally contains markdown

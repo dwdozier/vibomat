@@ -5,6 +5,7 @@ from backend.app.core.auth.fastapi_users import current_active_user
 from backend.app.models.user import User
 from backend.app.models.service_connection import ServiceConnection
 import os
+import uuid
 
 router = APIRouter()
 
@@ -42,7 +43,13 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
     import httpx
     from datetime import datetime, timedelta, UTC
 
-    # 1. Exchange code for tokens
+    # 1. Validate state (User ID) immediately
+    try:
+        user_id = uuid.UUID(state)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid state parameter (User ID)")
+
+    # 2. Exchange code for tokens
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://accounts.spotify.com/api/token",
@@ -68,8 +75,6 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
 
         # 3. Store in DB
         # Note: In a real app, we'd verify 'state' matches the user session
-        user_id = state
-
         expires_at = datetime.now(UTC) + timedelta(seconds=token_data["expires_in"])
 
         conn = ServiceConnection(
