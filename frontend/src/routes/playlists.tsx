@@ -5,6 +5,20 @@ import { useState } from 'react'
 import { Loader2, X, Music2, Zap, CheckCircle2, ExternalLink } from 'lucide-react'
 import { Modal } from '../components/Modal'
 
+// Helper to format milliseconds to MM:SS or HH:MM:SS
+const formatDuration = (ms?: number) => {
+  if (!ms) return '--:--'
+  const seconds = Math.floor((ms / 1000) % 60)
+  const minutes = Math.floor((ms / (1000 * 60)) % 60)
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+
+  const parts = []
+  if (hours > 0) parts.push(hours.toString().padStart(2, '0'))
+  parts.push(minutes.toString().padStart(2, '0'))
+  parts.push(seconds.toString().padStart(2, '0'))
+  return parts.join(':')
+}
+
 export const Route = createFileRoute('/playlists')({
   beforeLoad: async ({ context, location }) => {
     const user = await context.auth.getCurrentUser()
@@ -150,9 +164,14 @@ function Playlists() {
           <div className="absolute bottom-6 left-6 w-4 h-4 rounded-full bg-retro-dark opacity-30 shadow-inner"></div>
           <div className="absolute bottom-6 right-6 w-4 h-4 rounded-full bg-retro-dark opacity-30 shadow-inner"></div>
 
-          <h3 className="text-4xl font-display text-retro-dark mb-8 text-center border-b-4 border-retro-dark pb-6 border-dashed">
-            OUTPUT RESULTS
-          </h3>
+          <div className="flex justify-between items-end mb-8 border-b-4 border-retro-dark pb-6 border-dashed">
+            <h3 className="text-4xl font-display text-retro-dark text-center flex-grow">
+              OUTPUT RESULTS
+            </h3>
+            <div className="bg-retro-dark text-retro-teal px-4 py-2 rounded-lg font-display text-lg shadow-retro-xs">
+              TOTAL RUNTIME: {formatDuration(generatedTracks.reduce((acc, t) => acc + (t.duration_ms || 0), 0))}
+            </div>
+          </div>
 
           <div className="bg-white rounded-xl border-4 border-retro-dark overflow-hidden shadow-retro">
             <table className="min-w-full divide-y-4 divide-retro-dark">
@@ -160,6 +179,7 @@ function Playlists() {
                 <tr>
                   <th className="px-6 py-4 text-left text-lg font-display text-retro-dark uppercase tracking-widest border-r-4 border-retro-dark">Artist</th>
                   <th className="px-6 py-4 text-left text-lg font-display text-retro-dark uppercase tracking-widest border-r-4 border-retro-dark">Track</th>
+                  <th className="px-6 py-4 text-left text-lg font-display text-retro-dark uppercase tracking-widest border-r-4 border-retro-dark">Duration</th>
                   <th className="px-6 py-4 text-left text-lg font-display text-retro-dark uppercase tracking-widest border-r-4 border-retro-dark">Version</th>
                   <th className="px-6 py-4"></th>
                 </tr>
@@ -169,6 +189,7 @@ function Playlists() {
                   <tr key={i} className="hover:bg-retro-teal/10 transition-colors">
                     <td className="px-6 py-5 text-xl text-retro-dark font-body font-bold border-r-4 border-retro-dark">{track.artist}</td>
                     <td className="px-6 py-5 text-xl text-retro-dark font-body border-r-4 border-retro-dark italic">"{track.track}"</td>
+                    <td className="px-6 py-5 text-xl text-retro-dark font-body border-r-4 border-retro-dark">{formatDuration(track.duration_ms)}</td>
                     <td className="px-6 py-5 text-xl text-retro-dark font-body border-r-4 border-retro-dark">{track.version || 'Original'}</td>
                     <td className="px-6 py-5 text-right">
                       <button

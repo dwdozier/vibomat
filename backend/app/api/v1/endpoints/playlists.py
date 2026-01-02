@@ -94,13 +94,18 @@ async def build_playlist_endpoint(
         pid = builder.create_playlist(
             playlist.name, playlist.description or "", public=playlist.public
         )
-        failed = builder.add_tracks_to_playlist(pid, tracks_dict)
+        actual_tracks, failed = builder.add_tracks_to_playlist(pid, tracks_dict)
+
+        # Calculate total duration from actual metadata
+        total_ms = sum(t.get("duration_ms", 0) for t in actual_tracks)
 
         return {
             "status": "success",
             "playlist_id": pid,
             "url": f"https://open.spotify.com/playlist/{pid}",
             "failed_tracks": failed,
+            "actual_tracks": actual_tracks,
+            "total_duration_ms": total_ms,
         }
     except Exception as e:
         import traceback

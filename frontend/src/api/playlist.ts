@@ -5,6 +5,7 @@ export interface Track {
   track: string
   album?: string
   version?: string
+  duration_ms?: number
 }
 
 export interface GenerationRequest {

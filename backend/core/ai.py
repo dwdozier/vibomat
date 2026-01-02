@@ -17,9 +17,14 @@ Each object must follow this schema:
 {
   "artist": "Artist Name",
   "track": "Track Title",
-  "version": "studio" | "live" | "remix" | "original" | "remaster" | null
+  "version": "studio" | "live" | "remix" | "original" | "remaster" | "instrumental"
+             | "acoustic" | null,
+  "duration_ms": Estimated duration in milliseconds (integer)
 }
-If the user specifies a number of songs, try to meet that count. Default to 20 if unspecified.
+If the user specifies a specific number of tracks, follow that. If the user specifies a total
+playlist duration (e.g., 'roughly 2 hours'), calculate the appropriate number of tracks to fill
+that duration based on the typical lengths of songs in the requested genre.
+Default to 20 tracks if no count or duration is specified.
 """
 
 
@@ -103,10 +108,12 @@ def generate_playlist(description: str, count: int = 20) -> list[dict[str, Any]]
 
     # Construct the user prompt
     user_message = f"""
-    Create a playlist with {count} songs based on this description:
-    "{description}"
-    """
+    Create a playlist based on this description: "{description}".
 
+    CRITICAL: If the description mentions a total duration or runtime (e.g. '2 hours'),
+    ignore the default count of {count} and instead generate enough tracks to satisfy
+    that total runtime. Otherwise, generate exactly {count} tracks.
+    """
     contents = [SYSTEM_PROMPT, user_message]
     config = types.GenerateContentConfig(response_mime_type="application/json")
 

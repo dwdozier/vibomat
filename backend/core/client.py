@@ -226,36 +226,49 @@ class SpotifyPlaylistBuilder:
             batch = track_uris[i : i + 100]
             self.sp.playlist_add_items(playlist_id, batch)
 
-    def add_tracks_to_playlist(self, playlist_id: str, tracks: list[dict[str, Any]]) -> list[str]:
-        """Add tracks to a playlist, handling batch operations."""
-        uris = []
+    def add_tracks_to_playlist(
+        self, playlist_id: str, tracks: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        """Add tracks to a playlist, returning actual metadata and failed tracks."""
+        actual_tracks = []
         failed_tracks = []
+        uris = []
 
         for i, track in enumerate(tracks):
-            # Ensure we have strings, defaulting to empty string if missing
             artist = str(track.get("artist", ""))
             track_name = str(track.get("track", ""))
             album = track.get("album")
-            version = track.get("version")
+
+            # search_track only returns URI, we need full metadata for duration
+            query = f"track:{track_name} artist:{artist}"
             if album:
-                album = str(album)
-            if version:
-                version = str(version)
+                query += f" album:{album}"
 
-            uri = self.search_track(artist, track_name, album, version)
+            search_results = self.sp.search(q=query, type="track", limit=1)
+            items = search_results["tracks"]["items"] if search_results else []
 
-            if uri:
-                uris.append(uri)
+            if items:
+                best_match = items[0]
+                uris.append(best_match["uri"])
+                actual_tracks.append(
+                    {
+                        "artist": best_match["artists"][0]["name"],
+                        "track": best_match["name"],
+                        "album": best_match["album"]["name"],
+                        "uri": best_match["uri"],
+                        "duration_ms": best_match["duration_ms"],
+                    }
+                )
             else:
                 failed_tracks.append(f"{artist} - {track_name}")
 
-            # Add in batches of 100 (Spotify API limit)
+            # Add in batches of 100
             if len(uris) == 100 or i == len(tracks) - 1:
                 if uris:
                     self._add_track_uris_to_playlist(playlist_id, uris)
                     uris = []
 
-        return failed_tracks
+        return actual_tracks, failed_tracks
 
     @rate_limit_retry
     def get_playlist_tracks_details(self, playlist_id: str) -> list[dict[str, str]]:

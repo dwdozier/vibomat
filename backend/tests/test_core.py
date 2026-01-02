@@ -323,34 +323,65 @@ def test_update_playlist_details_no_change(builder, mock_spotify):
 
 def test_add_tracks_to_playlist_batching(builder, mock_spotify):
     """Test that tracks are added in batches of 100."""
-    with patch.object(builder, "search_track", return_value="spotify:track:1"):
-        # Create 105 dummy tracks
-        tracks = [{"artist": "A", "track": "B"}] * 105
-        builder.add_tracks_to_playlist("pid", tracks)
+    # Mock search to return a track with duration
+    mock_spotify.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "B",
+                    "artists": [{"name": "A"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:1",
+                    "duration_ms": 200000,
+                }
+            ]
+        }
+    }
+    # Create 105 dummy tracks
+    tracks = [{"artist": "A", "track": "B"}] * 105
+    actual, failed = builder.add_tracks_to_playlist("pid", tracks)
 
-        # Should be called twice: once for 100 tracks, once for 5 tracks
-        assert mock_spotify.playlist_add_items.call_count == 2
+    # Should be called twice: once for 100 tracks, once for 5 tracks
+    assert mock_spotify.playlist_add_items.call_count == 2
+    assert len(actual) == 105
+    assert len(failed) == 0
 
 
 def test_add_tracks_to_playlist_failures(builder, mock_spotify):
     """Test adding tracks where some are not found."""
     # Mock search_track to find first, fail second
-    with patch.object(builder, "search_track", side_effect=["uri:1", None]):
-        tracks = [{"artist": "A", "track": "Found"}, {"artist": "B", "track": "Missing"}]
-        failed = builder.add_tracks_to_playlist("pid", tracks)
+    mock_spotify.search.side_effect = [
+        {
+            "tracks": {
+                "items": [
+                    {
+                        "name": "Found",
+                        "artists": [{"name": "A"}],
+                        "album": {"name": "Album"},
+                        "uri": "uri:1",
+                        "duration_ms": 100,
+                    }
+                ]
+            }
+        },
+        {"tracks": {"items": []}},
+    ]
+    tracks = [{"artist": "A", "track": "Found"}, {"artist": "B", "track": "Missing"}]
+    actual, failed = builder.add_tracks_to_playlist("pid", tracks)
 
-        assert len(failed) == 1
-        assert failed[0] == "B - Missing"
-        # Verify only one track was added
-        mock_spotify.playlist_add_items.assert_called_with("pid", ["uri:1"])
+    assert len(failed) == 1
+    assert failed[0] == "B - Missing"
+    assert len(actual) == 1
+    # Verify only one track was added
+    mock_spotify.playlist_add_items.assert_called_with("pid", ["uri:1"])
 
 
 def test_add_tracks_all_missing(builder, mock_spotify):
     """Test adding tracks where none are found."""
-    with patch.object(builder, "search_track", return_value=None):
-        tracks = [{"artist": "A", "track": "B"}]
-        builder.add_tracks_to_playlist("pid", tracks)
-        mock_spotify.playlist_add_items.assert_not_called()
+    mock_spotify.search.return_value = {"tracks": {"items": []}}
+    tracks = [{"artist": "A", "track": "B"}]
+    builder.add_tracks_to_playlist("pid", tracks)
+    mock_spotify.playlist_add_items.assert_not_called()
 
 
 def test_add_track_uris_empty(builder, mock_spotify):

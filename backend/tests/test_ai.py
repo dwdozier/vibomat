@@ -1,6 +1,7 @@
+import os
+import json
 import pytest
 from unittest.mock import MagicMock, patch
-import os
 from backend.core.ai import (
     get_ai_api_key,
     generate_playlist,
@@ -23,22 +24,28 @@ def test_get_ai_api_key_missing():
 
 
 def test_generate_playlist_success():
-    """Test successful playlist generation with new SDK."""
+    """Test successful playlist generation."""
     mock_response = MagicMock()
-    mock_response.text = '[{"artist": "A", "track": "B"}]'
+    mock_response.text = json.dumps(
+        [
+            {
+                "artist": "Artist 1",
+                "track": "Track 1",
+                "version": "studio",
+                "duration_ms": 180000,
+            }
+        ]
+    )
 
     with (
-        patch("backend.core.ai.get_ai_api_key", return_value="key"),
-        patch("google.genai.Client") as mock_client_cls,
+        patch("backend.core.ai.genai.Client"),
+        patch("backend.core.ai.get_ai_api_key", return_value="fake_key"),
+        patch("backend.core.ai.generate_content_with_retry", return_value=mock_response),
     ):
-
-        mock_client = MagicMock()
-        mock_client.models.generate_content.return_value = mock_response
-        mock_client_cls.return_value = mock_client
-
-        result = generate_playlist("mood", 10)
-        assert result == [{"artist": "A", "track": "B"}]
-        mock_client.models.generate_content.assert_called_once()
+        result = generate_playlist("test prompt")
+        assert len(result) == 1
+        assert result[0]["artist"] == "Artist 1"
+        assert result[0]["duration_ms"] == 180000
 
 
 def test_generate_playlist_json_cleanup():

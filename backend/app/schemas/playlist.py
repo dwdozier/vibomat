@@ -7,10 +7,8 @@ class TrackBase(BaseModel):
     artist: str
     track: str
     album: Optional[str] = None
-    version: Optional[str] = Field(
-        None,
-        pattern="^(live|studio|compilation|remix|original|remaster|instrumental|acoustic|any)$",
-    )
+    version: Optional[str] = Field(None, pattern="^[a-zA-Z0-9| ]*$")
+    duration_ms: Optional[int] = None
 
 
 class TrackCreate(TrackBase):
