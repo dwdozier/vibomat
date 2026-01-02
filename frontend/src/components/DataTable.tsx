@@ -26,19 +26,24 @@ export function DataTable<T extends object>({
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = React.useState('')
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      globalFilter,
-    },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  })
+  const table = useReactTable(
+    React.useMemo(
+      () => ({
+        data,
+        columns,
+        state: {
+          sorting,
+          globalFilter,
+        },
+        onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+      }),
+      [data, columns, sorting, globalFilter]
+    )
+  )
 
   const colorClasses = {
     teal: 'bg-retro-teal text-retro-dark',

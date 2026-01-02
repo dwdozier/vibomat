@@ -1,3 +1,4 @@
+import React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Disc } from 'lucide-react'
@@ -25,34 +26,37 @@ function AdminConnections() {
     }
   })
 
-  const columns: ColumnDef<AdminConnection>[] = [
-    {
-      accessorKey: 'provider_name',
-      header: 'Provider',
-      cell: (info) => (
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-white rounded-lg border-2 border-retro-dark text-retro-yellow font-bold">
-            {(info.getValue() as string).charAt(0).toUpperCase()}
+  const columns = React.useMemo<ColumnDef<AdminConnection>[]>(
+    () => [
+      {
+        accessorKey: 'provider_name',
+        header: 'Provider',
+        cell: (info) => (
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white rounded-lg border-2 border-retro-dark text-retro-yellow font-bold">
+              {(info.getValue() as string).charAt(0).toUpperCase()}
+            </div>
+            <div className="font-display uppercase text-retro-dark">{info.getValue() as string}</div>
           </div>
-          <div className="font-display uppercase text-retro-dark">{info.getValue() as string}</div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'user_id',
-      header: 'Citizen ID',
-      cell: (info) => <span className="font-body text-xs text-retro-dark/60">{info.getValue() as string}</span>
-    },
-    {
-      accessorKey: 'expires_at',
-      header: 'Expiration',
-      cell: (info) => (
-        <span className="font-body text-sm text-retro-dark">
-          {info.getValue() ? new Date(info.getValue() as string).toLocaleString() : 'N/A'}
-        </span>
-      )
-    }
-  ]
+        ),
+      },
+      {
+        accessorKey: 'user_id',
+        header: 'Citizen ID',
+        cell: (info) => <span className="font-body text-xs text-retro-dark/60">{info.getValue() as string}</span>
+      },
+      {
+        accessorKey: 'expires_at',
+        header: 'Expiration',
+        cell: (info) => (
+          <span className="font-body text-sm text-retro-dark">
+            {info.getValue() ? new Date(info.getValue() as string).toLocaleString() : 'N/A'}
+          </span>
+        )
+      }
+    ],
+    []
+  )
 
   if (isLoading) return <div className="flex justify-center p-20"><Disc className="animate-spin w-12 h-12 text-retro-teal" /></div>
 
