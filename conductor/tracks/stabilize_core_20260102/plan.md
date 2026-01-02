@@ -12,7 +12,7 @@ This plan outlines the steps to stabilize the Vibomat MVP for initial release.
 - [x] **Task 2: Verify Metadata Enrichment Service** <!-- 13e1012 -->
   - [ ] Write tests for MusicBrainz and Discogs verification logic.
   - [ ] Refactor `metadata_service.py` to handle edge cases and "no match" scenarios.
-- [ ] **Task 3: AI Service Prompt Optimization**
+- [x] **Task 3: AI Service Prompt Optimization** <!-- da802cf -->
   - [ ] Write evaluation tests for AI-generated playlists.
   - [ ] Refine Gemini prompts to improve track relevance and metadata quality.
 - [ ] **Task 4: Conductor - User Manual Verification 'Backend & Relay Stabilization' (Protocol in workflow.md)**
