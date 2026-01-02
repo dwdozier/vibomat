@@ -10,6 +10,7 @@ from backend.app.schemas.playlist import (
     VerificationResponse,
     TrackCreate,
     PlaylistCreate,
+    BuildResponse,
 )
 from backend.app.services.ai_service import AIService
 from backend.app.core.auth.fastapi_users import current_active_user
@@ -62,7 +63,7 @@ async def verify_tracks_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/build")
+@router.post("/build", response_model=BuildResponse)
 async def build_playlist_endpoint(
     playlist: PlaylistCreate,
     user: User = Depends(current_active_user),

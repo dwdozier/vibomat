@@ -15,8 +15,13 @@ class TrackCreate(TrackBase):
     pass
 
 
-class Track(TrackBase):
-    uri: Optional[str] = None
+class BuildResponse(BaseModel):
+    status: str
+    playlist_id: str
+    url: str
+    failed_tracks: List[str]
+    actual_tracks: List[TrackCreate]
+    total_duration_ms: int
 
 
 class PlaylistBase(BaseModel):
@@ -30,16 +35,16 @@ class PlaylistCreate(PlaylistBase):
 
 
 class Playlist(PlaylistBase):
-    tracks: List[Track]
-
-
-class PlaylistRead(PlaylistBase):
     id: uuid.UUID
     user_id: uuid.UUID
     content_json: Dict[str, Any]
-    source_id: Optional[uuid.UUID] = None
+    total_duration_ms: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PlaylistRead(Playlist):
+    pass
 
 
 class GenerationRequest(BaseModel):

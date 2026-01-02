@@ -120,6 +120,11 @@ def test_spotify_callback_endpoint():
 
     mock_db = MagicMock()
     mock_db.commit = AsyncMock()
+    # Mock the ServiceConnection lookup for credentials
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
     app.dependency_overrides[get_async_session] = lambda: mock_db
 
     mock_token_resp = MagicMock()
@@ -156,6 +161,15 @@ def test_spotify_callback_invalid_uuid():
 
 def test_spotify_callback_token_error_with_details():
     """Test Spotify callback handling when token exchange fails with details."""
+    from backend.app.db.session import get_async_session
+
+    mock_db = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    app.dependency_overrides[get_async_session] = lambda: mock_db
+
     mock_token_resp = MagicMock()
     mock_token_resp.status_code = 400
     mock_token_resp.json.return_value = {
@@ -244,6 +258,92 @@ def test_build_playlist_endpoint_no_connection():
 
     app.dependency_overrides.clear()
 
+    app.dependency_overrides.clear()
+
+    app.dependency_overrides.clear()
+
+    app.dependency_overrides.clear()
+
+
+def test_spotify_callback_existing_connection():
+    """Test Spotify callback when a connection already exists."""
+    from backend.app.db.session import get_async_session
+    from backend.app.models.service_connection import ServiceConnection
+    from unittest.mock import AsyncMock
+
+    mock_db = MagicMock()
+    mock_db.commit = AsyncMock()
+
+    mock_conn = MagicMock(spec=ServiceConnection)
+    mock_conn.credentials = {"client_id": "c", "client_secret": "s"}
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_conn
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    app.dependency_overrides[get_async_session] = lambda: mock_db
+
+    mock_token_resp = MagicMock()
+    mock_token_resp.status_code = 200
+    mock_token_resp.json.return_value = {
+        "access_token": "acc",
+        "refresh_token": "ref",
+        "expires_in": 3600,
+    }
+
+    mock_user_resp = MagicMock()
+    mock_user_resp.json.return_value = {"id": "spotify_id"}
+
+    with (
+        patch("httpx.AsyncClient.post", return_value=mock_token_resp),
+        patch("httpx.AsyncClient.get", return_value=mock_user_resp),
+    ):
+        response = client.get(
+            f"/api/v1/integrations/spotify/callback?code=abc&state={mock_user.id}"
+        )
+        assert response.status_code == 200
+        assert response.json()["message"] == "Spotify relay connected!"
+
+    app.dependency_overrides.clear()
+
+
+def test_save_relay_config():
+    """Test saving user-specific relay credentials."""
+    from backend.app.db.session import get_async_session
+
+    mock_db = MagicMock()
+    mock_db.commit = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    app.dependency_overrides[get_async_session] = lambda: mock_db
+    app.dependency_overrides[current_active_user] = lambda: mock_user
+
+    payload = {"provider": "spotify", "client_id": "custom_id", "client_secret": "custom_secret"}
+    response = client.post("/api/v1/integrations/relay/config", json=payload)
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+    app.dependency_overrides.clear()
+
+
+def test_spotify_login_with_custom_creds():
+    """Test spotify login uses custom credentials if available."""
+    from backend.app.db.session import get_async_session
+    from backend.app.models.service_connection import ServiceConnection
+
+    mock_db = MagicMock()
+    mock_conn = MagicMock(spec=ServiceConnection)
+    mock_conn.credentials = {"client_id": "user_client_id"}
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_conn
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    app.dependency_overrides[get_async_session] = lambda: mock_db
+    app.dependency_overrides[current_active_user] = lambda: mock_user
+
+    response = client.get("/api/v1/integrations/spotify/login")
+    assert response.status_code == 200
+    assert "user_client_id" in response.json()["url"]
     app.dependency_overrides.clear()
 
 

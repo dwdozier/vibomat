@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import ForeignKey, String, DateTime, UUID
+from sqlalchemy import ForeignKey, String, DateTime, UUID, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.db.session import Base
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from .user import User
@@ -23,6 +23,9 @@ class ServiceConnection(Base):
     access_token: Mapped[str] = mapped_column(String(1024), nullable=False)
     refresh_token: Mapped[str] = mapped_column(String(1024), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+    # User-supplied configuration (e.g., Client ID, Client Secret for custom app)
+    credentials: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="service_connections")

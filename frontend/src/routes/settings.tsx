@@ -39,11 +39,32 @@ function Settings() {
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRelayModalOpen, setIsRelayModalOpen] = useState(false)
   const [activeMetadata, setActiveMetadata] = useState<EnrichedMetadata | null>(null)
+  const [relayCreds, setRelayCreds] = useState({ client_id: '', client_secret: '' })
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => auth.getCurrentUser()
+  })
+
+  const relayMutation = useMutation({
+    mutationFn: async (creds: typeof relayCreds) => {
+      const res = await fetch('/api/v1/integrations/relay/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'spotify',
+          ...creds
+        }),
+      })
+      return res.json()
+    },
+    onSuccess: () => {
+      setIsRelayModalOpen(false)
+      // Now trigger the actual OAuth login flow
+      handleConnectSpotify()
+    }
   })
 
   const updateMutation = useMutation({
@@ -126,10 +147,16 @@ function Settings() {
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
+      } else if (data.detail) {
+        alert(data.detail)
       }
     } catch (err) {
       console.error("Failed to initiate Spotify connection", err)
     }
+  }
+
+  const handleOpenRelayModal = () => {
+    setIsRelayModalOpen(true)
   }
 
   const handleRemoveAlbum = (index: number) => {
@@ -307,15 +334,81 @@ function Settings() {
                 <p className="font-body text-retro-dark/60 italic">High-fidelity playlist broadcasting.</p>
               </div>
             </div>
-            <button
-              onClick={handleConnectSpotify}
-              className="px-8 py-3 bg-retro-teal text-retro-dark font-display text-xl uppercase rounded-xl border-4 border-retro-dark shadow-retro-sm hover:bg-teal-400 transition-all"
-            >
-              Connect
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={handleOpenRelayModal}
+                className="px-6 py-3 bg-white text-retro-dark font-display text-lg uppercase rounded-xl border-4 border-retro-dark shadow-retro-sm hover:bg-gray-100 transition-all"
+              >
+                Configure
+              </button>
+              <button
+                onClick={handleConnectSpotify}
+                className="px-8 py-3 bg-retro-teal text-retro-dark font-display text-xl uppercase rounded-xl border-4 border-retro-dark shadow-retro-sm hover:bg-teal-400 transition-all"
+              >
+                Connect
+              </button>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* Relay Configuration Modal */}
+      <Modal
+        isOpen={isRelayModalOpen}
+        onClose={() => setIsRelayModalOpen(false)}
+        title="Relay Configuration"
+      >
+        <div className="space-y-8">
+          <div className="bg-retro-cream p-6 rounded-xl border-4 border-retro-dark space-y-4">
+            <h5 className="font-display text-retro-dark uppercase flex items-center gap-2">
+              <Info className="w-5 h-5" /> Transmission Manual
+            </h5>
+            <p className="font-body text-sm text-retro-dark/80 leading-relaxed">
+              To establish a high-fidelity relay, you must provide credentials from your own
+              <span className="font-bold"> Spotify Developer Application</span>.
+            </p>
+            <ol className="font-body text-xs space-y-2 list-decimal ml-4 text-retro-dark/70">
+              <li>Visit the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-retro-teal underline font-bold">Spotify Developer Dashboard</a>.</li>
+              <li>Create a new "App" (Name it <span className="italic">Vibomat Relay</span>).</li>
+              <li>In App Settings, set your <span className="font-bold">Redirect URI</span> to: <br/>
+                <code className="bg-white px-1 border border-retro-dark select-all">http://localhost/api/v1/integrations/spotify/callback</code>
+              </li>
+              <li>Copy your <span className="font-bold">Client ID</span> and <span className="font-bold">Client Secret</span> into the fields below.</li>
+            </ol>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-display uppercase tracking-widest text-retro-dark/60">Client ID</label>
+              <input
+                type="text"
+                value={relayCreds.client_id}
+                onChange={(e) => setRelayCreds({ ...relayCreds, client_id: e.target.value })}
+                placeholder="e.g. 5f2a..."
+                className="w-full bg-white rounded-lg border-2 border-retro-dark p-3 font-body font-bold focus:outline-none focus:border-retro-teal"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-display uppercase tracking-widest text-retro-dark/60">Client Secret</label>
+              <input
+                type="password"
+                value={relayCreds.client_secret}
+                onChange={(e) => setRelayCreds({ ...relayCreds, client_secret: e.target.value })}
+                placeholder="••••••••••••••••"
+                className="w-full bg-white rounded-lg border-2 border-retro-dark p-3 font-body font-bold focus:outline-none focus:border-retro-teal"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={() => relayMutation.mutate(relayCreds)}
+            disabled={relayMutation.isPending}
+            className="w-full py-4 bg-retro-teal text-retro-dark font-display text-2xl uppercase rounded-xl border-4 border-retro-dark shadow-retro hover:bg-teal-400 active:shadow-none active:translate-x-1 active:translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+          >
+            {relayMutation.isPending ? <Disc className="animate-spin" /> : 'Synchronize Relay'}
+          </button>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={isModalOpen}
