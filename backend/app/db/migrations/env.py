@@ -8,6 +8,7 @@ from alembic import context
 
 # Import your models here for autogenerate support
 from backend.app.db.session import Base, DATABASE_URL
+from backend.app.models import *  # noqa: F401, F403
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
