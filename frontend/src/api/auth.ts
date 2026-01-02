@@ -10,7 +10,7 @@ export interface User {
   is_superuser: boolean
   is_verified: boolean
   is_public: boolean
-  favorite_artists: string[]
+  favorite_artists: unknown[] // Keep unknown[] here for flexibility in the API schema
   unskippable_albums: Album[]
 }
 

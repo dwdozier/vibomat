@@ -1,8 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Settings as SettingsIcon, Link2, Shield, User as UserIcon, Globe, Lock, Trash2, Plus, Disc } from 'lucide-react'
+import { Settings as SettingsIcon, Link2, Shield, User as UserIcon, Globe, Lock, Trash2, Plus, Disc, Info, ExternalLink } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { type User, type Album } from '../api/auth'
+import { type User } from '../api/auth'
+import { Modal } from '../components/Modal'
 
 export const Route = createFileRoute('/settings')({
   beforeLoad: async ({ context, location }) => {
@@ -19,11 +20,26 @@ export const Route = createFileRoute('/settings')({
   component: Settings,
 })
 
+interface EnrichedMetadata {
+  name: string
+  artist?: string
+  type?: string
+  country?: string
+  first_release_date?: string
+  primary_type?: string
+  source_url?: string
+  source_name?: string
+}
+
 function Settings() {
   const queryClient = useQueryClient()
   const { auth } = Route.useRouteContext()
   const [newArtist, setNewArtist] = useState('')
   const [newAlbum, setNewAlbum] = useState({ name: '', artist: '' })
+
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [activeMetadata, setActiveMetadata] = useState<EnrichedMetadata | null>(null)
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ['me'],
@@ -62,21 +78,21 @@ function Settings() {
         body: JSON.stringify({ artist_name: newArtist }),
       })
 
-      const artistName = enrichRes.ok ? (await enrichRes.json()).name : newArtist
-      const artists = [...(user.favorite_artists || []), artistName]
+      const enrichedArtist = enrichRes.ok ? await enrichRes.json() : { name: newArtist }
+      const artists = [...(user.favorite_artists || []), enrichedArtist]
       updateMutation.mutate({ favorite_artists: artists })
     } catch (err) {
       console.error("Enrichment failed", err)
-      const artists = [...(user.favorite_artists || []), newArtist]
+      const artists = [...(user.favorite_artists || []), { name: newArtist }]
       updateMutation.mutate({ favorite_artists: artists })
     }
 
     setNewArtist('')
   }
 
-  const handleRemoveArtist = (artist: string) => {
+  const handleRemoveArtist = (index: number) => {
     if (!user) return
-    const artists = (user.favorite_artists || []).filter((a: string) => a !== artist)
+    const artists = (user.favorite_artists || []).filter((_: unknown, i: number) => i !== index)
     updateMutation.mutate({ favorite_artists: artists })
   }
 
@@ -92,12 +108,12 @@ function Settings() {
         body: JSON.stringify({ artist_name: newAlbum.artist, album_name: newAlbum.name }),
       })
 
-      const enrichedAlbum = enrichRes.ok ? await enrichRes.json() : newAlbum
+      const enrichedAlbum = enrichRes.ok ? await enrichRes.json() : { ...newAlbum }
       const albums = [...(user.unskippable_albums || []), enrichedAlbum]
       updateMutation.mutate({ unskippable_albums: albums })
     } catch (err) {
       console.error("Album enrichment failed", err)
-      const albums = [...(user.unskippable_albums || []), newAlbum]
+      const albums = [...(user.unskippable_albums || []), { ...newAlbum }]
       updateMutation.mutate({ unskippable_albums: albums })
     }
 
@@ -120,6 +136,11 @@ function Settings() {
     if (!user) return
     const albums = (user.unskippable_albums || []).filter((_: unknown, i: number) => i !== index)
     updateMutation.mutate({ unskippable_albums: albums })
+  }
+
+  const handleViewMetadata = (meta: EnrichedMetadata) => {
+    setActiveMetadata(meta)
+    setIsModalOpen(true)
   }
 
   if (isLoading || !user) return <div className="p-20 text-center font-display uppercase">Booting Systems...</div>
@@ -193,14 +214,25 @@ function Settings() {
               </button>
             </form>
             <div className="flex flex-wrap gap-3 mt-4">
-              {user.favorite_artists?.map((artist: string) => (
-                <div key={artist} className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border-2 border-retro-dark font-body font-bold">
-                  {artist}
-                  <button onClick={() => handleRemoveArtist(artist)} className="text-retro-pink hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+              {user.favorite_artists?.map((artist: unknown, i: number) => {
+                const name = typeof artist === 'string' ? artist : (artist as EnrichedMetadata).name;
+                const meta = typeof artist === 'string' ? { name: artist } : artist as EnrichedMetadata;
+                return (
+                  <div key={i} className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border-2 border-retro-dark font-body font-bold">
+                    {name}
+                    <button
+                      onClick={() => handleViewMetadata(meta)}
+                      className="text-retro-teal hover:text-teal-600 p-1"
+                      title="View Archive Data"
+                    >
+                      <Info className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleRemoveArtist(i)} className="text-retro-pink hover:text-red-600 p-1">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -228,20 +260,31 @@ function Settings() {
               </div>
             </form>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              {user.unskippable_albums?.map((album: Album, i: number) => (
-                <div key={i} className="flex items-center justify-between bg-white p-4 rounded-lg border-2 border-retro-dark">
-                  <div className="flex items-center gap-3">
-                    <Disc className="w-6 h-6 text-retro-dark" />
-                    <div>
-                      <div className="font-body font-bold text-sm leading-tight">{album.name}</div>
-                      <div className="text-xs text-retro-dark/60">{album.artist}</div>
+              {user.unskippable_albums?.map((album: unknown, i: number) => {
+                const a = album as EnrichedMetadata;
+                return (
+                  <div key={i} className="flex items-center justify-between bg-white p-4 rounded-lg border-2 border-retro-dark">
+                    <div className="flex items-center gap-3">
+                      <Disc className="w-6 h-6 text-retro-dark" />
+                      <div>
+                        <div className="font-body font-bold text-sm leading-tight">{a.name}</div>
+                        <div className="text-xs text-retro-dark/60">{a.artist}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewMetadata(a)}
+                        className="text-retro-teal hover:text-teal-600 p-2 border-2 border-transparent hover:border-retro-dark rounded-lg transition-all"
+                      >
+                        <Info className="w-5 h-5" />
+                      </button>
+                      <button onClick={() => handleRemoveAlbum(i)} className="text-retro-pink hover:text-red-600 p-2 border-2 border-transparent hover:border-retro-dark rounded-lg transition-all">
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
-                  <button onClick={() => handleRemoveAlbum(i)} className="text-retro-pink hover:text-red-600 p-2">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -273,6 +316,67 @@ function Settings() {
           </div>
         </div>
       </section>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Archive Highlights"
+      >
+        {activeMetadata && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 bg-retro-teal/20 rounded-full border-4 border-retro-dark flex items-center justify-center shadow-retro-sm">
+                {activeMetadata.artist ? <Disc className="w-10 h-10" /> : <UserIcon className="w-10 h-10" />}
+              </div>
+              <div>
+                <h4 className="text-3xl font-display text-retro-dark uppercase">{activeMetadata.name}</h4>
+                {activeMetadata.artist && <p className="font-body text-lg italic text-retro-dark/60">By {activeMetadata.artist}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 py-6 border-y-4 border-retro-dark border-dashed">
+              {activeMetadata.type && (
+                <div>
+                  <span className="block text-xs font-display uppercase text-retro-dark/40 tracking-widest">Type</span>
+                  <span className="font-body font-bold text-retro-dark uppercase">{activeMetadata.type}</span>
+                </div>
+              )}
+              {activeMetadata.country && (
+                <div>
+                  <span className="block text-xs font-display uppercase text-retro-dark/40 tracking-widest">Origin</span>
+                  <span className="font-body font-bold text-retro-dark uppercase">{activeMetadata.country}</span>
+                </div>
+              )}
+              {activeMetadata.first_release_date && (
+                <div>
+                  <span className="block text-xs font-display uppercase text-retro-dark/40 tracking-widest">Release Date</span>
+                  <span className="font-body font-bold text-retro-dark">{activeMetadata.first_release_date}</span>
+                </div>
+              )}
+              {activeMetadata.primary_type && (
+                <div>
+                  <span className="block text-xs font-display uppercase text-retro-dark/40 tracking-widest">Category</span>
+                  <span className="font-display text-retro-dark uppercase">{activeMetadata.primary_type}</span>
+                </div>
+              )}
+            </div>
+
+            {activeMetadata.source_url && (
+              <div className="pt-4">
+                <a
+                  href={activeMetadata.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-retro-teal hover:text-teal-600 font-display uppercase tracking-widest underline decoration-2 underline-offset-4 transition-all"
+                >
+                  View on {activeMetadata.source_name}
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
