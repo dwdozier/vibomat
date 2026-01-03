@@ -4,7 +4,7 @@ This plan outlines the steps to stabilize the Vibomat MVP for initial release.
 
 ---
 
-## Phase 1: Backend & Relay Stabilization
+## Phase 1: Backend & Relay Stabilization [checkpoint: d3ebad3]
 
 - [x] **Task 1: Audit Spotify Relay & Auth** <!-- 58b851b, 0d5f357 -->
   - [ ] Write tests for Spotify OAuth flow and relay synchronization.
@@ -15,19 +15,31 @@ This plan outlines the steps to stabilize the Vibomat MVP for initial release.
 - [x] **Task 3: AI Service Prompt Optimization** <!-- da802cf -->
   - [ ] Write evaluation tests for AI-generated playlists.
   - [ ] Refine Gemini prompts to improve track relevance and metadata quality.
-- [ ] **Task 4: Conductor - User Manual Verification 'Backend & Relay Stabilization' (Protocol in workflow.md)**
+- [x] **Task 4: Conductor - User Manual Verification 'Backend & Relay Stabilization' (Protocol in
+    workflow.md)**
 
 ---
 
-## Phase 2: Frontend Polishing & UI/UX
+## Phase 2: Playlist Management & UI Polish
 
-- [ ] **Task 1: Thematic UI Audit**
-  - [ ] Write Vitest snapshots for core components (`DataTable`, `Modal`).
-  - [ ] Apply Art Deco borders and "Automat" styling according to `product-guidelines.md`.
-- [ ] **Task 2: State Management & Error Handling**
-  - [ ] Write tests for TanStack Query error boundaries and loading states.
-  - [ ] Implement consistent error notifications for Citizens when a Relay fails.
-- [ ] **Task 3: Conductor - User Manual Verification 'Frontend Polishing & UI/UX' (Protocol in workflow.md)**
+- [ ] **Task 1: AI-Powered Creative Naming**
+  - [ ] Update `backend/core/ai.py` to request a "title" and "description" in the JSON response.
+  - [ ] Update `backend/app/services/ai_service.py` to handle the new response structure.
+  - [ ] Add tests for title generation.
+- [ ] **Task 2: Playlist Persistence & Tracking**
+  - [ ] Verify `Playlist` model in `backend/app/models/playlist.py` supports tracking status
+        (draft/transmitted).
+  - [ ] Implement `create_playlist` and `update_playlist` endpoints to save AI results *before*
+        Spotify transmission.
+- [ ] **Task 3: Profile & Playlist View (Frontend)**
+  - [ ] Create/Update `frontend/src/routes/profile.$userId.tsx` to list user's playlists
+        (transmitted and drafts).
+  - [ ] Implement a "Playlist Details" view (modal or page) to see tracks and metadata.
+  - [ ] Add "Transmit to Spotify" button to the Playlist Details view.
+- [ ] **Task 4: Thematic UI Polish**
+  - [ ] Apply Art Deco borders and "Automat" styling to the new Playlist views.
+- [ ] **Task 5: Conductor - User Manual Verification 'Playlist Management & UI Polish' (Protocol in
+    workflow.md)**
 
 ---
 
