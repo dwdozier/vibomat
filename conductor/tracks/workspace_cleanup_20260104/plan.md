@@ -13,8 +13,9 @@ Consolidate all useful information from `GEMINI.md` into the structured Conducto
       overview. c4e2a43
 - [x] Task: Explicitly document the Testing Stack (Pytest for backend, Playwright for frontend/E2E)
       in `conductor/tech-stack.md`. 4af8e46
-- [ ] Task: Update `conductor/code_styleguides/python.md` and
-      `conductor/code_styleguides/typescript.md` with the specific rules from `GEMINI.md`.
+- [x] Task: Update `conductor/code_styleguides/python.md` and
+      `conductor/code_styleguides/typescript.md` with the specific rules from
+      `GEMINI.md`. e07dd7d
 - [ ] Task: Update `conductor/workflow.md` with "Key Commands", "Critical Rules", and the
       "Branching Strategy" section.
 - [ ] Task: Conductor - User Manual Verification 'Directive Migration' (Protocol in workflow.md)
