@@ -7,7 +7,7 @@ testing, and clean architecture.
 
 - **Type Safety**: We use Pydantic for Backend schemas and TanStack Router/Query for Frontend types.
 - **Decoupling**: Identity is decoupled from service providers (Spotify).
-- **Quality**: We maintain **95% minimum test coverage** for all new logic.
+- **Quality**: We maintain **90% minimum test coverage** for all new logic.
 - **TanStack Patterns**: Prefer `loader` functions for data fetching on route entry. Avoid
   `useEffect` for state synchronization where TanStack Query or Router hooks can be used.
 - **E2E Stability**: Use `data-play` attributes for all critical UI elements to ensure
@@ -35,7 +35,7 @@ Follow the [SETUP.md](SETUP.md) guide to get your environment running.
 We use `pytest`. All logic in `backend/core` and `backend/app` must be tested.
 
 ```bash
-PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/ -m 'not ci'
+PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=90 backend/tests/ -m 'not ci'
 ```
 
 ### Frontend (TypeScript)

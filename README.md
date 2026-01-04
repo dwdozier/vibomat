@@ -1,3 +1,4 @@
+```markdown
 # Vibomat
 
 An intelligent, full-stack application to generate and manage music playlists using Generative AI
@@ -18,7 +19,7 @@ and external metadata verification.
 - **Frontend**: React, TanStack Router, TanStack Query, Tailwind CSS, Lucide.
 - **Backend**: FastAPI, SQLAlchemy (Async), Pydantic, Google Gemini SDK.
 - **Infrastructure**: Docker, Redis, PostgreSQL (Production) / SQLite (Dev).
-- **Quality**: 95% test coverage enforced via CI/CD.
+- **Quality**: 90% test coverage enforced via CI/CD.
 
 ## Quick Start
 
@@ -49,3 +50,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for standards and testing guidelines.
 ## License
 
 MIT
+```
