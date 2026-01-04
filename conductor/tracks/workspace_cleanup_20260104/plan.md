@@ -28,7 +28,7 @@ Formalize the lessons learned from the initial setup and remove legacy files.
       `conductor/workflow.md` to ensure it is robust and actionable. bb214f3
 - [x] Task: Perform a final cross-reference check between the new Conductor files and `GEMINI.md` to
       ensure no "global directives" or critical context was lost. a0889ba
-- [ ] Task: Delete the legacy `GEMINI.md` file.
+- [x] Task: Delete the legacy `GEMINI.md` file. 1e7e908
 - [ ] Task: Delete the `planning/` directory and its contents, as they are now superseded by
       Conductor tracks.
 - [ ] Task: Conductor - User Manual Verification 'Cleanup and Standardization' (Protocol in
