@@ -136,14 +136,20 @@ phase in `plan.md`.
           testing style.** The new tests **must** validate the functionality described in this
           phase's tasks (`plan.md`).
 
-3. **Execute Automated Tests with Proactive Debugging:**
-    - Before execution, you **must** announce the exact shell command you will use to run the tests.
-    - **Example Announcement:** "I will now run the automated test suite to verify the phase.
-      **Command:** `CI=true npm test`"
+3. **Execute Automated Tests and Linters with Proactive Debugging:**
+    - Before execution, you **must** identify the correct test command, directory, and linting
+      tools for the project by inspecting `pyproject.toml`, `package.json`, or existing workflow
+      patterns.
+    - You **must** announce the exact shell command you will use.
+    - **CRITICAL:** Always include project-specific linting (e.g., `pre-commit run --all-files`,
+      `ruff check .`, `npm run lint`) and documentation checks in this step.
+    - **Example Announcement:** "I will now run the automated test suite and linting checks to
+      verify the phase. **Command:** `pytest && pre-commit run --all-files`"
     - Execute the announced command.
-    - If tests fail, you **must** inform the user and begin debugging. You may attempt to propose a
-      fix a **maximum of two times**. If the tests still fail after your second proposed fix, you
-      **must stop**, report the persistent failure, and ask the user for guidance.
+    - If tests or linters fail, you **must** inform the user and begin debugging. You may attempt
+      to propose a fix a **maximum of two times**. If the failures persist after your second
+      proposed fix, you **must stop**, report the persistent failure, and ask the user for
+      guidance.
 
 4. **Propose a Detailed, Actionable Manual Verification Plan:**
     - **CRITICAL:** To generate the plan, first analyze `product.md`, `product-guidelines.md`, and
@@ -192,9 +198,11 @@ phase in `plan.md`.
 7. **Get and Record Phase Checkpoint SHA:**
     - **Step 7.1: Get Commit Hash:** Obtain the hash of the *just-created checkpoint commit*
       (`git log -1 --format="%H"`).
-    - **Step 7.2: Update Plan:** Read `plan.md`, find the heading for the completed phase, and
-      append the first 7 characters of the commit hash in the format `[checkpoint: <sha>]`.
-    - **Step 7.3: Write Plan:** Write the updated content back to `plan.md`.
+    - **Step 7.2: Update Plan Heading:** Read `plan.md`, find the heading for the completed phase,
+      and append the first 7 characters of the commit hash in the format `[checkpoint: <sha>]`.
+    - **Step 7.3: Update Verification Task:** Find the `Conductor - User Manual Verification` task
+      within that phase and append the same 7-character SHA to the end of that line.
+    - **Step 7.4: Write Plan:** Write the updated content back to `plan.md`.
 
 8. **Commit Plan Update:**
     - **Action:** Stage the modified `plan.md` file.
