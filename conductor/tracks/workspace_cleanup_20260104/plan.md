@@ -9,7 +9,7 @@ Consolidate all useful information from `GEMINI.md` into the structured Conducto
 
 - [x] Task: Update `conductor/product.md` with "Project Summary" and "Vib-O-Mat Terminology" from
       `GEMINI.md`. edc3013
-- [ ] Task: Update `conductor/tech-stack.md` with "Core Architecture" and "Coding Standards"
+- [~] Task: Update `conductor/tech-stack.md` with "Core Architecture" and "Coding Standards"
       overview.
 - [ ] Task: Explicitly document the Testing Stack (Pytest for backend, Playwright for frontend/E2E)
       in `conductor/tech-stack.md`.
