@@ -27,7 +27,7 @@ Formalize the lessons learned from the initial setup and remove legacy files.
 - [x] Task: Review and refine the "Phase Completion Verification and Checkpointing Protocol" in
       `conductor/workflow.md` to ensure it is robust and actionable. bb214f3
 - [x] Task: Perform a final cross-reference check between the new Conductor files and `GEMINI.md` to
-      ensure no "global directives" or critical context was lost. d23603f
+      ensure no "global directives" or critical context was lost. a0889ba
 - [ ] Task: Delete the legacy `GEMINI.md` file.
 - [ ] Task: Delete the `planning/` directory and its contents, as they are now superseded by
       Conductor tracks.
