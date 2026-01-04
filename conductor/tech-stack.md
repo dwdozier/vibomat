@@ -48,6 +48,8 @@
 
 ## Quality & Tooling
 
+- **Philosophy:** Treat linters and formatters as **verification tools**, not just fixers. Aim to
+  write compliant code (correct line lengths, types, formatting) from the start.
 - **Python Linting/Formatting:** Ruff, Black
 - **Frontend Linting:** ESLint
 - **Backend Testing:** Pytest, Pytest-Asyncio, Pytest-Cov
