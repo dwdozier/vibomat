@@ -16,8 +16,8 @@ Consolidate all useful information from `GEMINI.md` into the structured Conducto
 - [x] Task: Update `conductor/code_styleguides/python.md` and
       `conductor/code_styleguides/typescript.md` with the specific rules from
       `GEMINI.md`. e07dd7d
-- [ ] Task: Update `conductor/workflow.md` with "Key Commands", "Critical Rules", and the
-      "Branching Strategy" section.
+- [x] Task: Update `conductor/workflow.md` with "Key Commands", "Critical Rules", and the
+      "Branching Strategy" section. d23603f
 - [ ] Task: Conductor - User Manual Verification 'Directive Migration' (Protocol in workflow.md)
 
 ## Phase 2: Protocol Refinement and Cleanup
