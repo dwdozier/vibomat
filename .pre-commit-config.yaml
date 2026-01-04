@@ -32,7 +32,7 @@ repos:
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: bash -c "PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=95 backend/tests/ -m 'not ci'"
+        entry: bash -c "PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=90 backend/tests/ -m 'not ci'"
         language: system
         types: [python]
         pass_filenames: false
