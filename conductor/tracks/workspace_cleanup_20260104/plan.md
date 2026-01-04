@@ -11,8 +11,8 @@ Consolidate all useful information from `GEMINI.md` into the structured Conducto
       `GEMINI.md`. edc3013
 - [x] Task: Update `conductor/tech-stack.md` with "Core Architecture" and "Coding Standards"
       overview. c4e2a43
-- [ ] Task: Explicitly document the Testing Stack (Pytest for backend, Playwright for frontend/E2E)
-      in `conductor/tech-stack.md`.
+- [x] Task: Explicitly document the Testing Stack (Pytest for backend, Playwright for frontend/E2E)
+      in `conductor/tech-stack.md`. 4af8e46
 - [ ] Task: Update `conductor/code_styleguides/python.md` and
       `conductor/code_styleguides/typescript.md` with the specific rules from `GEMINI.md`.
 - [ ] Task: Update `conductor/workflow.md` with "Key Commands", "Critical Rules", and the
