@@ -28,14 +28,9 @@ All tasks follow a strict lifecycle:
 - **No Rule Bypassing:** Never bypass security rules, branch protections, or verification failures
   (linting, testing, etc.) without explicit user approval. Always employ the Pull Request workflow
   unless specifically directed to push to `main`.
-- **Branching Strategy:** Feature branches must always branch off the latest `main` branch.
-  - **No Chaining:** Never create a feature branch from another unmerged feature branch. This
-    prevents complex "chained" dependencies that clutter history and complicate reviews.
-  - **Related Changes:** If a request involves bug fixes or refinements to an existing open PR,
-    apply those changes directly to that PR's branch.
-  - **Unrelated Changes:** For new, unrelated features or tasks, always return to `main`, pull the
-    latest changes, and create a new branch. If the new work depends on an unmerged PR, inform the
-    user and wait for the merge or seek explicit approval to branch off the feature.
+- **Preemptive Formatting:** Do NOT rely on pre-commit hooks to fix formatting. Always write code
+  that adheres to the project's standards (100-char line limit, single trailing newline) *before*
+  saving or committing. Treat linters as validators, not fixers.
 
 #### Documentation Automation
 
