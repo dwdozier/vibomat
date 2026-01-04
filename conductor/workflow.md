@@ -15,6 +15,28 @@
 
 All tasks follow a strict lifecycle:
 
+### Critical Rules
+
+- **Strict Write Policy:** Never use `write_file` on an existing file unless specifically told to
+  "overwrite" or "replace" it. Always `read_file` first to perform a merge, or use
+  `run_shell_command` with `cat >>` for appending. For files over 50 lines, always prefer
+  incremental edits.
+- **No Force Pushing:** Force pushing is strictly forbidden as it rewrites history and can disrupt
+  collaboration. It should only be used as a last resort and REQUIRES explicit user approval.
+  Prefer accumulating multiple commits within an open PR, as they will be squash-merged upon
+  completion.
+- **No Rule Bypassing:** Never bypass security rules, branch protections, or verification failures
+  (linting, testing, etc.) without explicit user approval. Always employ the Pull Request workflow
+  unless specifically directed to push to `main`.
+- **Branching Strategy:** Feature branches must always branch off the latest `main` branch.
+  - **No Chaining:** Never create a feature branch from another unmerged feature branch. This
+    prevents complex "chained" dependencies that clutter history and complicate reviews.
+  - **Related Changes:** If a request involves bug fixes or refinements to an existing open PR,
+    apply those changes directly to that PR's branch.
+  - **Unrelated Changes:** For new, unrelated features or tasks, always return to `main`, pull the
+    latest changes, and create a new branch. If the new work depends on an unmerged PR, inform the
+    user and wait for the merge or seek explicit approval to branch off the feature.
+
 ### Standard Task Workflow
 
 1. **Select Task:** Choose the next available task from `plan.md` in sequential order
@@ -211,8 +233,20 @@ framework, and build tools.**
 ### Daily Development
 
 ```bash
-# Example: Commands for common daily tasks
-# e.g., for a Python project: pytest, ruff check ., black .
+# Run the application
+vibomat build playlists/your-playlist.json --source [env|keyring]
+
+# Format code
+black .
+
+# Lint code
+ruff check .
+
+# Run tests with coverage
+pytest --cov=spotify_playlist_builder tests/
+
+# Run pre-commit manually
+pre-commit run --all-files
 ```
 
 ### Before Committing
