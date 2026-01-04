@@ -41,11 +41,30 @@ This document summarizes key rules and best practices from the Google TypeScript
 
 ## 5. Style Rules
 
+- **Line Length:** 100 characters (**Strictly enforced**).
 - **Indentation:** 2 spaces. Never use tabs.
 - **Semicolons:** Required at the end of every statement.
 - **Quotes:** Use single quotes `'` for strings by default. Use backticks `` ` `` for template
-    literals.
+  literals.
 - **Trailing Commas:** Use trailing commas in multi-line object and array literals.
+
+## 6. React & TanStack Patterns
+
+- **Avoid `useEffect`:** Prefer modern TanStack patterns (TanStack Query, TanStack Router
+  loaders/hooks).
+- **Data Fetching:** Always prefer TanStack Router `loader` functions for data fetching on route
+  entry over the `useEffect + useState` pattern.
+- **TanStack Router Context:** Use `createRootRouteWithContext<T>()` and access it via
+  `Route.useRouteContext()`. Avoid `Route.useContext()`.
+- **E2E Testing:** Standardize on `data-play` attributes for Playwright locators to decouple tests
+  from visual styling or text content.
+
+## 7. Clean Code & Idiomatic Solutions
+
+- **Philosophy:** ALWAYS prioritize clean, idiomatic, and maintainable solutions over fragile
+  workarounds or "hacks."
+- **Quality over Speed:** Do not sacrifice code quality for speed; aim for standard solutions that
+  are easy to reason about.
 
 **BE CONSISTENT.** When editing code, match the existing style.
 

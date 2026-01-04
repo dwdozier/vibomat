@@ -1,5 +1,11 @@
 # Vibomat Product Guide
 
+## Project Summary
+
+Vibomat is a universal music platform to generate and manage playlists using Generative AI and
+external metadata verification. It supports multiple streaming services and uses a FastAPI backend
+with a TanStack/React frontend.
+
 ## Initial Concept
 
 Vibomat is an AI-powered universal music platform for generating and managing playlists with
@@ -11,6 +17,13 @@ To create a platform-agnostic music management suite that bridges the gap betwee
 streaming services (Spotify, Apple Music, Tidal, etc.) while fostering social sharing and
 discovery. Vibomat aims to be the definitive tool for users to seamlessly curate, transfer, and
 share music across the entire digital music ecosystem.
+
+## Vib-O-Mat Terminology
+
+- **Citizens:** Users
+- **Archives:** Playlists
+- **Relays:** Service Connections
+- **Nodes:** OAuth Identity Links
 
 ## Target Audience
 

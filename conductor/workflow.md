@@ -15,7 +15,39 @@
 
 All tasks follow a strict lifecycle:
 
-### Standard Task Workflow
+### Critical Rules
+
+- **Strict Write Policy:** Never use `write_file` on an existing file unless specifically told to
+  "overwrite" or "replace" it. Always `read_file` first to perform a merge, or use
+  `run_shell_command` with `cat >>` for appending. For files over 50 lines, always prefer
+  incremental edits.
+- **No Force Pushing:** Force pushing is strictly forbidden as it rewrites history and can disrupt
+  collaboration. It should only be used as a last resort and REQUIRES explicit user approval.
+  Prefer accumulating multiple commits within an open PR, as they will be squash-merged upon
+  completion.
+- **No Rule Bypassing:** Never bypass security rules, branch protections, or verification failures
+  (linting, testing, etc.) without explicit user approval. Always employ the Pull Request workflow
+  unless specifically directed to push to `main`.
+- **Preemptive Formatting:** Do NOT rely on pre-commit hooks to fix formatting. Always write code
+  that adheres to the project's standards (100-char line limit, single trailing newline) *before*
+  saving or committing. Treat linters as validators, not fixers.
+
+#### Documentation Automation
+
+A **Documentation Agent** (CI/CD service) automatically monitors code changes and updates
+project documentation.
+
+- **Workflow:**
+  - Detects changes in code, configuration, or specifications.
+  - Runs `agent_docs.py` using Gemini.
+  - Updates **`README.md`**, **`CONTRIBUTING.md`**, and **`SETUP.md`** to keep them synchronized.
+  - Generates/Updates usage guides in `docs/guides/`.
+  - Generates a PR for human review.
+- **Developer Responsibility:**
+  - Review auto-generated documentation PRs for technical accuracy and style compliance.
+  - Merge documentation PRs promptly to keep guides in sync with code.
+
+## Standard Task Workflow
 
 1. **Select Task:** Choose the next available task from `plan.md` in sequential order
 
@@ -114,14 +146,20 @@ phase in `plan.md`.
           testing style.** The new tests **must** validate the functionality described in this
           phase's tasks (`plan.md`).
 
-3. **Execute Automated Tests with Proactive Debugging:**
-    - Before execution, you **must** announce the exact shell command you will use to run the tests.
-    - **Example Announcement:** "I will now run the automated test suite to verify the phase.
-      **Command:** `CI=true npm test`"
+3. **Execute Automated Tests and Linters with Proactive Debugging:**
+    - Before execution, you **must** identify the correct test command, directory, and linting
+      tools for the project by inspecting `pyproject.toml`, `package.json`, or existing workflow
+      patterns.
+    - You **must** announce the exact shell command you will use.
+    - **CRITICAL:** Always include project-specific linting (e.g., `pre-commit run --all-files`,
+      `ruff check .`, `npm run lint`) and documentation checks in this step.
+    - **Example Announcement:** "I will now run the automated test suite and linting checks to
+      verify the phase. **Command:** `pytest && pre-commit run --all-files`"
     - Execute the announced command.
-    - If tests fail, you **must** inform the user and begin debugging. You may attempt to propose a
-      fix a **maximum of two times**. If the tests still fail after your second proposed fix, you
-      **must stop**, report the persistent failure, and ask the user for guidance.
+    - If tests or linters fail, you **must** inform the user and begin debugging. You may attempt
+      to propose a fix a **maximum of two times**. If the failures persist after your second
+      proposed fix, you **must stop**, report the persistent failure, and ask the user for
+      guidance.
 
 4. **Propose a Detailed, Actionable Manual Verification Plan:**
     - **CRITICAL:** To generate the plan, first analyze `product.md`, `product-guidelines.md`, and
@@ -170,9 +208,11 @@ phase in `plan.md`.
 7. **Get and Record Phase Checkpoint SHA:**
     - **Step 7.1: Get Commit Hash:** Obtain the hash of the *just-created checkpoint commit*
       (`git log -1 --format="%H"`).
-    - **Step 7.2: Update Plan:** Read `plan.md`, find the heading for the completed phase, and
-      append the first 7 characters of the commit hash in the format `[checkpoint: <sha>]`.
-    - **Step 7.3: Write Plan:** Write the updated content back to `plan.md`.
+    - **Step 7.2: Update Plan Heading:** Read `plan.md`, find the heading for the completed phase,
+      and append the first 7 characters of the commit hash in the format `[checkpoint: <sha>]`.
+    - **Step 7.3: Update Verification Task:** Find the `Conductor - User Manual Verification` task
+      within that phase and append the same 7-character SHA to the end of that line.
+    - **Step 7.4: Write Plan:** Write the updated content back to `plan.md`.
 
 8. **Commit Plan Update:**
     - **Action:** Stage the modified `plan.md` file.
@@ -211,8 +251,20 @@ framework, and build tools.**
 ### Daily Development
 
 ```bash
-# Example: Commands for common daily tasks
-# e.g., for a Python project: pytest, ruff check ., black .
+# Run the application
+vibomat build playlists/your-playlist.json --source [env|keyring]
+
+# Format code
+black .
+
+# Lint code
+ruff check .
+
+# Run tests with coverage
+pytest --cov=spotify_playlist_builder tests/
+
+# Run pre-commit manually
+pre-commit run --all-files
 ```
 
 ### Before Committing

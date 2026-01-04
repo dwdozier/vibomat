@@ -1,0 +1,8 @@
+{
+  "track_id": "workspace_cleanup_20260104",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-01-04T00:00:00Z",
+  "updated_at": "2026-01-04T00:00:00Z",
+  "description": "Standardize the AI workspace by migrating existing directives from the project-level GEMINI.md and global directives into the Conductor structure."
+}
