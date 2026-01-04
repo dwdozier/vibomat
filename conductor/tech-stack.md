@@ -36,6 +36,17 @@
 - **Cache/Broker:** Redis
 - **Containerization:** Docker & Docker Compose
 
+## Testing Stack
+
+- **Backend (Unit/Integration):** **Pytest** with `pytest-asyncio` for asynchronous testing and
+  `pytest-cov` for coverage reporting.
+- **Frontend (Unit/Component):** **Vitest** with `React Testing Library` for logic and component
+  verification.
+- **End-to-End (E2E):** **Playwright** (Python-based via `pytest-playwright`) for Critical User
+  Journeys (CUJs).
+- **Sanity Checks:** A specialized `e2e-sanity` check (Playwright) must pass for every PR to
+  ensure core site availability.
+
 ## Quality & Tooling
 
 - **Python Linting/Formatting:** Ruff, Black
