@@ -53,8 +53,10 @@ This document summarizes key rules and best practices from the Google Python Sty
   workarounds, "hacks," or monkeypatching.
 - **Library Bugs:** If a library has a bug, seek a declarative or structural fix within the
   project's code first.
+- **SQLAlchemy:** When using joined eager loads on collections, always call `.unique()` on the
+  execution result to avoid `InvalidRequestError` caused by duplicate parent rows.
 - **Quality over Speed:** Do not sacrifice code quality for speed; aim for standard solutions that
-  are easy to reason about, even if they require multiple iterations to perfect.
+  are easy to reason about.
 
 **BE CONSISTENT.** When editing code, match the existing style.
 

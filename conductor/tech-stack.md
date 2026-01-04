@@ -73,7 +73,14 @@
 - **Documentation Linting:** Proactively verify `markdownlint` conformance (especially the
   100-character line length limit) before every commit to ensure CI efficiency.
 
-## Implementation Patterns
+## Troubleshooting
+
+- **Vite 504 (Outdated Optimize Dep):** A '504 (Outdated Optimize Dep)' error in the browser
+  usually indicates a stale cache in the `node_modules/.vite` directory. Resolve by restarting the
+  dev server or clearing the `.vite` directory.
+- **SQLAlchemy Duplicate Rows:** When using joined eager loads on collections, always call
+  `.unique()` on the execution result to avoid `InvalidRequestError` caused by duplicate parent
+  rows.
 
 - **Admin Dashboard:** Favor native React/TanStack components over external libraries like
   `sqladmin` to maintain a consistent tech stack and avoid legacy dependencies.

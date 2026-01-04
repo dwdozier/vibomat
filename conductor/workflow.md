@@ -37,7 +37,22 @@ All tasks follow a strict lifecycle:
     latest changes, and create a new branch. If the new work depends on an unmerged PR, inform the
     user and wait for the merge or seek explicit approval to branch off the feature.
 
-### Standard Task Workflow
+#### Documentation Automation
+
+A **Documentation Agent** (CI/CD service) automatically monitors code changes and updates
+project documentation.
+
+- **Workflow:**
+  - Detects changes in code, configuration, or specifications.
+  - Runs `agent_docs.py` using Gemini.
+  - Updates **`README.md`**, **`CONTRIBUTING.md`**, and **`SETUP.md`** to keep them synchronized.
+  - Generates/Updates usage guides in `docs/guides/`.
+  - Generates a PR for human review.
+- **Developer Responsibility:**
+  - Review auto-generated documentation PRs for technical accuracy and style compliance.
+  - Merge documentation PRs promptly to keep guides in sync with code.
+
+## Standard Task Workflow
 
 1. **Select Task:** Choose the next available task from `plan.md` in sequential order
 
