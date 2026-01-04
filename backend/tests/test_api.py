@@ -238,10 +238,12 @@ def test_build_playlist_endpoint_success():
     app.dependency_overrides[current_active_user] = lambda: mock_user
 
     payload = {
-        "name": "Test Build",
-        "description": "Desc",
-        "public": False,
-        "tracks": [{"artist": "A", "track": "T"}],
+        "playlist_data": {
+            "name": "Test Build",
+            "description": "Desc",
+            "public": False,
+            "tracks": [{"artist": "A", "track": "T"}],
+        }
     }
 
     with (
@@ -277,7 +279,7 @@ def test_build_playlist_endpoint_no_connection():
     app.dependency_overrides[get_async_session] = lambda: mock_db
     app.dependency_overrides[current_active_user] = lambda: mock_user
 
-    payload = {"name": "Test", "tracks": []}
+    payload = {"playlist_data": {"name": "Test", "tracks": []}}
     response = client.post("/api/v1/playlists/build", json=payload)
     assert response.status_code == 400
     assert "Spotify relay station not connected" in response.json()["detail"]
@@ -389,7 +391,7 @@ def test_build_playlist_endpoint_failure():
     app.dependency_overrides[get_async_session] = lambda: mock_db
     app.dependency_overrides[current_active_user] = lambda: mock_user
 
-    payload = {"name": "Fail", "tracks": []}
+    payload = {"playlist_data": {"name": "Fail", "tracks": []}}
 
     with (
         patch(

@@ -39,12 +39,21 @@ class Playlist(PlaylistBase):
     user_id: uuid.UUID
     content_json: Dict[str, Any]
     total_duration_ms: Optional[int] = None
+    status: str = "draft"
+    provider: Optional[str] = None
+    provider_id: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class PlaylistRead(Playlist):
     pass
+
+
+class PlaylistBuildRequest(BaseModel):
+    playlist_id: Optional[uuid.UUID] = None
+    # Optional override or fallback if ID not provided
+    playlist_data: Optional[PlaylistCreate] = None
 
 
 class GenerationRequest(BaseModel):

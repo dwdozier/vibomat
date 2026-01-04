@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy import ForeignKey, String, JSON, Boolean, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.db.session import Base
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from .user import User
@@ -17,8 +17,13 @@ class Playlist(Base):
     )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str] = mapped_column(String(1024), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     public: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
+    provider: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    total_duration_ms: Mapped[Optional[int]] = mapped_column(nullable=True)
 
     # Store the tracks as JSON for flexibility
     content_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
