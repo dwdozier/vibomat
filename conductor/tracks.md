@@ -5,6 +5,12 @@ respective folder.
 
 ---
 
-## [~] Track: AI Workspace Cleanup and Conductor Standardization
+## [x] Track: AI Workspace Cleanup and Conductor Standardization
 
 *Link: [./conductor/tracks/workspace_cleanup_20260104/](./conductor/tracks/workspace_cleanup_20260104/)*
+
+---
+
+## [~] Track: Preemptive Formatting Compliance
+
+*Link: [./conductor/tracks/preemptive_formatting_20260104/](./conductor/tracks/preemptive_formatting_20260104/)*

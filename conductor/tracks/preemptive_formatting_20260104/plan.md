@@ -10,4 +10,4 @@ Update guidelines to prioritize correct formatting during generation.
       rules or guiding principles. 3083837
 - [x] Task: Update `conductor/tech-stack.md` to clarify the role of linters as verification (not
       just fixing) tools. 4a1a0d9
-- [ ] Task: Conductor - User Manual Verification 'Documentation Update' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Documentation Update' (Protocol in workflow.md)
