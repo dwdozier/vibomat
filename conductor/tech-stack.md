@@ -22,6 +22,7 @@
 ## Infrastructure
 
 - **Databases:** PostgreSQL (Production), SQLite (Development)
+  - **Extensions:** `pgvector` (Vector similarity search), `pg_trgm` (Fuzzy string matching)
 - **Cache/Broker:** Redis
 - **Containerization:** Docker & Docker Compose
 
