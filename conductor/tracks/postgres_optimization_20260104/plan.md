@@ -37,8 +37,8 @@ Implement advanced search features for Artists and Tracks using FTS and Trigrams
 - [x] Task: Write unit tests for fuzzy search and full-text search requirements. 22fc7d3
 - [x] Task: Create a migration to populate `tsvector` columns for existing Artist/Track records
       (backfill data). 836c942
-- [~] Task: Create functional GIN indices for Full Text Search on Artist/Track names.
-- [ ] Task: Implement `pg_trgm` indices for fuzzy name matching.
+- [x] Task: Create functional GIN indices for Full Text Search on Artist/Track names. 130b7a2
+- [~] Task: Implement `pg_trgm` indices for fuzzy name matching.
 - [ ] Task: Update the search service/API to leverage these new indexing strategies.
 - [ ] Task: Conductor - User Manual Verification 'Search & Discovery' (Protocol in workflow.md)
 
