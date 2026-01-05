@@ -19,7 +19,7 @@ Enable the necessary PostgreSQL extensions in the development and production env
 
 Optimize the storage and querying of playlist data within the `Archives` table.
 
-- [ ] Task: Create unit tests for querying specific fields within the `Archives` JSONB data.
+- [~] Task: Create unit tests for querying specific fields within the `Archives` JSONB data.
 - [ ] Task: Create a migration to analyze existing `Archives` data and ensure JSONB structures
       conform to expected indexing patterns.
 - [ ] Task: Implement GIN indices on the `Archives.playlist_data` (or equivalent) column for
