@@ -42,15 +42,17 @@ Implement advanced search features for Artists and Tracks using FTS and Trigrams
 - [x] Task: Update the search service/API to leverage these new indexing strategies. d2443a7
 - [x] Task: Conductor - User Manual Verification 'Search & Discovery' (Protocol in workflow.md) 163afd9
 
-## Phase 4: Vector Store Foundation (AI Logs)
+## Phase 4: Vector Store Foundation (AI Logs) [checkpoint: 4728225]
 
 Establish the database layer for storing and querying AI-generated embeddings.
 
 - [x] Task: Create unit tests for vector similarity search (top-k nearest neighbors). 5dfcfbb
 - [x] Task: Create the `AIInteractionEmbeddings` table with a `vector` column (dimension based on
       target model, e.g., 768 or 1536). 163afd9
-- [ ] Task: Create a data migration strategy (or script) to generate and store embeddings for
-      historical AI logs if applicable.
+- [x] Task: Create a data migration strategy (or script) to generate and store embeddings for
+      historical AI logs if applicable. (N/A - no legacy logs)
 - [x] Task: Implement HNSW or IVFFlat indices for efficient similarity searches. 4403f20
-- [~] Task: Implement a basic repository method to store and retrieve nearest neighbor embeddings.
-- [ ] Task: Conductor - User Manual Verification 'Vector Store Foundation' (Protocol in workflow.md)
+- [x] Task: Implement a basic repository method to store and retrieve nearest neighbor
+      embeddings. 168cc18
+- [x] Task: Conductor - User Manual Verification 'Vector Store Foundation' (Protocol in
+      workflow.md) 4728225
