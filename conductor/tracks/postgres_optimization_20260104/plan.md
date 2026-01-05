@@ -22,11 +22,11 @@ Optimize the storage and querying of playlist data within the `Archives` table.
 - [x] Task: Create unit tests for querying specific fields within the `Archives` JSONB data. 51a7f1f
 - [x] Task: Create a migration to analyze existing `Archives` data and ensure JSONB structures
       conform to expected indexing patterns. 4c4f031
-- [~] Task: Implement GIN indices on the `Archives.playlist_data` (or equivalent) column for
-      optimized key-value lookups.
-- [ ] Task: Refactor existing repository methods to use path-based JSONB queries where performance
-      benefits are identified.
-- [ ] Task: (Research/Optional) Analyze table partitioning strategies for `Archives` based on
+- [x] Task: Implement GIN indices on the `Archives.playlist_data` (or equivalent) column for
+      optimized key-value lookups. 1b39edb
+- [x] Task: Refactor existing repository methods to use path-based JSONB queries where performance
+      benefits are identified. d60580e
+- [~] Task: (Research/Optional) Analyze table partitioning strategies for `Archives` based on
       `user_id` or `created_at`.
 - [ ] Task: Conductor - User Manual Verification 'JSONB Optimization' (Protocol in workflow.md)
 
