@@ -41,6 +41,7 @@ dependencies = [
     "sqladmin",
     "itsdangerous",
     "cryptography",
+    "pgvector",
 ]
 
 [project.optional-dependencies]
