@@ -25,8 +25,8 @@ import uuid
 router = APIRouter()
 
 
-def get_ai_service():
-    return AIService()
+def get_ai_service(db: AsyncSession = Depends(get_async_session)):
+    return AIService(db)
 
 
 @router.post("/", response_model=PlaylistRead)

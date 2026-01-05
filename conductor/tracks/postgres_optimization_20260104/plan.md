@@ -51,6 +51,6 @@ Establish the database layer for storing and querying AI-generated embeddings.
       target model, e.g., 768 or 1536). 163afd9
 - [ ] Task: Create a data migration strategy (or script) to generate and store embeddings for
       historical AI logs if applicable.
-- [~] Task: Implement HNSW or IVFFlat indices for efficient similarity searches.
-- [ ] Task: Implement a basic repository method to store and retrieve nearest neighbor embeddings.
+- [x] Task: Implement HNSW or IVFFlat indices for efficient similarity searches. 4403f20
+- [~] Task: Implement a basic repository method to store and retrieve nearest neighbor embeddings.
 - [ ] Task: Conductor - User Manual Verification 'Vector Store Foundation' (Protocol in workflow.md)
