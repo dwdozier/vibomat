@@ -23,6 +23,11 @@ async def test_db():
     async with engine.begin() as conn:
         # Clean state for every test
         await conn.run_sync(Base.metadata.drop_all)
+        # Enable extensions before creating tables
+        from sqlalchemy import text
+
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine

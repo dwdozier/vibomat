@@ -25,8 +25,8 @@ import uuid
 router = APIRouter()
 
 
-def get_ai_service():
-    return AIService()
+def get_ai_service(db: AsyncSession = Depends(get_async_session)):
+    return AIService(db)
 
 
 @router.post("/", response_model=PlaylistRead)
@@ -257,6 +257,76 @@ async def build_playlist_endpoint(
 
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to build playlist: {str(e)}")
+
+
+@router.get("/search/tracks", response_model=List[PlaylistRead])
+async def search_playlists_by_track(
+    artist: str,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Search for playlists containing a specific artist using JSONB containment.
+    """
+    # Optimized query using @> operator
+    from sqlalchemy import cast
+    from sqlalchemy.dialects.postgresql import JSONB
+
+    stmt = select(PlaylistModel).where(
+        PlaylistModel.user_id == user.id,
+        cast(PlaylistModel.content_json, JSONB).contains({"tracks": [{"artist": artist}]}),
+    )
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.get("/search/metadata")
+async def search_metadata(
+    q: str,
+    db: AsyncSession = Depends(get_async_session),
+    user: User = Depends(current_active_user),
+):
+    """
+    Search for artists and tracks using FTS and Trigrams.
+    """
+    from backend.app.models.metadata import Artist, Track
+    from sqlalchemy import func, or_
+
+    # Trigram fuzzy search for artists
+    artist_stmt = (
+        select(Artist)
+        .where(
+            or_(
+                func.similarity(Artist.name, q) > 0.3,
+                func.to_tsvector("english", Artist.name).bool_op("@@")(
+                    func.plainto_tsquery("english", q)
+                ),
+            )
+        )
+        .limit(10)
+    )
+
+    # FTS for tracks
+    track_stmt = (
+        select(Track)
+        .where(
+            or_(
+                func.similarity(Track.title, q) > 0.3,
+                func.to_tsvector("english", Track.title).bool_op("@@")(
+                    func.plainto_tsquery("english", q)
+                ),
+            )
+        )
+        .limit(10)
+    )
+
+    artist_results = await db.execute(artist_stmt)
+    track_results = await db.execute(track_stmt)
+
+    return {
+        "artists": artist_results.scalars().all(),
+        "tracks": track_results.scalars().all(),
+    }
 
 
 @router.post("/export")
