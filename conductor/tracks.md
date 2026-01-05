@@ -5,6 +5,6 @@ respective folder.
 
 ---
 
-## [~] Track: Modern PostgreSQL Optimization
+## [x] Track: Modern PostgreSQL Optimization
 
 *Link: [./conductor/tracks/postgres_optimization_20260104/](./conductor/tracks/postgres_optimization_20260104/)*
