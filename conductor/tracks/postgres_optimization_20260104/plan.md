@@ -34,8 +34,8 @@ Optimize the storage and querying of playlist data within the `Archives` table.
 
 Implement advanced search features for Artists and Tracks using FTS and Trigrams.
 
-- [~] Task: Write unit tests for fuzzy search and full-text search requirements.
-- [ ] Task: Create a migration to populate `tsvector` columns for existing Artist/Track records
+- [x] Task: Write unit tests for fuzzy search and full-text search requirements. 22fc7d3
+- [~] Task: Create a migration to populate `tsvector` columns for existing Artist/Track records
       (backfill data).
 - [ ] Task: Create functional GIN indices for Full Text Search on Artist/Track names.
 - [ ] Task: Implement `pg_trgm` indices for fuzzy name matching.
