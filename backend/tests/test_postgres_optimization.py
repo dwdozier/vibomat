@@ -84,3 +84,43 @@ async def test_fuzzy_search_trigram(db_session: AsyncSession):
     result = await db_session.execute(stmt)
     db_artist = result.scalar_one()
     assert db_artist.name == "Daft Punk"
+
+
+@pytest.mark.asyncio
+async def test_vector_similarity_search(db_session: AsyncSession):
+    """Test vector similarity search using pgvector."""
+    from backend.app.models.ai_log import AIInteractionEmbedding
+    from backend.app.models.user import User
+
+    user = User(email="vector@example.com", hashed_password="h")
+    db_session.add(user)
+    await db_session.flush()
+
+    # Create dummy embeddings (768 dimensions)
+    # v1 is very different from target_v
+    # v3 is very similar to target_v
+    v1 = [0.1] * 768
+    v2 = [0.5] * 768
+    v3 = [0.9] * 768
+
+    interactions = [
+        AIInteractionEmbedding(user_id=user.id, prompt="Low vector", embedding=v1),
+        AIInteractionEmbedding(user_id=user.id, prompt="Mid vector", embedding=v2),
+        AIInteractionEmbedding(user_id=user.id, prompt="High vector", embedding=v3),
+    ]
+    db_session.add_all(interactions)
+    await db_session.commit()
+
+    # Search for nearest neighbor to a vector close to v3
+    target_v = [0.85] * 768
+
+    # We'll use Euclidean distance <-> for this test as it's more predictable
+    # with these dummy vectors
+    stmt = (
+        select(AIInteractionEmbedding)
+        .order_by(AIInteractionEmbedding.embedding.l2_distance(target_v))
+        .limit(1)
+    )
+    result = await db_session.execute(stmt)
+    nearest = result.scalar_one()
+    assert nearest.prompt == "High vector"
