@@ -76,6 +76,21 @@ async def enrich_album(
     return info
 
 
+@router.get("/by-handle/{handle}", response_model=UserPublic)
+async def get_public_profile_by_handle(
+    handle: str,
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Get a user's public profile by their handle.
+    """
+    result = await db.execute(select(User).where(User.handle == handle))
+    user = result.unique().scalar_one_or_none()
+    if not user or not user.is_public:
+        raise HTTPException(status_code=404, detail="User not found or profile is private")
+    return user
+
+
 @router.get("/{user_id}", response_model=UserPublic)
 async def get_public_profile(
     user_id: uuid.UUID,

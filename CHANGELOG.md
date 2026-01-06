@@ -2,7 +2,6 @@
 
 ## [0.4.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.3.0...vibomat-v0.4.0) (2026-01-06)
 
-
 ### Features
 
 * Centralize configuration with pydantic-settings ([276dc90](https://github.com/dwdozier/vibomat/commit/276dc907ebbad82316cb3ee846342d71a0b43df3))
@@ -10,11 +9,10 @@
 * Implement global auth guards and session expiry handling ([65bd6d5](https://github.com/dwdozier/vibomat/commit/65bd6d5fd54cb731d6b90b0e74cdad7ab10ab645))
 * Implement OAuth scope transparency ([2a6985b](https://github.com/dwdozier/vibomat/commit/2a6985be0bc5aa01caa88cf24e84472f483fdb79))
 
-
 ### Bug Fixes
 
-* **docker:** Auto-run migrations in dev backend ([#77](https://github.com/dwdozier/vibomat/issues/77)) ([77dbb33](https://github.com/dwdozier/vibomat/commit/77dbb334901185dc033e04d2ace980760cd6c18e))
-
+* **docker:** Auto-run migrations in dev backend ([#77](https://github.com/dwdozier/vibomat/issues/77))
+    ([77dbb33](https://github.com/dwdozier/vibomat/commit/77dbb334901185dc033e04d2ace980760cd6c18e))
 
 ### Documentation
 
@@ -25,11 +23,9 @@
 
 ## [0.3.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.2.0...vibomat-v0.3.0) (2026-01-05)
 
-
 ### Features
 
 * Modern PostgreSQL Optimization ([#72](https://github.com/dwdozier/vibomat/issues/72)) ([58f0642](https://github.com/dwdozier/vibomat/commit/58f0642c31ce6cbb7c89d89e12710b51711dbb82))
-
 
 ### Documentation
 

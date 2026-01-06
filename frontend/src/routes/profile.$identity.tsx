@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { User as UserIcon, Music, Disc, Heart, Globe, Lock } from 'lucide-react'
 import { type Album } from '../api/auth'
 
-export const Route = createFileRoute('/profile/$userId')({
+export const Route = createFileRoute('/profile/$identity')({
   component: Profile,
 })
 
@@ -14,36 +14,43 @@ interface PublicPlaylist {
   user_id: string
 }
 
+function isUuid(str: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)
+}
+
 function Profile() {
-  const { userId } = Route.useParams()
+  const { identity } = Route.useParams()
 
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
-    queryKey: ['profile', userId],
+    queryKey: ['profile', identity],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/profile/${userId}`)
+      const endpoint = isUuid(identity)
+        ? `/api/v1/profile/${identity}`
+        : `/api/v1/profile/by-handle/${identity}`
+      const res = await fetch(endpoint)
       if (!res.ok) throw new Error('Profile not found')
       return res.json()
     }
   })
 
   const { data: playlists, isLoading: playlistsLoading } = useQuery<PublicPlaylist[]>({
-    queryKey: ['profile-playlists', userId],
+    queryKey: ['profile-playlists', profile?.id],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/profile/${userId}/playlists`)
+      const res = await fetch(`/api/v1/profile/${profile.id}/playlists`)
       if (!res.ok) return []
       return res.json()
     },
-    enabled: !!profile?.is_public
+    enabled: !!profile?.is_public && !!profile?.id
   })
 
   const { data: favorites, isLoading: favoritesLoading } = useQuery<PublicPlaylist[]>({
-    queryKey: ['profile-favorites', userId],
+    queryKey: ['profile-favorites', profile?.id],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/profile/${userId}/favorites`)
+      const res = await fetch(`/api/v1/profile/${profile.id}/favorites`)
       if (!res.ok) return []
       return res.json()
     },
-    enabled: !!profile?.is_public
+    enabled: !!profile?.is_public && !!profile?.id
   })
 
   if (profileLoading) return <div className="flex justify-center p-20"><Disc className="animate-spin w-12 h-12 text-retro-teal" /></div>
@@ -51,7 +58,7 @@ function Profile() {
     <div className="max-w-4xl mx-auto p-12 bg-retro-pink/10 border-4 border-retro-pink rounded-2xl text-center">
       <Lock className="w-16 h-16 text-retro-pink mx-auto mb-4" />
       <h2 className="text-3xl font-display text-retro-dark uppercase">Profile Restricted</h2>
-      <p className="mt-4 text-xl font-body text-retro-dark/70">This Citizen has opted for a private broadcast frequency.</p>
+      <p className="mt-4 text-xl font-body text-retro-dark/70">This Citizen has opted for a private broadcast frequency or the record does not exist.</p>
     </div>
   )
 
@@ -79,9 +86,14 @@ function Profile() {
           </div>
           <div className="text-center md:text-left">
             <h2 className="text-5xl font-display text-retro-dark uppercase italic tracking-tighter">
-              Citizen {profile.email.split('@')[0]}
+              Citizen {profile.display_name}
             </h2>
-            <p className="font-display text-retro-teal text-xl tracking-widest mt-2">VERIFIED VIB-O-MAT USER</p>
+            {profile.handle && (
+               <p className="font-display text-retro-dark/40 text-lg uppercase tracking-widest mt-1">
+                 @{profile.handle}
+               </p>
+            )}
+            <p className="font-display text-retro-teal text-xl tracking-widest mt-2 uppercase italic">Verified Vib-O-Mat Citizen</p>
           </div>
         </div>
       </section>
@@ -96,11 +108,14 @@ function Profile() {
             </h3>
             <ul className="space-y-2">
               {profile.favorite_artists?.length > 0 ? (
-                profile.favorite_artists.map((artist: string, i: number) => (
-                  <li key={i} className="font-body text-lg font-bold text-retro-dark bg-white/50 px-3 py-1 rounded border-2 border-retro-dark/10">
-                    {artist}
-                  </li>
-                ))
+                profile.favorite_artists.map((artist: any, i: number) => {
+                  const name = typeof artist === 'string' ? artist : artist.name;
+                  return (
+                    <li key={i} className="font-body text-lg font-bold text-retro-dark bg-white/50 px-3 py-1 rounded border-2 border-retro-dark/10">
+                      {name}
+                    </li>
+                  );
+                })
               ) : (
                 <li className="text-retro-dark/40 italic">No artists archived.</li>
               )}

@@ -16,6 +16,10 @@ export interface ServiceConnection {
 export interface User {
   id: string
   email: string
+  handle?: string
+  first_name?: string
+  last_name?: string
+  display_name: string
   is_active: boolean
   is_superuser: boolean
   is_verified: boolean
