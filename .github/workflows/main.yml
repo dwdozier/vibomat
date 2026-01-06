@@ -48,6 +48,9 @@ jobs:
       - name: Run tests with coverage
         env:
           TEST_DATABASE_URL: postgresql+asyncpg://user:pass@localhost:5432/vibomat_test
+          DATABASE_URL: postgresql+asyncpg://user:pass@localhost:5432/vibomat_test
+          SECRET_KEY: temporary-insecure-secret-key-for-tests
+          FASTAPI_SECRET: temporary-insecure-secret-key-for-tests
         run: |
           PYTHONPATH=. uv run pytest --cov=backend/core --cov=backend/app --cov-fail-under=90 backend/tests/
 
