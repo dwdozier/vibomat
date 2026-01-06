@@ -2,13 +2,7 @@
 
 ## Active Track
 
-- **Foundation & Security Hygiene** (2026-01-04)
-
-  - [Plan](tracks/foundation_security_20260104/plan.md)
-
-  - [Spec](tracks/foundation_security_20260104/spec.md)
-
-  - [Metadata](tracks/foundation_security_20260104/metadata.json)
+None
 
 ## Backlog
 
@@ -46,6 +40,8 @@
   - Implement "Manual Match Selection" UI for ambiguous searches (show top 5 matches).
 
 ## Archive
+
+- [x] **Foundation & Security Hygiene** (2026-01-04)
 
 - [x] **Stabilize Core Services & Tests** (2026-01-02)
 - [x] **Project Workspace Cleanup** (2026-01-04)
