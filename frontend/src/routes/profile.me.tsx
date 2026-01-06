@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { User as UserIcon, Music, Disc, Plus, Settings, Edit, Zap, CheckCircle2, Loader2, ExternalLink } from 'lucide-react'
+import { User as UserIcon, Music, Disc, Plus, Settings, Edit, Zap, CheckCircle2, Loader2, ExternalLink, Globe } from 'lucide-react'
 import { playlistService, type BuildResponse } from '../api/playlist'
 import { useState } from 'react'
 import { Modal } from '../components/Modal'
@@ -63,6 +63,14 @@ function MyProfile() {
       {/* Header Card */}
       <section className="bg-white p-10 rounded-2xl border-8 border-retro-dark shadow-retro relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 flex gap-4">
+           <Link
+             to="/profile/$identity"
+             params={{ identity: user.handle || user.id }}
+             className="flex items-center gap-2 text-retro-dark hover:text-retro-teal transition-colors"
+           >
+             <Globe className="w-6 h-6" />
+             <span className="font-display uppercase text-sm tracking-widest hidden sm:inline">Public View</span>
+           </Link>
            <Link to="/settings" className="flex items-center gap-2 text-retro-dark hover:text-retro-teal transition-colors">
              <Settings className="w-6 h-6" />
              <span className="font-display uppercase text-sm tracking-widest hidden sm:inline">Settings</span>
@@ -75,9 +83,14 @@ function MyProfile() {
           </div>
           <div className="text-center md:text-left">
             <h2 className="text-5xl font-display text-retro-dark uppercase italic tracking-tighter">
-              Citizen {user.email.split('@')[0]}
+              Citizen {user.display_name}
             </h2>
-            <p className="font-display text-retro-teal text-xl tracking-widest mt-2">ACCESS LEVEL: CREATOR</p>
+            {user.handle && (
+              <p className="font-display text-retro-dark/40 text-lg uppercase tracking-widest mt-1">
+                @{user.handle}
+              </p>
+            )}
+            <p className="font-display text-retro-teal text-xl tracking-widest mt-2 italic">ACCESS LEVEL: CREATOR</p>
           </div>
         </div>
       </section>

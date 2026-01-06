@@ -58,6 +58,49 @@ async def test_public_profile_logic(db_session):
 
 
 @pytest.mark.asyncio
+async def test_get_profile_by_handle(db_session):
+    """Test fetching a public profile by handle."""
+    user_id = uuid.uuid4()
+    user = User(
+        id=user_id,
+        email="handle@example.com",
+        handle="vibecitizen",
+        hashed_password="...",
+        is_active=True,
+        is_verified=True,
+        is_public=True,
+        first_name="Vibe",
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    from backend.app.db.session import get_async_session
+
+    app.dependency_overrides[get_async_session] = lambda: db_session
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        # Success
+        response = await ac.get("/api/v1/profile/by-handle/vibecitizen")
+        assert response.status_code == 200
+        assert response.json()["display_name"] == "vibecitizen"
+
+        # Not found
+        response = await ac.get("/api/v1/profile/by-handle/nonexistent")
+        assert response.status_code == 404
+
+        # Private
+        user.is_public = False
+        db_session.add(user)
+        await db_session.commit()
+        response = await ac.get("/api/v1/profile/by-handle/vibecitizen")
+        assert response.status_code == 404
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
 async def test_favoriting_logic(db_session):
     """Test favoriting and unfavoriting playlists."""
     user_id = uuid.uuid4()

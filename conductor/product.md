@@ -21,6 +21,7 @@ share music across the entire digital music ecosystem.
 ## Vib-O-Mat Terminology
 
 - **Citizens:** Users
+- **Handles:** Unique social identifiers for Citizens.
 - **Archives:** Playlists
 - **Relays:** Service Connections
 - **Nodes:** OAuth Identity Links
@@ -46,3 +47,6 @@ metadata verification.
     hallucinations and ensure accurate track matching across services.
 - **Universal Synchronization:** Designed to eventually support all major streaming platforms,
     breaking down the barriers of service-specific ecosystems.
+- **Social Identity:** Citizens can establish a unique Handle and public profile to showcase their
+    favorite artists, unskippable albums, and archived playlists, facilitating cross-platform
+    discovery.

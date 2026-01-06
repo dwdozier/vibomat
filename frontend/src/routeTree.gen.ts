@@ -16,7 +16,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProfileMeRouteImport } from './routes/profile.me'
-import { Route as ProfileUserIdRouteImport } from './routes/profile.$userId'
+import { Route as ProfileIdentityRouteImport } from './routes/profile.$identity'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminPlaylistsRouteImport } from './routes/admin.playlists'
@@ -57,9 +57,9 @@ const ProfileMeRoute = ProfileMeRouteImport.update({
   path: '/profile/me',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
-  id: '/profile/$userId',
-  path: '/profile/$userId',
+const ProfileIdentityRoute = ProfileIdentityRouteImport.update({
+  id: '/profile/$identity',
+  path: '/profile/$identity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -93,7 +93,7 @@ export interface FileRoutesByFullPath {
   '/admin/playlists': typeof AdminPlaylistsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/profile/$userId': typeof ProfileUserIdRoute
+  '/profile/$identity': typeof ProfileIdentityRoute
   '/profile/me': typeof ProfileMeRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -106,7 +106,7 @@ export interface FileRoutesByTo {
   '/admin/playlists': typeof AdminPlaylistsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/profile/$userId': typeof ProfileUserIdRoute
+  '/profile/$identity': typeof ProfileIdentityRoute
   '/profile/me': typeof ProfileMeRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -121,7 +121,7 @@ export interface FileRoutesById {
   '/admin/playlists': typeof AdminPlaylistsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/profile/$userId': typeof ProfileUserIdRoute
+  '/profile/$identity': typeof ProfileIdentityRoute
   '/profile/me': typeof ProfileMeRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -137,7 +137,7 @@ export interface FileRouteTypes {
     | '/admin/playlists'
     | '/admin/users'
     | '/auth/callback'
-    | '/profile/$userId'
+    | '/profile/$identity'
     | '/profile/me'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -150,7 +150,7 @@ export interface FileRouteTypes {
     | '/admin/playlists'
     | '/admin/users'
     | '/auth/callback'
-    | '/profile/$userId'
+    | '/profile/$identity'
     | '/profile/me'
     | '/admin'
   id:
@@ -164,7 +164,7 @@ export interface FileRouteTypes {
     | '/admin/playlists'
     | '/admin/users'
     | '/auth/callback'
-    | '/profile/$userId'
+    | '/profile/$identity'
     | '/profile/me'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -176,7 +176,7 @@ export interface RootRouteChildren {
   PlaylistsRoute: typeof PlaylistsRoute
   SettingsRoute: typeof SettingsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  ProfileUserIdRoute: typeof ProfileUserIdRoute
+  ProfileIdentityRoute: typeof ProfileIdentityRoute
   ProfileMeRoute: typeof ProfileMeRoute
 }
 
@@ -231,11 +231,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileMeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/$userId': {
-      id: '/profile/$userId'
-      path: '/profile/$userId'
-      fullPath: '/profile/$userId'
-      preLoaderRoute: typeof ProfileUserIdRouteImport
+    '/profile/$identity': {
+      id: '/profile/$identity'
+      path: '/profile/$identity'
+      fullPath: '/profile/$identity'
+      preLoaderRoute: typeof ProfileIdentityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
@@ -292,7 +292,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlaylistsRoute: PlaylistsRoute,
   SettingsRoute: SettingsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  ProfileUserIdRoute: ProfileUserIdRoute,
+  ProfileIdentityRoute: ProfileIdentityRoute,
   ProfileMeRoute: ProfileMeRoute,
 }
 export const routeTree = rootRouteImport

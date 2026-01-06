@@ -1,4 +1,3 @@
-```markdown
 # Vibomat
 
 An intelligent, full-stack application to generate and manage music playlists using Generative AI
@@ -9,45 +8,41 @@ and external metadata verification.
 - **AI Generation**: Describe a mood or theme (e.g., "Deep space ambient") and get a curated list.
 - **Multi-Provider Verification**: Cross-references AI results with MusicBrainz and Discogs to
     eliminate hallucinations.
-- **Service Sync**: Automatically creates and updates playlists on Spotify (with extensibility for
-    other providers).
-- **Modern Architecture**: FastAPI Backend + TanStack/React Frontend.
-- **Robust Background Processing**: Uses TaskIQ and Redis for reliable playlist building.
+- **Service Sync**: Broadcast archives to Spotify and other major relays.
 
-## Tech Stack
+## Project Structure
 
-- **Frontend**: React, TanStack Router, TanStack Query, Tailwind CSS, Lucide.
-- **Backend**: FastAPI, SQLAlchemy (Async), Pydantic Settings, Google Gemini SDK.
-- **Infrastructure**: Docker, Redis, PostgreSQL (pgvector).
-- **Quality**: 90% test coverage enforced via CI/CD.
+```text
+.
+├── backend/            # FastAPI Series 2000
+│   ├── app/            # Application Logic
+│   └── core/           # Core Engines & CLI
+├── frontend/           # React 19 + TanStack Series
+└── conductor/          # Spec-Driven Framework
+```
 
 ## Quick Start
 
-### 1. Register Spotify App
+1. **Boot Systems:** `docker compose up -d`
+2. **Access Terminal:** `http://localhost:3000`
+3. **Authentication:** Register and establish your Citizen ID.
 
-Get your credentials at the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+## Developer Workflow
 
-### 2. Configure & Install
+Vibomat uses the **Conductor** framework for spec-driven development.
 
-Follow the [SETUP.md](SETUP.md) for detailed platform-specific installation.
+1. **Select Track:** `conductor/tracks.md`
+2. **Initialize Track:** `/conductor:implement track "<id>"`
+3. **Execute Phase:** Follow the `plan.md` in sequential order.
+4. **Verify & Checkpoint:** Automatic testing and linting required before phase completion.
 
-### 3. Run with Docker
+## Quality Gates
 
-The Docker setup is pre-configured for development with hot-reloading enabled.
+- **Backend:** Pytest (>90% coverage required)
+- **Frontend:** Vitest + React Testing Library
+- **Static Analysis:** Ruff, Black, Ty (Type Checker)
+- **Sanity Checks:** Playwright E2E verification
 
-```bash
-docker-compose up --build
-```
+## Licensing
 
-- Open [http://localhost:80](http://localhost:80) to start building.
-- Changes to your local code will automatically reflect in the running containers.
-- To stop the stack: `docker-compose down`.
-
-## Development & Contribution
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for standards and testing guidelines.
-
-## License
-
-MIT
-```
+Vibomat is licensed under the MIT License. See `LICENSE` for details.
