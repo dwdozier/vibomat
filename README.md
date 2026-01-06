@@ -10,6 +10,7 @@ and external metadata verification.
 - **Multi-Provider Verification**: Cross-references AI results with MusicBrainz and Discogs to
     eliminate hallucinations.
 - **Service Sync**: Broadcast archives to Spotify and other major relays.
+- **User Identity**: Implement User Identity, Handles, and Public Profiles
 
 ## Project Structure
 
