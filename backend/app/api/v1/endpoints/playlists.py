@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
+from datetime import datetime, timezone
 from backend.app.db.session import get_async_session
 from backend.app.models.service_connection import ServiceConnection
 from backend.app.schemas.playlist import (
@@ -128,6 +129,61 @@ async def update_playlist(
     tracks_dict = [t.model_dump() for t in playlist_update.tracks]
     db_playlist.content_json = {"tracks": tracks_dict}
 
+    await db.commit()
+    await db.refresh(db_playlist)
+    return db_playlist
+
+
+@router.delete("/{playlist_id}", status_code=204)
+async def delete_playlist(
+    playlist_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Soft-delete a playlist.
+    """
+    result = await db.execute(
+        select(PlaylistModel).where(
+            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None)
+        )
+    )
+    db_playlist = result.scalar_one_or_none()
+
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    if db_playlist.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this playlist")
+
+    db_playlist.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return None
+
+
+@router.post("/{playlist_id}/restore", response_model=PlaylistRead)
+async def restore_playlist(
+    playlist_id: uuid.UUID,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Restore a soft-deleted playlist.
+    """
+    result = await db.execute(
+        select(PlaylistModel).where(
+            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_not(None)
+        )
+    )
+    db_playlist = result.scalar_one_or_none()
+
+    if not db_playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found or not deleted")
+
+    if db_playlist.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to restore this playlist")
+
+    db_playlist.deleted_at = None
     await db.commit()
     await db.refresh(db_playlist)
     return db_playlist

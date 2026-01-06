@@ -3,9 +3,9 @@
 ## Phase 1: Soft-Delete Implementation
 
 - [x] Add `deleted_at` column to `Playlist` model and migration. 10d1c13
-- [ ] Update `Playlist` CRUD operations to handle soft-deletes (filter out deleted by default).
-- [ ] Implement `delete` endpoint to perform soft-delete.
-- [ ] Implement `restore` endpoint to recover soft-deleted playlists.
+- [x] Update `Playlist` CRUD operations to handle soft-deletes (filter out deleted by default).
+- [x] Implement `delete` endpoint to perform soft-delete.
+- [x] Implement `restore` endpoint to recover soft-deleted playlists.
 - [ ] Create a Celery/background task to purge playlists older than 30 days.
 
 ## Phase 2: Playlist Import
