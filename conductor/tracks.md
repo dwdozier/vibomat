@@ -2,19 +2,18 @@
 
 ## Active Track
 
-None
+### [~] Track: Playlist Lifecycle & Sync Engine
+
+- **Goal:** Make playlists robust with recovery options and bi-directional synchronization.
+- **Link:** [View Track Folder](conductor/tracks/playlist_lifecycle_sync)
+- **Key Features:**
+  - Implement "Soft-Delete" for playlists with a 30-day auto-purge policy.
+  - Import existing playlists from services.
+  - Build the bi-directional sync engine (Periodic + On-Demand).
 
 ## Backlog
 
-### 1. Foundation & Security Hygiene
-
-- **Goal:** Solidify configuration management and secure the user session experience.
-- **Key Features:**
-  - Audit and separate environment variables (Dev vs. Prod), update `.env.example`.
-  - Audit OAuth scopes and display them in the "Relay Station" UI for transparency.
-  - Implement strict auth guards, handle session expiry, and redirect unauthenticated access to Login.
-
-### 2. User Identity & Privacy
+### 1. User Identity & Privacy
 
 - **Goal:** Expand the user model to support social features and privacy controls.
 - **Key Features:**
@@ -22,15 +21,7 @@ None
   - Implement "Public vs. Private" profile visibility controls.
   - "View As" feature to preview the public profile.
 
-### 3. Playlist Lifecycle & Sync Engine
-
-- **Goal:** Make playlists robust with recovery options and bi-directional synchronization.
-- **Key Features:**
-  - Implement "Soft-Delete" for playlists with a 30-day auto-purge policy.
-  - Import existing playlists from services.
-  - Build the bi-directional sync engine (Periodic + On-Demand).
-
-### 4. Advanced Metadata & Matching Intelligence
+### 2. Advanced Metadata & Matching Intelligence
 
 - **Goal:** Improve match quality and provide transparency when tracks are missing.
 - **Key Features:**
