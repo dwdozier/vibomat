@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.4.0...vibomat-v0.5.0) (2026-01-06)
+
+
+### Features
+
+* **user:** Implement User Identity, Handles, and Public Profiles ([#81](https://github.com/dwdozier/vibomat/issues/81)) ([909c7ee](https://github.com/dwdozier/vibomat/commit/909c7ee3ab69ca2f9c63629f3f10b732ab6ff22f))
+
+
+### Documentation
+
+* Auto-update documentation via Gemini Agent ([#83](https://github.com/dwdozier/vibomat/issues/83)) ([9e3b0b4](https://github.com/dwdozier/vibomat/commit/9e3b0b44cbe6bbc14a33d656d2aed2f82afe5aa3))
+
 ## [0.4.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.3.0...vibomat-v0.4.0) (2026-01-06)
 
 ### Features
