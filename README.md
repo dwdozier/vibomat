@@ -1,3 +1,4 @@
+```markdown
 # Vibomat
 
 An intelligent, full-stack application to generate and manage music playlists using Generative AI
@@ -49,3 +50,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for standards and testing guidelines.
 ## License
 
 MIT
+```
