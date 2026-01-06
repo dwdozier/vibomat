@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import ForeignKey, String, JSON, Boolean, UUID
+from datetime import datetime
+from sqlalchemy import ForeignKey, String, JSON, Boolean, UUID, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.db.session import Base
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -24,6 +25,9 @@ class Playlist(Base):
     provider: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     total_duration_ms: Mapped[Optional[int]] = mapped_column(nullable=True)
+
+    # Soft delete
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Store the tracks as JSON for flexibility
     content_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
