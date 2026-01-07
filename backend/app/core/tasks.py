@@ -114,7 +114,8 @@ async def periodic_sync_dispatch_task() -> str:
         # Find playlists that:
         # 1. Are linked to a provider (e.g., Spotify)
         # 2. Are not soft-deleted
-        # 3. Have never been synced (last_synced_at is NULL) OR have not been synced in the last 24 hours
+        # 3. Have never been synced (last_synced_at is NULL) OR have not been synced
+        #    in the last 24 hours
         stmt = select(Playlist.id).where(
             Playlist.provider.is_not(None),
             Playlist.provider_id.is_not(None),
