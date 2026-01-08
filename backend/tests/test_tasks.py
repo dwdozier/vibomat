@@ -1,22 +1,47 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 from backend.app.core.tasks import create_playlist_task
+
+# --- Shared Mocks for Spotify ---
+
+
+class MockSpotifyClient:
+    """Mocks the spotipy.Spotify client for testing."""
+
+    def __init__(self, auth=None, **kwargs):
+        self.auth = auth
+        self.current_user = MagicMock(return_value={"id": "mock_user_id"})
+        self.user_playlist_create = MagicMock(return_value={"id": "pl_id"})
+        # Mock methods used in the provider to prevent network calls/validation failures
+        self.playlist_replace_items = MagicMock()
+        self.playlist_add_items = MagicMock()
+
+
+# Patch the constructor of spotipy.Spotify itself
+patch_spotipy_client = patch(
+    "backend.core.providers.spotify.spotipy.Spotify", new=MockSpotifyClient
+)
+
+# --- Test Functions ---
 
 
 async def test_create_playlist_task():
     """Test the create_playlist_task background worker."""
-    from unittest.mock import AsyncMock
 
-    with patch("backend.core.providers.spotify.SpotifyProvider") as mock_provider_cls:
-        mock_provider = MagicMock()
-        mock_provider.create_playlist = AsyncMock(return_value="pl_id")
-        mock_provider.add_tracks_to_playlist = AsyncMock()
-        mock_provider_cls.return_value = mock_provider
+    with patch_spotipy_client:
+        with patch("backend.app.core.tasks.SpotifyProvider") as mock_provider_cls:
+            mock_provider = MagicMock()
 
-        pl_id = await create_playlist_task("My Task Playlist", ["uri:1"], "token")
+            # The mocked SpotifyProvider should now use the MockSpotifyClient internally,
+            # but we need to mock the async methods it calls on itself.
+            mock_provider.create_playlist = AsyncMock(return_value="pl_id")
+            mock_provider.add_tracks_to_playlist = AsyncMock()
+            mock_provider_cls.return_value = mock_provider
 
-        assert pl_id == "pl_id"
-        mock_provider.create_playlist.assert_called_once_with("My Task Playlist")
-        mock_provider.add_tracks_to_playlist.assert_called_once_with("pl_id", ["uri:1"])
+            pl_id = await create_playlist_task("My Task Playlist", ["uri:1"], "token")
+
+            assert pl_id == "pl_id"
+            mock_provider.create_playlist.assert_called_once_with("My Task Playlist")
+            mock_provider.add_tracks_to_playlist.assert_called_once_with("pl_id", ["uri:1"])
 
 
 async def test_purge_deleted_playlists_task():
@@ -75,31 +100,33 @@ async def test_sync_playlist_task_success():
     mock_session = MagicMock()
     mock_session.execute = AsyncMock(return_value=mock_result)
     mock_session.commit = AsyncMock()
+    mock_session.rollback = AsyncMock()
 
     # Mock session context manager
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=None)
 
-    with (
-        patch("backend.app.core.tasks.async_session_maker", return_value=mock_session),
-        patch(
-            "backend.app.core.tasks.IntegrationsService.get_valid_spotify_token",
-            new=AsyncMock(return_value="valid_token"),
-        ),
-        patch("backend.core.providers.spotify.SpotifyProvider") as MockProviderCls,
-    ):
-        mock_provider = MockProviderCls.return_value
-        mock_provider.replace_playlist_tracks = AsyncMock()
+    with patch_spotipy_client:
+        with (
+            patch("backend.app.core.tasks.async_session_maker", return_value=mock_session),
+            patch(
+                "backend.app.core.tasks.IntegrationsService.get_valid_spotify_token",
+                new=AsyncMock(return_value="valid_token"),
+            ),
+            patch("backend.app.core.tasks.SpotifyProvider") as MockProviderCls,
+        ):
+            mock_provider = MockProviderCls.return_value
+            mock_provider.replace_playlist_tracks = AsyncMock()
 
-        result = await sync_playlist_task(mock_playlist.id)
+            result = await sync_playlist_task(mock_playlist.id)
 
-        assert "Sync successful" in result
-        mock_provider.replace_playlist_tracks.assert_called_once_with(
-            "sp_id_123", ["spotify:track:123"]
-        )
-        # Check if last_synced_at was updated (rough check for call, logic is in task)
-        assert mock_playlist.last_synced_at is not None
-        mock_session.commit.assert_called_once()
+            assert "Sync successful" in result
+            mock_provider.replace_playlist_tracks.assert_called_once_with(
+                "sp_id_123", ["spotify:track:123"]
+            )
+            # Check if last_synced_at was updated (rough check for call, logic is in task)
+            assert mock_playlist.last_synced_at is not None
+            mock_session.commit.assert_called_once()
 
 
 async def test_periodic_sync_dispatch_task():
@@ -124,6 +151,7 @@ async def test_periodic_sync_dispatch_task():
         patch("backend.app.core.tasks.async_session_maker", return_value=mock_session),
         patch("backend.app.core.tasks.sync_playlist_task") as mock_task,
     ):
+        mock_task.kiq = AsyncMock()
         # Mock DB result with two playlist IDs
         pl1_id = uuid.uuid4()
         pl2_id = uuid.uuid4()
@@ -135,6 +163,6 @@ async def test_periodic_sync_dispatch_task():
 
         assert "Dispatched 2 sync tasks" in result
         # Check that the task was dispatched for both IDs
-        mock_task.send.assert_any_call(pl1_id)
-        mock_task.send.assert_any_call(pl2_id)
-        assert mock_task.send.call_count == 2
+        mock_task.kiq.assert_any_call(pl1_id)
+        mock_task.kiq.assert_any_call(pl2_id)
+        assert mock_task.kiq.call_count == 2

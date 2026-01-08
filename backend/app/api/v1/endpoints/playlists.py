@@ -165,7 +165,7 @@ async def sync_playlist_endpoint(
         )
 
     # Dispatch the task to the worker
-    sync_playlist_task.send(db_playlist.id)
+    await sync_playlist_task.kiq(db_playlist.id)
 
     return {"status": "success", "message": "Playlist synchronization task enqueued"}
 

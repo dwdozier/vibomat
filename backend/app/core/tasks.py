@@ -1,12 +1,18 @@
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import delete, select
+from typing import cast
+import traceback
+from uuid import UUID
+
+from sqlalchemy import delete, select, CursorResult
 from taskiq_redis import ListQueueBroker
+
 from backend.app.core.config import settings
 from backend.app.db.session import async_session_maker
 from backend.app.models.playlist import Playlist
 from backend.app.models.service_connection import ServiceConnection
+from backend.app.models.user import User
 from backend.app.services.integrations_service import IntegrationsService
-from uuid import UUID
+from backend.core.providers.spotify import SpotifyProvider
 
 broker = ListQueueBroker(str(settings.REDIS_URL))
 
@@ -18,8 +24,6 @@ async def create_playlist_task(
     auth_token: str,
 ) -> str:
     """Background task to create a playlist on Spotify."""
-    from backend.core.providers.spotify import SpotifyProvider
-
     provider = SpotifyProvider(auth_token=auth_token)
     playlist_id = await provider.create_playlist(playlist_name)
     await provider.add_tracks_to_playlist(playlist_id, track_uris)
@@ -33,10 +37,6 @@ async def sync_playlist_task(playlist_id: UUID) -> str:
     Synchronizes a local playlist with its remote service provider.
     Currently implements a one-way sync from local DB to Spotify.
     """
-    from backend.core.providers.spotify import SpotifyProvider
-    from backend.app.models.user import User
-    import traceback
-
     async with async_session_maker() as session:
         try:
             # 1. Fetch Playlist, User, and Connection
@@ -130,7 +130,7 @@ async def periodic_sync_dispatch_task() -> str:
 
         # Dispatch sync tasks
         for p_id in playlist_ids:
-            sync_playlist_task.send(p_id)
+            await sync_playlist_task.kiq(p_id)
 
         return f"Dispatched {len(playlist_ids)} sync tasks."
 
@@ -146,4 +146,4 @@ async def purge_deleted_playlists_task() -> str:
         stmt = delete(Playlist).where(Playlist.deleted_at <= cutoff)
         result = await session.execute(stmt)
         await session.commit()
-        return f"Purged {result.rowcount} playlists"  # type: ignore
+        return f"Purged {cast(CursorResult, result).rowcount} playlists"
