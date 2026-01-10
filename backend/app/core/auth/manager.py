@@ -25,10 +25,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         if not re.match(r"^[a-zA-Z0-9_-]{3,20}$", handle):
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "Handle must be 3-20 characters and only contain letters, "
-                    "numbers, underscores, or dashes."
-                ),
+                detail=("Handle must be 3-20 characters and only contain letters, " "numbers, underscores, or dashes."),
             )
 
         # Check uniqueness
@@ -50,9 +47,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         if hasattr(user_create, "handle"):
             await self.validate_handle(user_create.handle)
 
-    async def on_before_update(
-        self, user: User, update_dict: Dict[str, Any], request: Optional[Request] = None
-    ):
+    async def on_before_update(self, user: User, update_dict: Dict[str, Any], request: Optional[Request] = None):
         if "handle" in update_dict:
             await self.validate_handle(update_dict["handle"], user)
 

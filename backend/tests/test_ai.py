@@ -1,12 +1,14 @@
 import json
+from unittest.mock import MagicMock, patch, AsyncMock
 import pytest
-from unittest.mock import MagicMock, patch
+import httpx
 from backend.core.ai import (
     get_ai_api_key,
     generate_playlist,
     list_available_models,
     discover_fallback_model,
 )
+from backend.core.metadata import MetadataVerifier
 from backend.app.core.config import settings
 
 
@@ -181,10 +183,7 @@ def test_generate_playlist_404_retry():
 
         assert mock_client.models.generate_content.call_count == 2
         # First call with default
-        assert (
-            mock_client.models.generate_content.call_args_list[0][1]["model"]
-            == "gemini-flash-latest"
-        )
+        assert mock_client.models.generate_content.call_args_list[0][1]["model"] == "gemini-flash-latest"
         # Second call with fallback
         assert mock_client.models.generate_content.call_args_list[1][1]["model"] == "fallback-model"
 
@@ -227,38 +226,49 @@ def test_generate_playlist_legacy_list_support():
         assert result["tracks"] == [{"artist": "A", "track": "B"}]
 
 
-def test_verify_ai_tracks_success():
+@pytest.fixture
+def async_mock_client():
+    """Mocks the httpx.AsyncClient for MetadataVerifier."""
+    return AsyncMock(spec=httpx.AsyncClient)
+
+
+async def test_verify_ai_tracks_success(async_mock_client):
     """Test successful track verification."""
     from backend.core.ai import verify_ai_tracks
 
     tracks = [{"artist": "A", "track": "T", "version": "studio"}]
     with patch("backend.core.ai.MetadataVerifier") as mock_verifier_cls:
         mock_verifier = MagicMock()
-        mock_verifier.verify_track_version.return_value = True
+        # search_recording is async, but we patch verifier class here.
+        # It's safest to set the return value to an awaitable mock
+        mock_verifier.verify_track_version.return_value = AsyncMock(return_value=True)
         mock_verifier_cls.return_value = mock_verifier
 
-        verified, rejected = verify_ai_tracks(tracks)
-        assert len(verified) == 1
-        assert len(rejected) == 0
+        verified, rejected = await verify_ai_tracks(tracks, http_client=async_mock_client)
+
+        assert verified == tracks
+        assert rejected == []
+        mock_verifier_cls.assert_called_once_with(http_client=async_mock_client)
+        mock_verifier.verify_track_version.assert_called_once_with("A", "T", "studio")
 
 
-def test_verify_ai_tracks_rejected():
+async def test_verify_ai_tracks_rejected(async_mock_client):
     """Test track verification with rejections."""
     from backend.core.ai import verify_ai_tracks
 
     tracks = [{"artist": "A", "track": "T"}]
     with patch("backend.core.ai.MetadataVerifier") as mock_verifier_cls:
-        mock_verifier = MagicMock()
+        mock_verifier = AsyncMock(spec=MetadataVerifier)
         mock_verifier.verify_track_version.return_value = False
         mock_verifier_cls.return_value = mock_verifier
+        verified, rejected = await verify_ai_tracks(tracks, http_client=async_mock_client)
 
-        verified, rejected = verify_ai_tracks(tracks)
-        assert len(verified) == 0
-        assert len(rejected) == 1
-        assert rejected[0] == "A - T"
+        assert verified == []
+        assert rejected == ["A - T"]
+        mock_verifier_cls.assert_called_once_with(http_client=async_mock_client)
 
 
-def test_verify_ai_tracks_exception():
+async def test_verify_ai_tracks_exception(async_mock_client):
     """Test track verification when the verifier raises an exception."""
     from backend.core.ai import verify_ai_tracks
 
@@ -269,6 +279,7 @@ def test_verify_ai_tracks_exception():
         mock_verifier_cls.return_value = mock_verifier
 
         # We lean towards keeping tracks if verification fails technically
-        verified, rejected = verify_ai_tracks(tracks)
-        assert len(verified) == 1
-        assert len(rejected) == 0
+        verified, rejected = await verify_ai_tracks(tracks, http_client=async_mock_client)
+
+        assert verified == tracks
+        assert rejected == []

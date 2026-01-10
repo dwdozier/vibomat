@@ -10,9 +10,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from backend.core.client import SpotifyPlaylistBuilder
 
-TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL", "postgresql+asyncpg://user:pass@localhost:5432/vibomat_test"
-)
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql+asyncpg://user:pass@localhost:5432/vibomat_test")
+
+
+@pytest.fixture(autouse=True)
+def mock_discogs_pat_global():
+    """Mock DISCOGS_PAT globally for tests that instantiate DiscogsClient."""
+    with patch("backend.app.core.config.settings.DISCOGS_PAT", "mock-pat"):
+        yield
 
 
 @pytest.fixture

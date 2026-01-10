@@ -48,9 +48,7 @@ class ServiceConnection(Base):
     __tablename__ = "service_connection"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
 
     provider_name: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., "spotify"
     provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)

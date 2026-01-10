@@ -1,4 +1,26 @@
-# Project Workflow
+# Gemini CLI & Conductor Guidelines & Project Workflow
+
+## Tool Use Protocols
+
+### 1. WriteTodos Tool
+
+- **STRICT SCHEMA:** The `todos` parameter MUST be a List of Objects, not Strings.
+- **CORRECT FORMAT:** `[{"description": "Task name", "status": "pending"}]`
+- **INCORRECT FORMAT:** `["Task name"]` - NEVER do this.
+
+### 2. Shell Tool (Git Commands)
+
+- **Simplicity:** Execute only ONE command per tool call.
+- **Description Field:** Keep the `description` field empty `""` or very short to avoid parser safety
+  blocks.
+- **Forbidden:** Do NOT use chaining characters (`&&`, `;`) or complex sub-shells.
+- **Failure Protocol:** If a `git` command fails due to "parsing" or "safety", STOP immediately.
+  Do not retry. Ask the user to run it.
+
+### 3. Git Workflow
+
+- Always run `git status` before committing.
+- If the agent cannot run git commands, fall back to asking the user to run them manually.
 
 ## Guiding Principles
 
@@ -77,7 +99,8 @@ project documentation.
       pytest --cov=app --cov-report=html
       ```
 
-      Target: >90% coverage for new code. The specific tools and commands will vary by language and framework.
+      Target: >90% coverage for new code. The specific tools and commands will vary by language
+      and framework.
 
 7. **Document Deviations:** If implementation differs from tech stack:
    - **STOP** implementation

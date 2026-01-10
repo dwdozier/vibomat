@@ -20,9 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.execute(
-        "ALTER TABLE playlist ALTER COLUMN content_json TYPE JSONB USING content_json::JSONB"
-    )
+    op.execute("ALTER TABLE playlist ALTER COLUMN content_json TYPE JSONB USING content_json::JSONB")
 
 
 def downgrade() -> None:

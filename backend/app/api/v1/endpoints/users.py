@@ -11,12 +11,21 @@ from backend.app.services.metadata_service import MetadataService
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import uuid
+import httpx
 
 router = APIRouter()
 
 
-def get_metadata_service():
-    return MetadataService()
+def get_http_client() -> httpx.AsyncClient:
+    # NOTE: This should be managed by FastAPI lifespan events for a real app,
+    # but for local development and testing, we use a simple instantiation.
+    # We rely on the app's lifespan to create a client that the DI system can use.
+    # Since we don't have a global DI for the client yet, we instantiate it here.
+    return httpx.AsyncClient()
+
+
+def get_metadata_service(http_client: httpx.AsyncClient = Depends(get_http_client)):
+    return MetadataService(http_client=http_client)
 
 
 class UserPreferencesUpdate(BaseModel):
@@ -55,7 +64,7 @@ async def enrich_artist(
     """
     Fetch enriched metadata for an artist.
     """
-    info = metadata_service.get_artist_info(request.artist_name)
+    info = await metadata_service.get_artist_info(request.artist_name)
     if not info:
         raise HTTPException(status_code=404, detail="Artist metadata not found")
     return info
@@ -70,7 +79,7 @@ async def enrich_album(
     """
     Fetch enriched metadata for an album.
     """
-    info = metadata_service.get_album_info(request.artist_name, request.album_name)
+    info = await metadata_service.get_album_info(request.artist_name, request.album_name)
     if not info:
         raise HTTPException(status_code=404, detail="Album metadata not found")
     return info
@@ -121,9 +130,7 @@ async def get_public_playlists(
         raise HTTPException(status_code=404, detail="User not found or profile is private")
 
     result = await db.execute(
-        select(Playlist).where(
-            Playlist.user_id == user_id, Playlist.public, Playlist.deleted_at.is_(None)
-        )
+        select(Playlist).where(Playlist.user_id == user_id, Playlist.public, Playlist.deleted_at.is_(None))
     )
     return result.scalars().all()
 
@@ -180,9 +187,7 @@ async def favorite_playlist(
     if fav_result.scalar_one_or_none():
         return {"status": "success", "message": "Already favorited"}
 
-    await db.execute(
-        user_favorite_playlists.insert().values(user_id=user.id, playlist_id=playlist_id)
-    )
+    await db.execute(user_favorite_playlists.insert().values(user_id=user.id, playlist_id=playlist_id))
     await db.commit()
     return {"status": "success", "message": "Playlist favorited"}
 

@@ -5,6 +5,9 @@ import os
 from pathlib import Path
 from typing import Any
 from spotipy.oauth2 import SpotifyOAuth
+import asyncio
+from unittest.mock import AsyncMock
+import httpx
 from .metadata import MetadataVerifier
 from .utils.helpers import (
     _similarity,
@@ -50,7 +53,8 @@ class SpotifyPlaylistBuilder:
             )
 
         self._user_id = None
-        self.metadata_verifier = MetadataVerifier()
+        # MetadataVerifier is async, so we use a mock client for the synchronous CLI
+        self.metadata_verifier = MetadataVerifier(http_client=AsyncMock(spec=httpx.AsyncClient))
 
     @property
     def user_id(self) -> str:
@@ -147,9 +151,7 @@ class SpotifyPlaylistBuilder:
             if version in ["live", "remix", "remaster"]:
                 try:
                     primary_artist = item_artists[0] if item_artists else artist
-                    if self.metadata_verifier.verify_track_version(
-                        primary_artist, item_name, version
-                    ):
+                    if asyncio.run(self.metadata_verifier.verify_track_version(primary_artist, item_name, version)):
                         score += 20
                 except Exception as e:
                     logger.debug(f"Metadata verification skipped: {e}")
@@ -204,9 +206,7 @@ class SpotifyPlaylistBuilder:
             self.sp.playlist_remove_all_occurrences_of_items(playlist_id, batch)
 
     @rate_limit_retry
-    def create_playlist(
-        self, playlist_name: str, description: str = "", public: bool = False
-    ) -> str:
+    def create_playlist(self, playlist_name: str, description: str = "", public: bool = False) -> str:
         """Create a new playlist for the authenticated user."""
         playlist = self.sp.user_playlist_create(
             user=self.user_id,
@@ -219,9 +219,7 @@ class SpotifyPlaylistBuilder:
         return playlist["id"]
 
     @rate_limit_retry
-    def update_playlist_details(
-        self, playlist_id: str, description: str, public: bool = False
-    ) -> None:
+    def update_playlist_details(self, playlist_id: str, description: str, public: bool = False) -> None:
         """Update playlist details if they differ."""
         playlist = self.sp.playlist(playlist_id)
         if playlist is None:
@@ -308,9 +306,7 @@ class SpotifyPlaylistBuilder:
                             "artist": artist_name,
                             "track": track["name"],
                             "album": track["album"]["name"],
-                            "version": self._determine_version(
-                                track["name"], track["album"]["name"]
-                            ),
+                            "version": self._determine_version(track["name"], track["album"]["name"]),
                         }
                     )
             if not results["next"]:
@@ -318,9 +314,7 @@ class SpotifyPlaylistBuilder:
             offset += limit
         return tracks
 
-    def export_playlist_to_json(
-        self, playlist_name: str, output_file: str, playlist_id: str | None = None
-    ) -> None:
+    def export_playlist_to_json(self, playlist_name: str, output_file: str, playlist_id: str | None = None) -> None:
         """Export an existing playlist to a JSON file."""
         if not playlist_id:
             playlist_id = self.find_playlist_by_name(playlist_name)
@@ -381,23 +375,18 @@ class SpotifyPlaylistBuilder:
                 # Use provided URI from backup if search fails
                 new_track_uris.append(track["uri"])
                 logger.info(
-                    f"Using provided URI for unsearchable track: {track.get('artist')} - "
-                    f"{track.get('track')}"
+                    f"Using provided URI for unsearchable track: {track.get('artist')} - " f"{track.get('track')}"
                 )
             else:
                 failed_items.append(track)
 
         if dry_run:
-            logger.info(
-                f"Dry run complete. Found {len(new_track_uris)}, missing {len(failed_items)}."
-            )
+            logger.info(f"Dry run complete. Found {len(new_track_uris)}, missing {len(failed_items)}.")
             return
 
         existing_pid = self.find_playlist_by_name(playlist_name)
         if existing_pid:
-            self.update_playlist_details(
-                existing_pid, data.get("description", ""), data.get("public", False)
-            )
+            self.update_playlist_details(existing_pid, data.get("description", ""), data.get("public", False))
 
             # Attempt to preserve unplayable/unsearchable tracks if they already exist
             if failed_items:
@@ -415,18 +404,13 @@ class SpotifyPlaylistBuilder:
                     if search_key in current_map:
                         new_track_uris.append(current_map[search_key])
                         rescued_count += 1
-                        logger.info(
-                            f"Preserved existing track: {item.get('artist')} - {item.get('track')}"
-                        )
+                        logger.info(f"Preserved existing track: {item.get('artist')} - {item.get('track')}")
                     else:
                         # Fallback: fuzzy match on existing tracks?
                         # For safety, strict match is better to avoid keeping wrong songs.
                         # But unplayable tracks might have slightly different metadata.
                         # Let's stick to strict match on Artist - Title for now.
-                        logger.warning(
-                            f"Could not find or preserve: {item.get('artist')} - "
-                            f"{item.get('track')}"
-                        )
+                        logger.warning(f"Could not find or preserve: {item.get('artist')} - " f"{item.get('track')}")
 
             if self.get_playlist_tracks(existing_pid) != new_track_uris:
                 self.clear_playlist(existing_pid)
@@ -435,14 +419,9 @@ class SpotifyPlaylistBuilder:
         else:
             if failed_items:
                 for item in failed_items:
-                    logger.warning(
-                        f"Track not found (new playlist): {item.get('artist')} - "
-                        f"{item.get('track')}"
-                    )
+                    logger.warning(f"Track not found (new playlist): {item.get('artist')} - " f"{item.get('track')}")
 
-            playlist_id = self.create_playlist(
-                playlist_name, data.get("description", ""), data.get("public", False)
-            )
+            playlist_id = self.create_playlist(playlist_name, data.get("description", ""), data.get("public", False))
             self._add_track_uris_to_playlist(playlist_id, new_track_uris)
 
         logger.info(f"Playlist ready: https://open.spotify.com/playlist/{playlist_id}")

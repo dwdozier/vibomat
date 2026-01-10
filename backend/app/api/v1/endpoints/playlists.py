@@ -84,9 +84,7 @@ async def get_playlist(
     Get a specific playlist by ID.
     """
     result = await db.execute(
-        select(PlaylistModel).where(
-            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None)
-        )
+        select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
     playlist = result.scalar_one_or_none()
 
@@ -111,9 +109,7 @@ async def update_playlist(
     Update a playlist (e.g. content, name).
     """
     result = await db.execute(
-        select(PlaylistModel).where(
-            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None)
-        )
+        select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
     db_playlist = result.scalar_one_or_none()
 
@@ -146,9 +142,7 @@ async def sync_playlist_endpoint(
     Manually trigger a background synchronization task for a playlist.
     """
     result = await db.execute(
-        select(PlaylistModel).where(
-            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None)
-        )
+        select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
     db_playlist = result.scalar_one_or_none()
 
@@ -165,7 +159,7 @@ async def sync_playlist_endpoint(
         )
 
     # Dispatch the task to the worker
-    await sync_playlist_task.kiq(db_playlist.id)
+    await sync_playlist_task.kiq(db_playlist.id)  # type: ignore[no-matching-overload]
 
     return {"status": "success", "message": "Playlist synchronization task enqueued"}
 
@@ -180,9 +174,7 @@ async def delete_playlist(
     Soft-delete a playlist.
     """
     result = await db.execute(
-        select(PlaylistModel).where(
-            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None)
-        )
+        select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
     db_playlist = result.scalar_one_or_none()
 
@@ -207,9 +199,7 @@ async def restore_playlist(
     Restore a soft-deleted playlist.
     """
     result = await db.execute(
-        select(PlaylistModel).where(
-            PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_not(None)
-        )
+        select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_not(None))
     )
     db_playlist = result.scalar_one_or_none()
 
@@ -277,9 +267,7 @@ async def import_playlist_endpoint(
                 if track:
                     tracks.append(
                         {
-                            "artist": (
-                                track["artists"][0]["name"] if track["artists"] else "Unknown"
-                            ),
+                            "artist": (track["artists"][0]["name"] if track["artists"] else "Unknown"),
                             "track": track["name"],
                             "album": track["album"]["name"] if track["album"] else None,
                             "duration_ms": track["duration_ms"],
@@ -323,9 +311,7 @@ async def generate_playlist_endpoint(
     """
     try:
         # ai_service.generate now returns {title, description, tracks}
-        result = ai_service.generate(
-            prompt=request.prompt, count=request.count, artists=request.artists
-        )
+        result = ai_service.generate(prompt=request.prompt, count=request.count, artists=request.artists)
         return result
     except Exception as e:
         import traceback
@@ -346,7 +332,7 @@ async def verify_tracks_endpoint(
     try:
         # Convert Pydantic models to dicts for the service
         tracks_dict = [t.model_dump() for t in request.tracks]
-        verified, rejected = ai_service.verify_tracks(tracks_dict)
+        verified, rejected = await ai_service.verify_tracks(tracks_dict)
         return {"verified": verified, "rejected": rejected}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -491,9 +477,7 @@ async def search_metadata(
         .where(
             or_(
                 func.similarity(Artist.name, q) > 0.3,
-                func.to_tsvector("english", Artist.name).bool_op("@@")(
-                    func.plainto_tsquery("english", q)
-                ),
+                func.to_tsvector("english", Artist.name).bool_op("@@")(func.plainto_tsquery("english", q)),
             )
         )
         .limit(10)
@@ -505,9 +489,7 @@ async def search_metadata(
         .where(
             or_(
                 func.similarity(Track.title, q) > 0.3,
-                func.to_tsvector("english", Track.title).bool_op("@@")(
-                    func.plainto_tsquery("english", q)
-                ),
+                func.to_tsvector("english", Track.title).bool_op("@@")(func.plainto_tsquery("english", q)),
             )
         )
         .limit(10)

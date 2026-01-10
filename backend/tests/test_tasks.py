@@ -17,9 +17,7 @@ class MockSpotifyClient:
 
 
 # Patch the constructor of spotipy.Spotify itself
-patch_spotipy_client = patch(
-    "backend.core.providers.spotify.spotipy.Spotify", new=MockSpotifyClient
-)
+patch_spotipy_client = patch("backend.core.providers.spotify.spotipy.Spotify", new=MockSpotifyClient)
 
 # --- Test Functions ---
 
@@ -121,9 +119,7 @@ async def test_sync_playlist_task_success():
             result = await sync_playlist_task(mock_playlist.id)
 
             assert "Sync successful" in result
-            mock_provider.replace_playlist_tracks.assert_called_once_with(
-                "sp_id_123", ["spotify:track:123"]
-            )
+            mock_provider.replace_playlist_tracks.assert_called_once_with("sp_id_123", ["spotify:track:123"])
             # Check if last_synced_at was updated (rough check for call, logic is in task)
             assert mock_playlist.last_synced_at is not None
             mock_session.commit.assert_called_once()

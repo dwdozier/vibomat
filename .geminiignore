@@ -1,0 +1,6 @@
+package-lock.json
+yarn.lock
+dist/
+build/
+*.log
+coverage/

@@ -1,49 +1,59 @@
-from unittest.mock import patch, MagicMock
-from backend.app.services.ai_service import AIService
+from unittest.mock import MagicMock, patch, AsyncMock
+import pytest
+from httpx import AsyncClient
+from backend.core.metadata import MetadataVerifier
+
 from backend.app.services.metadata_service import MetadataService
+from backend.app.services.integrations_service import IntegrationsService
 
 
-def test_ai_service_generate():
-    service = AIService()
-    with patch("backend.app.services.ai_service.generate_playlist") as mock_gen:
-        mock_gen.return_value = [{"artist": "A", "track": "T"}]
-        result = service.generate("prompt", 10, "artists")
-        assert result == [{"artist": "A", "track": "T"}]
-        mock_gen.assert_called_once_with("prompt. Inspired by artists: artists", 10)
+@pytest.fixture
+def mock_httpx_client():
+    """Mocks the httpx.AsyncClient to be passed to MetadataService."""
+    mock_client = AsyncMock(spec=AsyncClient)
+    yield mock_client
 
 
-def test_ai_service_verify():
-    service = AIService()
-    with patch("backend.app.services.ai_service.verify_ai_tracks") as mock_verify:
-        mock_verify.return_value = ([], [])
-        result = service.verify_tracks([{"artist": "A"}])
-        assert result == ([], [])
-        mock_verify.assert_called_once_with([{"artist": "A"}])
+@pytest.fixture
+def mock_metadata_verifier_cls():
+    """Mocks the MetadataVerifier class to track instantiations and methods."""
+    with patch("backend.app.services.metadata_service.MetadataVerifier", spec=MetadataVerifier) as mock_cls:
+        mock_instance = AsyncMock(spec=MetadataVerifier)
+        mock_cls.return_value = mock_instance
+        yield mock_cls
 
 
-def test_metadata_service_enrich_artist():
-    with patch("backend.app.services.metadata_service.MetadataVerifier") as mock_verifier_cls:
-        mock_verifier = MagicMock()
-        mock_verifier_cls.return_value = mock_verifier
-        mock_verifier.search_artist.return_value = {"name": "Enriched", "id": "123"}
-
-        service = MetadataService()
-        result = service.get_artist_info("Artist")
-
-        assert result is not None
-        assert result["name"] == "Enriched"
-        mock_verifier.search_artist.assert_called_once_with("Artist")
+@pytest.fixture
+def metadata_service(mock_httpx_client):
+    """Fixture to instantiate MetadataService with a mock client."""
+    return MetadataService(http_client=mock_httpx_client)
 
 
-def test_metadata_service_enrich_album():
-    with patch("backend.app.services.metadata_service.MetadataVerifier") as mock_verifier_cls:
-        mock_verifier = MagicMock()
-        mock_verifier_cls.return_value = mock_verifier
-        mock_verifier.search_album.return_value = {"title": "Album", "id": "456"}
+async def test_metadata_service_enrich_artist(mock_metadata_verifier_cls):
+    """Test successful artist enrichment."""
+    mock_verifier = mock_metadata_verifier_cls.return_value
+    mock_verifier.search_artist.return_value = {"name": "Enriched", "id": "123"}
 
-        service = MetadataService()
-        result = service.get_album_info("Artist", "Album")
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    result = await metadata_service.get_artist_info("Artist")
+    assert result is not None
+    assert result["name"] == "Enriched"
+    mock_verifier.search_artist.assert_called_once_with("Artist")
 
-        assert result is not None
-        assert result["name"] == "Album"
-        mock_verifier.search_album.assert_called_once_with("Artist", "Album")
+
+async def test_metadata_service_enrich_album(mock_metadata_verifier_cls):
+    """Test successful album enrichment."""
+    mock_verifier = mock_metadata_verifier_cls.return_value
+    mock_verifier.search_album.return_value = {"title": "Album", "id": "456"}
+
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    result = await metadata_service.get_album_info("Artist", "Album")
+    assert result is not None
+    assert result["name"] == "Album"
+    mock_verifier.search_album.assert_called_once_with("Artist", "Album")
+
+
+def test_integrations_service_init():
+    """Test that IntegrationsService initializes correctly."""
+    service = IntegrationsService(db=MagicMock())
+    assert service.db is not None

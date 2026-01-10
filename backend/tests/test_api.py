@@ -70,7 +70,7 @@ def test_verify_tracks_endpoint():
     mock_rejected = ["R - S"]
 
     mock_service = MagicMock()
-    mock_service.verify_tracks.return_value = (mock_verified, mock_rejected)
+    mock_service.verify_tracks = AsyncMock(return_value=(mock_verified, mock_rejected))
 
     app.dependency_overrides[get_ai_service] = lambda: mock_service
     app.dependency_overrides[current_active_user] = lambda: mock_user
@@ -104,14 +104,12 @@ def test_generate_playlist_error():
 def test_verify_tracks_error():
     """Test error handling in verification endpoint."""
     mock_service = MagicMock()
-    mock_service.verify_tracks.side_effect = Exception("Verify Error")
+    mock_service.verify_tracks = AsyncMock(side_effect=Exception("Verify Error"))
 
     app.dependency_overrides[get_ai_service] = lambda: mock_service
     app.dependency_overrides[current_active_user] = lambda: mock_user
 
-    response = client.post(
-        "/api/v1/playlists/verify", json={"tracks": [{"artist": "A", "track": "T"}]}
-    )
+    response = client.post("/api/v1/playlists/verify", json={"tracks": [{"artist": "A", "track": "T"}]})
 
     assert response.status_code == 500
     assert response.json()["detail"] == "Verify Error"
@@ -215,9 +213,7 @@ def test_spotify_callback_token_error_with_details():
         patch.object(settings, "SPOTIFY_CLIENT_ID", "test_id"),
         patch.object(settings, "SPOTIFY_CLIENT_SECRET", "test_secret"),
     ):
-        response = client.get(
-            f"/api/v1/integrations/spotify/callback?code=abc&state={mock_user.id}"
-        )
+        response = client.get(f"/api/v1/integrations/spotify/callback?code=abc&state={mock_user.id}")
         assert response.status_code == 400
         assert "Invalid code" in response.json()["detail"]
 

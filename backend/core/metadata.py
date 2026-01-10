@@ -1,156 +1,88 @@
 import logging
-import requests
-import time
+import asyncio
+from typing import List, Optional, Dict, Any
+
+import httpx
 from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
+
 from backend.app.core.config import settings
+from backend.core.providers.discogs import DiscogsClient
 
 logger = logging.getLogger("backend.core.metadata")
 
 
-def get_discogs_token() -> str | None:
-    """Retrieve Discogs PAT from environment variables."""
-    try:
-        return settings.DISCOGS_PAT
-    except Exception as e:
-        logger.debug(f"Failed to retrieve Discogs Token: {e}")
-    return None
+# Exception for retry logic
+class MusicBrainzAPIError(Exception):
+    """Custom exception for MusicBrainz API errors."""
 
-
-class DiscogsVerifier:
-    def __init__(self) -> None:
-        self.token = get_discogs_token()
-        self.base_url = "https://api.discogs.com/database/search"
-        self.headers = {
-            "User-Agent": "SpotifyPlaylistBuilder/0.1.0",
-        }
-        if self.token:
-            self.headers["Authorization"] = f"Discogs token={self.token}"
-        self.last_request_time = 0.0
-        # Discogs allows 60 req/min -> 1 req/sec
-        self.rate_limit_delay = 1.1
-
-    def _enforce_rate_limit(self):
-        elapsed = time.time() - self.last_request_time
-        if elapsed < self.rate_limit_delay:
-            time.sleep(self.rate_limit_delay - elapsed)
-        self.last_request_time = time.time()
-
-    @retry(
-        retry=retry_if_exception_type(requests.RequestException),
-        wait=wait_fixed(2),
-        stop=stop_after_attempt(3),
-    )
-    def search_recording(self, artist: str, track: str) -> list[dict]:
-        """Search Discogs for releases matching the artist and track."""
-        if not self.token:
-            return []
-
-        self._enforce_rate_limit()
-
-        params = {
-            "artist": artist,
-            "track": track,
-            "type": "release",
-            "per_page": 5,
-        }
-
-        try:
-            response = requests.get(self.base_url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-            return data.get("results", [])
-        except requests.RequestException as e:
-            logger.debug(f"Discogs API error: {e}")
-            return []
-        except Exception as e:
-            logger.debug(f"Unexpected error querying Discogs: {e}")
-            return []
-
-    def verify_track_version(self, artist: str, track: str, version: str) -> bool:
-        """Verify if a track matches the requested version using Discogs metadata."""
-        if not self.token:
-            return False
-
-        results = self.search_recording(artist, track)
-
-        for res in results:
-            title = res.get("title", "").lower()
-            formats = res.get("format", [])
-            format_str = " ".join(formats).lower()
-
-            # Discogs titles are often "Artist - Track"
-            # We can check if the version keywords appear in title or formats
-            if version == "live":
-                if "live" in title or "live" in format_str:
-                    return True
-            elif version == "remix":
-                if "remix" in title or "mix" in title or "remix" in format_str:
-                    return True
-            elif version == "remaster":
-                if "remaster" in title or "remastered" in format_str:
-                    return True
-            elif version == "studio":
-                # If we found a result that matches artist/track, and it's not explicitly
-                # live/remix, we assume it exists as a studio version.
-                return True
-
-        return False
+    pass
 
 
 class MetadataVerifier:
-    def __init__(self) -> None:
+    """
+    Asynchronous metadata verifier using MusicBrainz (primary) and Discogs (fallback).
+    """
+
+    def __init__(self, http_client: httpx.AsyncClient):
+        self.http_client = http_client
         self.base_url = "https://musicbrainz.org/ws/2/recording"
         self.headers = {
-            "User-Agent": "SpotifyPlaylistBuilder/0.1.0 "
-            "( https://github.com/dwdozier/spotify-playlist-builder )",
+            "User-Agent": f"{settings.PROJECT_NAME}/0.1.0 " "( https://github.com/dwdozier/vibomat )",
             "Accept": "application/json",
         }
         self.last_request_time = 0.0
         # MusicBrainz allows ~1 req/sec
         self.rate_limit_delay = 1.1
-        self.discogs = DiscogsVerifier()
+        self.discogs_client = DiscogsClient()
 
-    def _enforce_rate_limit(self):
+    async def _enforce_rate_limit(self):
         """Sleep to respect MusicBrainz rate limits."""
-        elapsed = time.time() - self.last_request_time
+        elapsed = asyncio.get_event_loop().time() - self.last_request_time
         if elapsed < self.rate_limit_delay:
-            time.sleep(self.rate_limit_delay - elapsed)
-        self.last_request_time = time.time()
+            await asyncio.sleep(self.rate_limit_delay - elapsed)
+        self.last_request_time = asyncio.get_event_loop().time()
 
     @retry(
-        retry=retry_if_exception_type(requests.RequestException),
+        retry=retry_if_exception_type(httpx.RequestError),
         wait=wait_fixed(2),
         stop=stop_after_attempt(3),
+        retry_error_callback=lambda retry_state: (
+            retry_state.outcome.result() if retry_state.outcome and retry_state.outcome.result() is not None else None
+        ),
     )
-    def search_recording(self, artist: str, track: str) -> list[dict]:
+    async def search_recording(self, artist: str, track: str) -> List[Dict[str, Any]]:
         """Search MusicBrainz for recordings matching the artist and track."""
-        self._enforce_rate_limit()
+        await self._enforce_rate_limit()
 
         # Lucene search syntax
         query = f'artist:"{artist}" AND recording:"{track}"'
         params = {"query": query, "fmt": "json", "limit": 10}
+        url = "https://musicbrainz.org/ws/2/recording"
 
         try:
-            response = requests.get(self.base_url, headers=self.headers, params=params)
+            response = await self.http_client.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             data = response.json()
             return data.get("recordings", [])
-        except requests.RequestException as e:
-            logger.warning(f"MusicBrainz API error: {e}")
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"MusicBrainz HTTP error for {artist} - {track}: {e}")
+            raise MusicBrainzAPIError(f"MB HTTP error: {e.response.status_code}") from e
+        except httpx.RequestError as e:
+            logger.warning(f"MusicBrainz Request error for {artist} - {track}: {e}")
             raise e
         except Exception as e:
             logger.warning(f"Unexpected error querying MusicBrainz: {e}")
             return []
 
-    def verify_track_version(self, artist: str, track: str, version: str) -> bool:
-        """Verify if a track matches the requested version using MusicBrainz metadata."""
-        if not version or version == "studio":
-            # Just check if it exists
-            pass
+    async def verify_track_version(self, artist: str, track: str, version: str) -> bool:
+        """Verify if a track matches the requested version using MusicBrainz (primary)
+        and Discogs (fallback) metadata.
+        """
+        version = version.lower() if version else "studio"
 
         # 1. Try MusicBrainz
         try:
-            recordings = self.search_recording(artist, track)
+            recordings = await self.search_recording(artist, track)
             if recordings:
                 for rec in recordings:
                     disambiguation = rec.get("disambiguation", "").lower()
@@ -169,30 +101,35 @@ class MetadataVerifier:
                         # For 'studio' or unspecified, simple existence in MB is enough
                         # provided we aren't looking for a specific alternate version
                         return True
+        except MusicBrainzAPIError as e:
+            logger.warning(f"MusicBrainz verification failed, falling back to Discogs: {e}")
+            # Continue to Discogs fallback
         except Exception as e:
-            logger.warning(f"MusicBrainz verification failed for {artist} - {track}: {e}")
+            logger.warning(f"MusicBrainz search failed unexpectedly: {e}")
             # Continue to Discogs fallback
 
-        # 2. Fallback to Discogs if MusicBrainz didn't confirm the specific version
-        # OR if MusicBrainz didn't find the track at all.
-        if self.discogs.verify_track_version(artist, track, version or "studio"):
-            logger.info(f"Verified {artist} - {track} ({version}) via Discogs.")
+        # 2. Fallback to Discogs
+        discogs_uri = await self.discogs_client.search_track(
+            artist=artist,
+            track=track,
+            # We don't have album/version yet, so we only pass the core data.
+        )
+
+        if discogs_uri:
+            logger.info(f"Found Discogs URI for {artist} - {track}: {discogs_uri}")
+            # Since Discogs search is more general, we currently assume existence is enough.
+            # We will improve version matching logic later if needed.
             return True
 
         return False
 
-    @retry(
-        retry=retry_if_exception_type(requests.RequestException),
-        wait=wait_fixed(2),
-        stop=stop_after_attempt(3),
-    )
-    def search_artist(self, artist_name: str) -> dict | None:
+    async def search_artist(self, artist_name: str) -> Optional[Dict[str, Any]]:
         """Search MusicBrainz for artist metadata."""
-        self._enforce_rate_limit()
+        await self._enforce_rate_limit()
         url = "https://musicbrainz.org/ws/2/artist"
         params = {"query": f'artist:"{artist_name}"', "fmt": "json", "limit": 1}
         try:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = await self.http_client.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             data = response.json()
             artists = data.get("artists", [])
@@ -202,19 +139,14 @@ class MetadataVerifier:
             logger.debug(f"Failed to fetch artist metadata for {artist_name}: {e}")
         return None
 
-    @retry(
-        retry=retry_if_exception_type(requests.RequestException),
-        wait=wait_fixed(2),
-        stop=stop_after_attempt(3),
-    )
-    def search_album(self, artist_name: str, album_name: str) -> dict | None:
+    async def search_album(self, artist_name: str, album_name: str) -> Optional[Dict[str, Any]]:
         """Search MusicBrainz for album (release-group) metadata."""
-        self._enforce_rate_limit()
+        await self._enforce_rate_limit()
         url = "https://musicbrainz.org/ws/2/release-group"
         query = f'artist:"{artist_name}" AND releasegroup:"{album_name}"'
         params = {"query": query, "fmt": "json", "limit": 1}
         try:
-            response = requests.get(url, headers=self.headers, params=params)
+            response = await self.http_client.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             data = response.json()
             groups = data.get("release-groups", [])

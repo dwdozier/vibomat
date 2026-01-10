@@ -66,9 +66,7 @@ class Settings(BaseSettings):
     GITHUB_OAUTH_CLIENT_ID: Optional[str] = None
     GITHUB_OAUTH_CLIENT_SECRET: Optional[str] = None
 
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore")
 
 
 settings = Settings()  # type: ignore

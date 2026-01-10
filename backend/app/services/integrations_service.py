@@ -56,9 +56,9 @@ class IntegrationsService:
             if "refresh_token" in token_data:
                 connection.refresh_token = token_data["refresh_token"]
 
-            connection.expires_at = (
-                datetime.now(UTC) + timedelta(seconds=token_data["expires_in"])
-            ).replace(tzinfo=None)
+            connection.expires_at = (datetime.now(UTC) + timedelta(seconds=token_data["expires_in"])).replace(
+                tzinfo=None
+            )
 
             await self.db.commit()
             return connection.access_token

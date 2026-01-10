@@ -2,18 +2,7 @@
 
 ## Active Track
 
-### [~] Track: User Identity & Privacy
-
-- **Goal:** Expand the user model to support social features and privacy controls.
-- **Link:** [View Track Folder](conductor/tracks/user_identity_privacy)
-- **Key Features:**
-  - Add User Handle, First/Last Name, and display logic (Handle > First Name > Username).
-  - Implement "Public vs. Private" profile visibility controls.
-  - "View As" feature to preview the public profile.
-
-## Backlog
-
-### 1. Advanced Metadata & Matching Intelligence
+### [~] Track: Advanced Metadata & Matching Intelligence
 
 - **Goal:** Improve match quality and provide transparency when tracks are missing.
 - **Key Features:**
@@ -22,8 +11,27 @@
   - UI for "Degraded Signals" (explain why a track wasn't added).
   - Implement "Manual Match Selection" UI for ambiguous searches (show top 5 matches).
 
+## Backlog
+
+### [ ] Track: Refactoring & Tech Debt
+
+- **Goal:** Simplify codebase, improve maintainability, and harden tests.
+- **Key Features:**
+  - Robust test dependency overrides.
+  - Standardized API status codes.
+  - Codebase simplification (providers).
+
+### [ ] Track: Tooling & Dependencies
+
+- **Goal:** Optimize development environment, build processes, and dependency management.
+- **Key Features:**
+  - Unify TypeScript configurations.
+  - Optimize Docker builds.
+  - Improve pre-commit hook performance.
+
 ## Archive
 
+- [x] **User Identity & Privacy** (2026-01-07)
 - [x] **Playlist Lifecycle & Sync Engine** (2026-01-07)
 - [x] **Foundation & Security Hygiene** (2026-01-04)
 - [x] **Stabilize Core Services & Tests** (2026-01-02)

@@ -13,9 +13,7 @@ class Playlist(Base):
     __tablename__ = "playlist"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
@@ -30,18 +28,12 @@ class Playlist(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Sync Engine
-    last_synced_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Store the tracks as JSON for flexibility
     content_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="playlists")
-    source_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("playlist.id", ondelete="SET NULL"), nullable=True
-    )
-    source_playlist: Mapped["Playlist"] = relationship(
-        remote_side=[id], backref="derived_playlists"
-    )
+    source_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("playlist.id", ondelete="SET NULL"), nullable=True)
+    source_playlist: Mapped["Playlist"] = relationship(remote_side=[id], backref="derived_playlists")

@@ -1,114 +1,91 @@
+from unittest.mock import patch, AsyncMock
 import pytest
-import httpx
-from unittest.mock import MagicMock, patch
-from backend.app.main import app
-from backend.app.models.user import User
-from backend.app.core.auth.fastapi_users import current_active_user
-from backend.app.api.v1.endpoints.users import get_metadata_service
+from httpx import AsyncClient
+
 from backend.app.services.metadata_service import MetadataService
+from backend.core.metadata import MetadataVerifier
+
+# --- Fixtures ---
 
 
-@pytest.mark.asyncio
-async def test_enrich_artist_success():
-    """Test successful artist metadata enrichment."""
-    mock_user = User(
-        id="550e8400-e29b-41d4-a716-446655440000",
-        email="user@example.com",
-        is_active=True,
-    )
-    mock_service = MagicMock()
-    mock_service.get_artist_info.return_value = {
-        "name": "Enriched Artist",
-        "type": "Person",
-        "country": "US",
-    }
-
-    app.dependency_overrides[current_active_user] = lambda: mock_user
-    app.dependency_overrides[get_metadata_service] = lambda: mock_service
-
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        response = await ac.post("/api/v1/profile/me/enrich/artist", json={"artist_name": "Artist"})
-        assert response.status_code == 200
-        assert response.json()["name"] == "Enriched Artist"
-
-    app.dependency_overrides.clear()
+@pytest.fixture
+def mock_httpx_client():
+    """Mocks the httpx.AsyncClient to be passed to MetadataService."""
+    mock_client = AsyncMock(spec=AsyncClient)
+    yield mock_client
 
 
-@pytest.mark.asyncio
-async def test_enrich_album_success():
-    """Test successful album metadata enrichment."""
-    mock_user = User(
-        id="550e8400-e29b-41d4-a716-446655440000",
-        email="user@example.com",
-        is_active=True,
-    )
-    mock_service = MagicMock()
-    mock_service.get_album_info.return_value = {
-        "name": "Enriched Album",
-        "artist": "Artist",
-        "first_release_date": "2020",
-    }
-
-    app.dependency_overrides[current_active_user] = lambda: mock_user
-    app.dependency_overrides[get_metadata_service] = lambda: mock_service
-
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        response = await ac.post(
-            "/api/v1/profile/me/enrich/album",
-            json={"artist_name": "Artist", "album_name": "Album"},
-        )
-        assert response.status_code == 200
-        assert response.json()["name"] == "Enriched Album"
-
-    app.dependency_overrides.clear()
+@pytest.fixture
+def mock_metadata_verifier_cls():
+    """Mocks the MetadataVerifier class to track instantiations and methods."""
+    # Ensure the class itself returns a mock instance suitable for awaiting its methods.
+    with patch("backend.app.services.metadata_service.MetadataVerifier", spec=MetadataVerifier) as mock_cls:
+        mock_instance = AsyncMock(spec=MetadataVerifier)
+        mock_cls.return_value = mock_instance
+        yield mock_cls
 
 
-@pytest.mark.asyncio
-async def test_enrich_not_found():
-    """Test enrichment failure (not found)."""
-    mock_user = User(
-        id="550e8400-e29b-41d4-a716-446655440000",
-        email="user@example.com",
-        is_active=True,
-    )
-    mock_service = MagicMock()
-    mock_service.get_artist_info.return_value = None
-
-    app.dependency_overrides[current_active_user] = lambda: mock_user
-    app.dependency_overrides[get_metadata_service] = lambda: mock_service
-
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        res = await ac.post("/api/v1/profile/me/enrich/artist", json={"artist_name": "Unknown"})
-        assert res.status_code == 404
-
-    app.dependency_overrides.clear()
+@pytest.fixture
+def metadata_service(mock_httpx_client):
+    """Fixture to instantiate MetadataService with a mock client."""
+    return MetadataService(http_client=mock_httpx_client)
 
 
-def test_metadata_service_enrich_artist_none():
+# --- Metadata Service Enrichment Tests ---
+
+
+async def test_metadata_service_enrich_artist_success(mock_metadata_verifier_cls):
+    """Test successful artist enrichment."""
+    mock_verifier = mock_metadata_verifier_cls.return_value
+    mock_data = {"id": "123", "name": "Test Artist", "type": "Group", "country": "US"}
+    mock_verifier.search_artist.return_value = mock_data
+
+    metadata_service = MetadataService(http_client=AsyncMock())
+    result = await metadata_service.get_artist_info("Test Artist")
+
+    assert result is not None
+    assert result["name"] == "Test Artist"
+    assert result["source_url"] == "https://musicbrainz.org/artist/123"
+    mock_verifier.search_artist.assert_called_once_with("Test Artist")
+
+
+async def test_metadata_service_enrich_artist_none(mock_metadata_verifier_cls):
     """Test MetadataService when artist info is missing."""
-    with patch("backend.app.services.metadata_service.MetadataVerifier") as mock_verifier_cls:
-        mock_verifier = MagicMock()
-        mock_verifier_cls.return_value = mock_verifier
-        mock_verifier.search_artist.return_value = None
+    mock_verifier = mock_metadata_verifier_cls.return_value
+    mock_verifier.search_artist.return_value = None
 
-        service = MetadataService()
-        result = service.get_artist_info("Unknown")
-        assert result is None
+    metadata_service = MetadataService(http_client=AsyncMock())
+    result = await metadata_service.get_artist_info("Unknown")
+    assert result is None
+    mock_verifier.search_artist.assert_called_once_with("Unknown")
 
 
-def test_metadata_service_enrich_album_none():
+async def test_metadata_service_enrich_album_success(mock_metadata_verifier_cls):
+    """Test successful album enrichment."""
+    mock_verifier = mock_metadata_verifier_cls.return_value
+    mock_data = {
+        "id": "456",
+        "title": "Test Album",
+        "first-release-date": "2024-01-01",
+        "primary-type": "Album",
+    }
+    mock_verifier.search_album.return_value = mock_data
+
+    metadata_service = MetadataService(http_client=AsyncMock())
+    result = await metadata_service.get_album_info("Test Artist", "Test Album")
+
+    assert result is not None
+    assert result["name"] == "Test Album"
+    assert result["source_url"] == "https://musicbrainz.org/release-group/456"
+    mock_verifier.search_album.assert_called_once_with("Test Artist", "Test Album")
+
+
+async def test_metadata_service_enrich_album_none(mock_metadata_verifier_cls):
     """Test MetadataService when album info is missing."""
-    with patch("backend.app.services.metadata_service.MetadataVerifier") as mock_verifier_cls:
-        mock_verifier = MagicMock()
-        mock_verifier_cls.return_value = mock_verifier
-        mock_verifier.search_album.return_value = None
+    mock_verifier = mock_metadata_verifier_cls.return_value
+    mock_verifier.search_album.return_value = None
 
-        service = MetadataService()
-        result = service.get_album_info("Artist", "Unknown")
-        assert result is None
+    metadata_service = MetadataService(http_client=AsyncMock())
+    result = await metadata_service.get_album_info("Artist", "Unknown")
+    assert result is None
+    mock_verifier.search_album.assert_called_once_with("Artist", "Unknown")

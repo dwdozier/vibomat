@@ -3,22 +3,25 @@ from backend.core.ai import generate_playlist, verify_ai_tracks
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.models.ai_log import AIInteractionEmbedding
 from sqlalchemy import select
+import httpx
 
 
 class AIService:
-    def __init__(self, db: Optional[AsyncSession] = None):
+    def __init__(self, db: Optional[AsyncSession] = None, http_client: Optional[httpx.AsyncClient] = None):
         self.db = db
+        self.http_client = http_client
 
-    def generate(
-        self, prompt: str, count: int = 20, artists: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def generate(self, prompt: str, count: int = 20, artists: Optional[str] = None) -> Dict[str, Any]:
         full_prompt = prompt
         if artists:
             full_prompt += f". Inspired by artists: {artists}"
         return generate_playlist(full_prompt, count)
 
-    def verify_tracks(self, tracks: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], List[str]]:
-        return verify_ai_tracks(tracks)
+    async def verify_tracks(self, tracks: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], List[str]]:
+        if not self.http_client:
+            # Should not happen in FastAPI, but for core use, raise error
+            raise ValueError("HTTP client required for metadata verification.")
+        return await verify_ai_tracks(tracks, http_client=self.http_client)
 
     async def store_interaction_embedding(
         self, user_id: Any, prompt: str, embedding: List[float]
@@ -33,9 +36,7 @@ class AIService:
         await self.db.refresh(interaction)
         return interaction
 
-    async def get_nearest_interactions(
-        self, embedding: List[float], limit: int = 5
-    ) -> List[AIInteractionEmbedding]:
+    async def get_nearest_interactions(self, embedding: List[float], limit: int = 5) -> List[AIInteractionEmbedding]:
         """Retrieve the nearest neighbor interactions by vector similarity."""
         if not self.db:
             raise ValueError("Database session required for this operation")

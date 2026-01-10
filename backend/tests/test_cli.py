@@ -113,9 +113,7 @@ def test_cli_install_completion_success():
         mock_run.assert_called_once()
         # Check if file was written
         mock_open.assert_called_with(mock_target, "w")
-        mock_open.return_value.__enter__.return_value.write.assert_called_with(
-            "completion script content"
-        )
+        mock_open.return_value.__enter__.return_value.write.assert_called_with("completion script content")
 
 
 def test_cli_install_completion_no_omz():

@@ -4,6 +4,7 @@ from .base import BaseMusicProvider
 from backend.core.utils.helpers import _similarity, _determine_version
 from backend.core.metadata import MetadataVerifier
 import logging
+import httpx
 
 logger = logging.getLogger("backend.core.providers.spotify")
 
@@ -11,7 +12,9 @@ logger = logging.getLogger("backend.core.providers.spotify")
 class SpotifyProvider(BaseMusicProvider):
     def __init__(self, auth_token: str):
         self.sp = spotipy.Spotify(auth=auth_token)
-        self.metadata_verifier = MetadataVerifier()
+        # Create a new HTTP client instance for the Metadata Verifier
+        self.http_client = httpx.AsyncClient()
+        self.metadata_verifier = MetadataVerifier(http_client=self.http_client)
         self._user_id = None
 
     @property
@@ -78,9 +81,7 @@ class SpotifyProvider(BaseMusicProvider):
         return None
 
     async def create_playlist(self, name: str, description: str = "", public: bool = False) -> str:
-        playlist = self.sp.user_playlist_create(
-            user=self.user_id, name=name, public=public, description=description
-        )
+        playlist = self.sp.user_playlist_create(user=self.user_id, name=name, public=public, description=description)
         return playlist["id"]
 
     async def add_tracks_to_playlist(self, playlist_id: str, track_uris: List[str]) -> None:

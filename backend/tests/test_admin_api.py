@@ -23,9 +23,7 @@ async def test_admin_stats_endpoint(db_session):
     app.dependency_overrides[get_async_session] = lambda: db_session
     app.dependency_overrides[current_active_superuser] = lambda: mock_admin
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/v1/admin/stats")
         assert response.status_code == 200
         data = response.json()
@@ -51,9 +49,7 @@ async def test_admin_list_users(db_session):
     app.dependency_overrides[get_async_session] = lambda: db_session
     app.dependency_overrides[current_active_superuser] = lambda: mock_admin
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/v1/admin/users")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
@@ -76,9 +72,7 @@ async def test_admin_list_playlists(db_session):
     app.dependency_overrides[get_async_session] = lambda: db_session
     app.dependency_overrides[current_active_superuser] = lambda: mock_admin
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/v1/admin/playlists")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
@@ -101,9 +95,7 @@ async def test_admin_list_connections(db_session):
     app.dependency_overrides[get_async_session] = lambda: db_session
     app.dependency_overrides[current_active_superuser] = lambda: mock_admin
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/v1/admin/connections")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
@@ -114,8 +106,6 @@ async def test_admin_list_connections(db_session):
 @pytest.mark.asyncio
 async def test_admin_stats_unauthorized():
     """Test that non-admins cannot access stats."""
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/v1/admin/stats")
         assert response.status_code in [401, 403]

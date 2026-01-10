@@ -235,9 +235,7 @@ def test_import_playlist_success(mock_db_session):
 
             mock_db_session.execute.return_value.scalar_one_or_none.return_value = mock_playlist
 
-            with patch(
-                "backend.app.api.v1.endpoints.playlists.sync_playlist_task"
-            ) as mock_sync_task:
+            with patch("backend.app.api.v1.endpoints.playlists.sync_playlist_task") as mock_sync_task:
 
                 response = client.post(f"/api/v1/playlists/{pid}/sync")
 

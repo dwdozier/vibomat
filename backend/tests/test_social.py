@@ -43,9 +43,7 @@ async def test_public_profile_logic(db_session):
 
     app.dependency_overrides[get_async_session] = lambda: db_session
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get(f"/api/v1/profile/{user_id}")
         assert response.status_code == 200
         assert response.json()["favorite_artists"] == ["Artist A"]
@@ -78,9 +76,7 @@ async def test_get_profile_by_handle(db_session):
 
     app.dependency_overrides[get_async_session] = lambda: db_session
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         # Success
         response = await ac.get("/api/v1/profile/by-handle/vibecitizen")
         assert response.status_code == 200
@@ -139,9 +135,7 @@ async def test_favoriting_logic(db_session):
     app.dependency_overrides[get_async_session] = lambda: db_session
     app.dependency_overrides[current_active_user] = lambda: user
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         # Favorite
         response = await ac.post(f"/api/v1/profile/playlists/{playlist_id}/favorite")
         assert response.status_code == 200
@@ -178,12 +172,8 @@ async def test_get_public_playlists(db_session):
     )
     db_session.add(user)
 
-    playlist = Playlist(
-        id=uuid.uuid4(), user_id=user_id, name="Public", public=True, content_json={}
-    )
-    private_playlist = Playlist(
-        id=uuid.uuid4(), user_id=user_id, name="Private", public=False, content_json={}
-    )
+    playlist = Playlist(id=uuid.uuid4(), user_id=user_id, name="Public", public=True, content_json={})
+    private_playlist = Playlist(id=uuid.uuid4(), user_id=user_id, name="Private", public=False, content_json={})
     db_session.add_all([playlist, private_playlist])
     await db_session.commit()
 
@@ -191,9 +181,7 @@ async def test_get_public_playlists(db_session):
 
     app.dependency_overrides[get_async_session] = lambda: db_session
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get(f"/api/v1/profile/{user_id}/playlists")
         assert response.status_code == 200
         assert len(response.json()) == 1
@@ -221,9 +209,7 @@ async def test_favorite_edge_cases(db_session):
     app.dependency_overrides[get_async_session] = lambda: db_session
     app.dependency_overrides[current_active_user] = lambda: user
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as ac:
         # Test favoriting non-existent playlist
         response = await ac.post(f"/api/v1/profile/playlists/{uuid.uuid4()}/favorite")
         assert response.status_code == 404

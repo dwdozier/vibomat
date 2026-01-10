@@ -87,17 +87,14 @@ async def spotify_login(
         client_id = conn.credentials.get("client_id", client_id)
 
     if not client_id:
-        raise HTTPException(
-            status_code=400, detail="Spotify Client ID not configured for this relay."
-        )
+        raise HTTPException(status_code=400, detail="Spotify Client ID not configured for this relay.")
 
     params = {
         "client_id": client_id,
         "response_type": "code",
         "redirect_uri": settings.SPOTIFY_REDIRECT_URI,
         "scope": (
-            "playlist-modify-public playlist-modify-private "
-            "playlist-read-private playlist-read-collaborative"
+            "playlist-modify-public playlist-modify-private " "playlist-read-private playlist-read-collaborative"
         ),
         "state": str(user.id),
     }
@@ -171,9 +168,7 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
 
         # 4. Update or Create Connection
         # Note: Database expects naive timestamp (UTC)
-        expires_at = (datetime.now(UTC) + timedelta(seconds=token_data["expires_in"])).replace(
-            tzinfo=None
-        )
+        expires_at = (datetime.now(UTC) + timedelta(seconds=token_data["expires_in"])).replace(tzinfo=None)
 
         if not conn:
             conn = ServiceConnection(

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { Settings as SettingsIcon, Link2, Shield, User as UserIcon, Globe, Lock, Trash2, Plus, Disc, Info, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
@@ -10,7 +10,16 @@ export const Route = createFileRoute('/settings')({
   component: Settings,
 })
 
-// ... EnrichedMetadata interface
+interface EnrichedMetadata {
+  name: string
+  artist?: string
+  type?: string
+  country?: string
+  first_release_date?: string
+  primary_type?: string
+  source_url?: string
+  source_name?: string
+}
 
 function Settings() {
   const queryClient = useQueryClient()
@@ -125,9 +134,9 @@ function Settings() {
   const handleUpdateIdentity = () => {
     if (!user) return
     updateMutation.mutate({
-      handle: handle || null,
-      first_name: firstName || null,
-      last_name: lastName || null
+      handle: handle || undefined,
+      first_name: firstName || undefined,
+      last_name: lastName || undefined
     })
   }
 

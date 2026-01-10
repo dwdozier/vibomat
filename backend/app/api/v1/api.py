@@ -19,9 +19,7 @@ from backend.app.core.config import settings
 api_router = APIRouter()
 
 # Auth routes
-api_router.include_router(
-    fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
-)
+api_router.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"])
 api_router.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/auth",

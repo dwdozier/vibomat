@@ -35,9 +35,7 @@ async def test_jsonb_deep_query(db_session: AsyncSession):
 
     # Query for specific track within the array using containment @>
     # Note: containment operator @> requires JSONB on both sides
-    stmt = select(Playlist).where(
-        text('content_json::jsonb @> \'{"tracks": [{"artist": "Gunship"}]}\'::jsonb')
-    )
+    stmt = select(Playlist).where(text('content_json::jsonb @> \'{"tracks": [{"artist": "Gunship"}]}\'::jsonb'))
     result = await db_session.execute(stmt)
     db_pl = result.scalar_one()
     assert db_pl.name == "Deep Query Test"
@@ -58,9 +56,7 @@ async def test_full_text_search(db_session: AsyncSession):
 
     # Create a basic FTS query using plainto_tsquery
     stmt = select(Artist).where(
-        func.to_tsvector("english", Artist.name).bool_op("@@")(
-            func.plainto_tsquery("english", "midnight")
-        )
+        func.to_tsvector("english", Artist.name).bool_op("@@")(func.plainto_tsquery("english", "midnight"))
     )
     result = await db_session.execute(stmt)
     results = result.scalars().all()
@@ -116,11 +112,7 @@ async def test_vector_similarity_search(db_session: AsyncSession):
 
     # We'll use Euclidean distance <-> for this test as it's more predictable
     # with these dummy vectors
-    stmt = (
-        select(AIInteractionEmbedding)
-        .order_by(AIInteractionEmbedding.embedding.l2_distance(target_v))
-        .limit(1)
-    )
+    stmt = select(AIInteractionEmbedding).order_by(AIInteractionEmbedding.embedding.l2_distance(target_v)).limit(1)
     result = await db_session.execute(stmt)
     nearest = result.scalar_one()
     assert nearest.prompt == "High vector"

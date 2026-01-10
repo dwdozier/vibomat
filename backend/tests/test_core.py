@@ -323,9 +323,7 @@ def test_update_playlist_details(builder, mock_spotify):
         "public": True,
     }
     builder.update_playlist_details("pid", "New Description", public=False)
-    mock_spotify.playlist_change_details.assert_called_with(
-        "pid", description="New Description", public=False
-    )
+    mock_spotify.playlist_change_details.assert_called_with("pid", description="New Description", public=False)
 
 
 def test_update_playlist_details_no_change(builder, mock_spotify):
@@ -694,9 +692,7 @@ def test_search_track_with_album(builder):
     uri = builder.search_track("Artist", "Song", album="Album")
     assert uri == "spotify:track:album_track"
     # Verify query included album
-    builder.sp.search.assert_called_with(
-        q="track:Song artist:Artist album:Album", type="track", limit=1
-    )
+    builder.sp.search.assert_called_with(q="track:Song artist:Artist album:Album", type="track", limit=1)
 
 
 def test_search_track_low_score(builder):
@@ -845,9 +841,7 @@ def test_backup_all_playlists_includes_followed(builder, mock_spotify):
         # Both should be backed up
         assert mock_export.call_count == 2
         # Verify the IDs are passed correctly
-        mock_export.assert_any_call(
-            "Owned", os.path.join("backups", "owned.json"), playlist_id="owned_id"
-        )
+        mock_export.assert_any_call("Owned", os.path.join("backups", "owned.json"), playlist_id="owned_id")
         mock_export.assert_any_call(
             "Followed",
             os.path.join("backups", "followed.json"),
@@ -898,9 +892,7 @@ def test_build_playlist_preserves_unplayable_tracks(builder, mock_spotify):
                         patch.object(builder, "clear_playlist"),
                         patch.object(builder, "_add_track_uris_to_playlist") as mock_add,
                         patch.object(builder, "update_playlist_details"),
-                        patch.object(
-                            builder, "get_playlist_tracks", return_value=["uri:old"]
-                        ),  # Force update trigger
+                        patch.object(builder, "get_playlist_tracks", return_value=["uri:old"]),  # Force update trigger
                     ):
                         builder.build_playlist_from_json("file.json")
 

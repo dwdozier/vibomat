@@ -75,9 +75,7 @@ async def sync_playlist_task(playlist_id: UUID) -> str:
 
             # 4. Get track URIs from local content
             local_tracks = playlist.content_json.get("tracks", [])
-            local_uris = [
-                t["uri"] for t in local_tracks if t.get("uri") and t.get("provider") == "spotify"
-            ]
+            local_uris = [t["uri"] for t in local_tracks if t.get("uri") and t.get("provider") == "spotify"]
 
             # 5. Get remote track URIs (Assuming SpotifyProvider has a method for this)
             # For simplicity, we will force a full overwrite for the first pass of the sync engine.
@@ -130,7 +128,7 @@ async def periodic_sync_dispatch_task() -> str:
 
         # Dispatch sync tasks
         for p_id in playlist_ids:
-            await sync_playlist_task.kiq(p_id)
+            await sync_playlist_task.kiq(p_id)  # type: ignore[no-matching-overload]
 
         return f"Dispatched {len(playlist_ids)} sync tasks."
 

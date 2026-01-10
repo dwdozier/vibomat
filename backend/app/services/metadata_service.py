@@ -1,14 +1,15 @@
 from backend.core.metadata import MetadataVerifier
 from typing import Optional, Dict, Any
+import httpx
 
 
 class MetadataService:
-    def __init__(self):
-        self.verifier = MetadataVerifier()
+    def __init__(self, http_client: httpx.AsyncClient):
+        self.verifier = MetadataVerifier(http_client=http_client)
 
-    def get_artist_info(self, artist_name: str) -> Optional[Dict[str, Any]]:
+    async def get_artist_info(self, artist_name: str) -> Optional[Dict[str, Any]]:
         """Fetch enriched metadata for an artist."""
-        data = self.verifier.search_artist(artist_name)
+        data = await self.verifier.search_artist(artist_name)
         if not data:
             return None
 
@@ -21,11 +22,10 @@ class MetadataService:
             "source_url": f"https://musicbrainz.org/artist/{mb_id}" if mb_id else None,
             "source_name": "MusicBrainz",
         }
-        return None
 
-    def get_album_info(self, artist_name: str, album_name: str) -> Optional[Dict[str, Any]]:
+    async def get_album_info(self, artist_name: str, album_name: str) -> Optional[Dict[str, Any]]:
         """Fetch enriched metadata for an album."""
-        data = self.verifier.search_album(artist_name, album_name)
+        data = await self.verifier.search_album(artist_name, album_name)
         if not data:
             return None
 
@@ -39,4 +39,3 @@ class MetadataService:
             "source_url": (f"https://musicbrainz.org/release-group/{mb_id}" if mb_id else None),
             "source_name": "MusicBrainz",
         }
-        return None
