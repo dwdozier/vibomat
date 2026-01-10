@@ -132,6 +132,7 @@ def generate_cmd(
     from .utils.helpers import to_snake_case
     import httpx
     from unittest.mock import AsyncMock
+    from .providers.spotify import SpotifyProvider
 
     if not prompt:
         prompt = typer.prompt("Describe the playlist mood/theme")
@@ -152,7 +153,10 @@ def generate_cmd(
         # We must use a temporary client for this synchronous context
         # We pass a mock AsyncClient to avoid needing a real lifespan management here
         mock_client = AsyncMock(spec=httpx.AsyncClient)
-        verified, rejected = asyncio.run(verify_ai_tracks(raw_tracks, http_client=mock_client))
+        mock_provider = AsyncMock(spec=SpotifyProvider)
+        verified, rejected = asyncio.run(
+            verify_ai_tracks(raw_tracks, http_client=mock_client, spotify_provider=mock_provider)
+        )
 
         logger.info("\nVerification Results:")
         logger.info(f"✓ {len(verified)} tracks verified.")

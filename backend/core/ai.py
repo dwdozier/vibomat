@@ -1,12 +1,15 @@
 import json
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from google import genai
 from google.genai import types
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 from backend.app.core.config import settings
 from .metadata import MetadataVerifier
 import httpx
+
+if TYPE_CHECKING:
+    from .providers.spotify import SpotifyProvider
 
 logger = logging.getLogger("backend.core.ai")
 
@@ -181,10 +184,12 @@ def generate_playlist(description: str, count: int = 20) -> dict[str, Any]:
 
 
 async def verify_ai_tracks(
-    tracks: list[dict[str, Any]], http_client: httpx.AsyncClient
+    tracks: list[dict[str, Any]],
+    http_client: httpx.AsyncClient,
+    spotify_provider: "SpotifyProvider",
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Verify AI-generated tracks against MusicBrainz."""
-    verifier = MetadataVerifier(http_client=http_client)
+    verifier = MetadataVerifier(http_client=http_client, spotify_provider=spotify_provider)
     verified_tracks = []
     rejected_tracks = []
 

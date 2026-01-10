@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional, cast
 from backend.core.ai import generate_playlist, verify_ai_tracks
+from backend.core.providers.spotify import SpotifyProvider
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.models.ai_log import AIInteractionEmbedding
 from sqlalchemy import select
@@ -7,9 +8,15 @@ import httpx
 
 
 class AIService:
-    def __init__(self, db: Optional[AsyncSession] = None, http_client: Optional[httpx.AsyncClient] = None):
+    def __init__(
+        self,
+        db: Optional[AsyncSession] = None,
+        http_client: Optional[httpx.AsyncClient] = None,
+        spotify_provider: Optional[SpotifyProvider] = None,
+    ):
         self.db = db
         self.http_client = http_client
+        self.spotify_provider = spotify_provider
 
     def generate(self, prompt: str, count: int = 20, artists: Optional[str] = None) -> Dict[str, Any]:
         full_prompt = prompt
@@ -18,10 +25,10 @@ class AIService:
         return generate_playlist(full_prompt, count)
 
     async def verify_tracks(self, tracks: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], List[str]]:
-        if not self.http_client:
+        if not self.http_client or not self.spotify_provider:
             # Should not happen in FastAPI, but for core use, raise error
-            raise ValueError("HTTP client required for metadata verification.")
-        return await verify_ai_tracks(tracks, http_client=self.http_client)
+            raise ValueError("HTTP client and Spotify provider required for metadata verification.")
+        return await verify_ai_tracks(tracks, http_client=self.http_client, spotify_provider=self.spotify_provider)
 
     async def store_interaction_embedding(
         self, user_id: Any, prompt: str, embedding: List[float]

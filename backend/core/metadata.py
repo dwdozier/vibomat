@@ -7,6 +7,7 @@ from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_t
 
 from backend.app.core.config import settings
 from backend.core.providers.discogs import DiscogsClient
+from backend.core.providers.spotify import SpotifyProvider
 
 logger = logging.getLogger("backend.core.metadata")
 
@@ -20,11 +21,14 @@ class MusicBrainzAPIError(Exception):
 
 class MetadataVerifier:
     """
-    Asynchronous metadata verifier using MusicBrainz (primary) and Discogs (fallback).
+    Asynchronous metadata verifier using a multi-provider strategy:
+    Spotify (primary), Discogs (secondary), and MusicBrainz (tertiary/verification).
     """
 
-    def __init__(self, http_client: httpx.AsyncClient):
+    def __init__(self, http_client: httpx.AsyncClient, spotify_provider: SpotifyProvider):
         self.http_client = http_client
+        self.spotify_provider = spotify_provider
+        self.discogs_client = DiscogsClient()
         self.base_url = "https://musicbrainz.org/ws/2/recording"
         self.headers = {
             "User-Agent": f"{settings.PROJECT_NAME}/0.1.0 " "( https://github.com/dwdozier/vibomat )",
@@ -33,7 +37,28 @@ class MetadataVerifier:
         self.last_request_time = 0.0
         # MusicBrainz allows ~1 req/sec
         self.rate_limit_delay = 1.1
-        self.discogs_client = DiscogsClient()
+
+    async def enrich_track_metadata(
+        self, artist: str, track: str, album: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Enrich track metadata using Spotify, with Discogs as a fallback.
+        """
+        # 1. Start with Spotify
+        spotify_data = await self.spotify_provider.search_track(artist=artist, track=track, album=album)
+
+        if not spotify_data:
+            return None  # If Spotify finds nothing, we stop.
+
+        # 2. If Spotify data is incomplete, try to fill gaps with Discogs
+        if not spotify_data.get("album"):
+            discogs_result = await self.discogs_client.search_track(artist=artist, track=track, album=album)
+            if discogs_result and "uri" in discogs_result:
+                discogs_metadata = await self.discogs_client.get_metadata(discogs_result["uri"])
+                if discogs_metadata and discogs_metadata.get("title"):
+                    spotify_data["album"] = discogs_metadata["title"]
+
+        return spotify_data
 
     async def _enforce_rate_limit(self):
         """Sleep to respect MusicBrainz rate limits."""
@@ -109,14 +134,14 @@ class MetadataVerifier:
             # Continue to Discogs fallback
 
         # 2. Fallback to Discogs
-        discogs_uri = await self.discogs_client.search_track(
+        discogs_result = await self.discogs_client.search_track(
             artist=artist,
             track=track,
             # We don't have album/version yet, so we only pass the core data.
         )
 
-        if discogs_uri:
-            logger.info(f"Found Discogs URI for {artist} - {track}: {discogs_uri}")
+        if discogs_result and "uri" in discogs_result:
+            logger.info(f"Found Discogs URI for {artist} - {track}: {discogs_result['uri']}")
             # Since Discogs search is more general, we currently assume existence is enough.
             # We will improve version matching logic later if needed.
             return True

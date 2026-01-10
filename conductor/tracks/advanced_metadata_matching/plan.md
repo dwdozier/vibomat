@@ -2,8 +2,8 @@
 
 ## Phase 1: Discogs Integration and Core Metadata Fixes
 
-- [ ] Implement a `DiscogsClient` for fetching album/artist/track metadata.
-- [ ] Update `backend/core/metadata.py` to use a multi-source lookup (Spotify ->
+- [x] Implement a `DiscogsClient` for fetching album/artist/track metadata. [72a8af7]
+- [x] Update `backend/core/metadata.py` to use a multi-source lookup (Spotify -> [154730e]
   Discogs/MusicBrainz) to reduce missing data.
 - [ ] Enhance `MetadataVerifier` to flag tracks missing core data as "degraded signal."
 - [ ] Update track schema to include fields for Discogs URI and degradation flag.

@@ -29,8 +29,9 @@ async def test_spotify_provider_search_track(mock_spotipy):
     }
 
     provider = SpotifyProvider(auth_token="token")
-    uri = await provider.search_track("Artist", "Song")
-    assert uri == "spotify:track:123"
+    result = await provider.search_track("Artist", "Song")
+    assert result is not None
+    assert result["uri"] == "spotify:track:123"
 
 
 @pytest.mark.asyncio
@@ -47,10 +48,22 @@ async def test_spotify_provider_create_playlist(mock_spotipy):
 @pytest.mark.asyncio
 async def test_spotify_provider_search_track_with_album(mock_spotipy):
     """Test search_track with album."""
-    mock_spotipy.search.return_value = {"tracks": {"items": [{"uri": "spotify:track:album"}]}}
+    mock_spotipy.search.return_value = {
+        "tracks": {
+            "items": [
+                {
+                    "name": "Song",
+                    "artists": [{"name": "Artist"}],
+                    "album": {"name": "Album"},
+                    "uri": "spotify:track:album",
+                }
+            ]
+        }
+    }
     provider = SpotifyProvider(auth_token="token")
-    uri = await provider.search_track("Artist", "Song", album="Album")
-    assert uri == "spotify:track:album"
+    result = await provider.search_track("Artist", "Song", album="Album")
+    assert result is not None
+    assert result["uri"] == "spotify:track:album"
 
 
 @pytest.mark.asyncio
@@ -79,8 +92,9 @@ async def test_spotify_provider_search_track_no_version_pref(mock_spotipy):
     }
     provider = SpotifyProvider(auth_token="token")
     # No version passed, should prefer studio
-    uri = await provider.search_track("Artist", "Song")
-    assert uri == "spotify:track:studio"
+    result = await provider.search_track("Artist", "Song")
+    assert result is not None
+    assert result["uri"] == "spotify:track:studio"
 
 
 @pytest.mark.asyncio

@@ -12,8 +12,8 @@ class BaseMusicProvider(ABC):
         track: str,
         album: Optional[str] = None,
         version: Optional[str] = None,
-    ) -> Optional[str]:
-        """Search for a track and return its provider-specific URI."""
+    ) -> Optional[dict]:
+        """Search for a track and return its metadata."""
         pass
 
     @abstractmethod

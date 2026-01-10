@@ -1,9 +1,11 @@
 from unittest.mock import patch, AsyncMock
+
 import pytest
 from httpx import AsyncClient
 
 from backend.core.metadata import MetadataVerifier, MusicBrainzAPIError
 from backend.core.providers.discogs import DiscogsClient
+from backend.core.providers.spotify import SpotifyProvider
 from backend.app.services.metadata_service import MetadataService
 
 # --- Fixtures ---
@@ -17,7 +19,13 @@ def mock_httpx_client():
 
 
 @pytest.fixture
-def mock_metadata_verifier_cls():
+def mock_spotify_provider():
+    """Mocks the SpotifyProvider."""
+    return AsyncMock(spec=SpotifyProvider)
+
+
+@pytest.fixture
+def mock_metadata_verifier_cls(mock_spotify_provider):
     """Mocks the MetadataVerifier class to track instantiations and methods."""
     with patch("backend.app.services.metadata_service.MetadataVerifier", spec=MetadataVerifier) as mock_cls:
         # The class mock needs to return an AsyncMock instance when instantiated by the service
@@ -27,21 +35,21 @@ def mock_metadata_verifier_cls():
 
 
 @pytest.fixture
-def metadata_service(mock_httpx_client):
+def metadata_service(mock_httpx_client, mock_spotify_provider):
     """Fixture to instantiate MetadataService with a mock client."""
-    return MetadataService(http_client=mock_httpx_client)
+    return MetadataService(http_client=mock_httpx_client, spotify_provider=mock_spotify_provider)
 
 
 # --- Service Tests (formerly sync, now async) ---
 
 
-async def test_metadata_service_get_artist_info_success(mock_metadata_verifier_cls):
+async def test_metadata_service_get_artist_info_success(mock_metadata_verifier_cls, mock_spotify_provider):
     """Test successful fetching of artist info."""
     mock_verifier = mock_metadata_verifier_cls.return_value
     mock_data = {"id": "123", "name": "Artist", "type": "Group", "country": "US"}
     mock_verifier.search_artist.return_value = mock_data
 
-    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
     info = await metadata_service.get_artist_info("Artist")
     assert info is not None
     assert info["name"] == "Artist"
@@ -50,18 +58,18 @@ async def test_metadata_service_get_artist_info_success(mock_metadata_verifier_c
     mock_verifier.search_artist.assert_called_once_with("Artist")
 
 
-async def test_metadata_service_get_artist_info_not_found(mock_metadata_verifier_cls):
+async def test_metadata_service_get_artist_info_not_found(mock_metadata_verifier_cls, mock_spotify_provider):
     """Test MetadataService when artist info is not found."""
     mock_verifier = mock_metadata_verifier_cls.return_value
     mock_verifier.search_artist.return_value = None
 
-    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
     info = await metadata_service.get_artist_info("Unknown")
     assert info is None
     mock_verifier.search_artist.assert_called_once_with("Unknown")
 
 
-async def test_metadata_service_get_album_info_success(mock_metadata_verifier_cls):
+async def test_metadata_service_get_album_info_success(mock_metadata_verifier_cls, mock_spotify_provider):
     """Test successful fetching of album info."""
     mock_verifier = mock_metadata_verifier_cls.return_value
     mock_data = {
@@ -72,7 +80,7 @@ async def test_metadata_service_get_album_info_success(mock_metadata_verifier_cl
     }
     mock_verifier.search_album.return_value = mock_data
 
-    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
     info = await metadata_service.get_album_info("Artist", "Album")
     assert info is not None
     assert info["name"] == "Album"
@@ -81,12 +89,12 @@ async def test_metadata_service_get_album_info_success(mock_metadata_verifier_cl
     mock_verifier.search_album.assert_called_once_with("Artist", "Album")
 
 
-async def test_metadata_service_get_album_info_not_found(mock_metadata_verifier_cls):
+async def test_metadata_service_get_album_info_not_found(mock_metadata_verifier_cls, mock_spotify_provider):
     """Test MetadataService when album info is not found."""
     mock_verifier = mock_metadata_verifier_cls.return_value
     mock_verifier.search_album.return_value = None
 
-    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
     info = await metadata_service.get_album_info("Artist", "Unknown")
     assert info is None
     mock_verifier.search_album.assert_called_once_with("Artist", "Unknown")
@@ -114,7 +122,7 @@ def mock_discogs_search():
         yield mock
 
 
-async def test_verify_track_version_mb_exception(mock_mb_search, mock_discogs_search):
+async def test_verify_track_version_mb_exception(mock_mb_search, mock_discogs_search, mock_spotify_provider):
     """Test that if MusicBrainz raises an exception, we still try Discogs."""
     # We must mock the verifier's dependencies, not the verifier itself, to test its logic.
     # The actual verifier instance should be used here.
@@ -123,13 +131,13 @@ async def test_verify_track_version_mb_exception(mock_mb_search, mock_discogs_se
         patch("backend.core.metadata.settings.PROJECT_NAME", "VibomatTest"),
     ):
 
-        verifier = MetadataVerifier(http_client=AsyncMock(spec=AsyncClient))
+        verifier = MetadataVerifier(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
 
         # MB raises exception (simulate API call failure)
         mock_mb_search.side_effect = MusicBrainzAPIError("MB API failure")
 
         # Discogs should be called and succeed
-        mock_discogs_search.return_value = "discogs:master:789"
+        mock_discogs_search.return_value = {"uri": "discogs:master:789"}
 
         result = await verifier.verify_track_version("Artist", "Song", "studio")
 
@@ -137,7 +145,7 @@ async def test_verify_track_version_mb_exception(mock_mb_search, mock_discogs_se
         mock_discogs_search.assert_called_once()
 
 
-async def test_verify_track_version_both_fail_no_token(mock_mb_search):
+async def test_verify_track_version_both_fail_no_token(mock_mb_search, mock_spotify_provider):
     """Test that if MB fails and Discogs search fails, returns False."""
     with (
         patch("backend.core.metadata.asyncio.sleep", new=AsyncMock()),
@@ -149,7 +157,7 @@ async def test_verify_track_version_both_fail_no_token(mock_mb_search):
         mock_discogs_client.search_track.return_value = None  # Simulate Discogs failure
         mock_discogs_cls.return_value = mock_discogs_client
 
-        verifier = MetadataVerifier(http_client=AsyncMock(spec=AsyncClient))
+        verifier = MetadataVerifier(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
 
         # MB returns nothing
         mock_mb_search.return_value = []

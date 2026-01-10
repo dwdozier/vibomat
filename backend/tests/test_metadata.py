@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from backend.core.metadata import MetadataVerifier, MusicBrainzAPIError
 from backend.core.providers.discogs import DiscogsClient
+from backend.core.providers.spotify import SpotifyProvider  # New Import
 from httpx import AsyncClient, RequestError, HTTPStatusError
 import asyncio
 
@@ -25,9 +26,16 @@ def mock_discogs_client():
 
 
 @pytest.fixture
-def verifier(mock_httpx_client, mock_discogs_client):
+def mock_spotify_provider():
+    """Mocks the SpotifyProvider."""
+    mock_provider = AsyncMock(spec=SpotifyProvider)
+    return mock_provider
+
+
+@pytest.fixture
+def verifier(mock_httpx_client, mock_discogs_client, mock_spotify_provider):
     """Asynchronous fixture for the MetadataVerifier."""
-    return MetadataVerifier(http_client=mock_httpx_client)
+    return MetadataVerifier(http_client=mock_httpx_client, spotify_provider=mock_spotify_provider)
 
 
 @pytest.fixture(autouse=True)
@@ -162,6 +170,34 @@ async def test_verify_track_version_no_match_fallback_fail(verifier, mock_httpx_
 # --- Multi-Source (Discogs Fallback) Tests ---
 
 
+async def test_enrich_metadata_spotify_incomplete_discogs_fills_gap(
+    verifier, mock_spotify_provider, mock_discogs_client
+):
+    """Test that Discogs is called to enrich metadata if Spotify's is incomplete."""
+    # 1. Spotify returns partial data (missing album)
+    mock_spotify_provider.search_track.return_value = {
+        "artist": "The Band",
+        "track": "The Song",
+        "album": None,  # Missing data
+    }
+
+    # 2. Discogs returns the missing data
+    mock_discogs_client.search_track.return_value = {"uri": "discogs:master:12345"}
+    mock_discogs_client.get_metadata.return_value = {
+        "artist": "The Band",
+        "title": "The Album",  # Correct album title
+        "year": 1970,
+    }
+
+    enriched_data = await verifier.enrich_track_metadata(artist="The Band", track="The Song")
+
+    assert enriched_data is not None
+    assert enriched_data["album"] == "The Album"
+    mock_spotify_provider.search_track.assert_called_once()
+    mock_discogs_client.search_track.assert_called_once()
+    mock_discogs_client.get_metadata.assert_called_once()
+
+
 async def test_verify_track_mb_fail_discogs_success(verifier, mock_httpx_client, mock_discogs_client):
     """Test that if MusicBrainz finds nothing, Discogs is called and succeeds."""
     # 1. MB Fails (returns empty list)
@@ -169,7 +205,7 @@ async def test_verify_track_mb_fail_discogs_success(verifier, mock_httpx_client,
     mock_httpx_client.get.return_value = mock_response
 
     # 2. Discogs Succeeds (returns a URI)
-    mock_discogs_client.search_track.return_value = "discogs:master:123"
+    mock_discogs_client.search_track.return_value = {"uri": "discogs:master:123"}
 
     with patch("backend.core.metadata.asyncio.sleep", new=AsyncMock()):
         result = await verifier.verify_track_version("Artist", "Test Song", "studio")
@@ -189,7 +225,7 @@ async def test_verify_track_mb_http_error_discogs_success(verifier, mock_httpx_c
     mock_httpx_client.get.return_value = mock_response
 
     # 2. Discogs Succeeds (returns a URI)
-    mock_discogs_client.search_track.return_value = "discogs:master:456"
+    mock_discogs_client.search_track.return_value = {"uri": "discogs:master:456"}
 
     with patch("backend.core.metadata.asyncio.sleep", new=AsyncMock()):
         result = await verifier.verify_track_version("Artist", "Test Song", "studio")
@@ -264,7 +300,7 @@ async def test_verify_track_version_remaster(verifier, mock_httpx_client):
         assert await verifier.verify_track_version("Artist", "Song", "remaster") is True
 
 
-async def test_verify_track_version_remix(verifier, mock_httpx_client):
+async def test__verify_track_version_remix(verifier, mock_httpx_client):
     """Test verification for remix version match."""
     mock_response = MagicMock(
         status_code=200,
