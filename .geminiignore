@@ -1,6 +1,10 @@
 package-lock.json
 yarn.lock
+
+.git/
 dist/
 build/
-*.log
 coverage/
+
+*.log
+*.svg/mod
