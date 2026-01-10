@@ -405,9 +405,7 @@ function Playlists() {
                 onClick={() => {
                     setIsModalOpen(false)
                     handleDiscard()
-                    navigate({ to: '/profile/$userId', params: { userId: 'me' } }) // Assuming 'me' redirects or handled? Or check actual ID?
-                    // Actually, we don't know the ID here easily without context.
-                    // For now just close.
+                    navigate({ to: '/profile/$identity', params: { identity: 'me' } })
                 }}
                 className="text-retro-dark underline font-display uppercase tracking-widest hover:text-retro-teal"
               >
