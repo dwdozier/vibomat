@@ -38,27 +38,43 @@ class MetadataVerifier:
         # MusicBrainz allows ~1 req/sec
         self.rate_limit_delay = 1.1
 
-    async def enrich_track_metadata(
-        self, artist: str, track: str, album: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+    async def enrich_track_metadata(self, artist: str, track: str, album: Optional[str] = None) -> Dict[str, Any]:
         """
         Enrich track metadata using Spotify, with Discogs as a fallback.
+        Flags tracks with missing core data as "degraded."
         """
         # 1. Start with Spotify
         spotify_data = await self.spotify_provider.search_track(artist=artist, track=track, album=album)
 
+        # Initialize with base info, in case Spotify fails
+        enriched_data = {
+            "artist": artist,
+            "track": track,
+            "album": album,
+            "degraded_signal": True,  # Assume degraded until verified
+        }
+
         if not spotify_data:
-            return None  # If Spotify finds nothing, we stop.
+            return enriched_data  # Return base info if Spotify finds nothing
+
+        # Update with Spotify's findings
+        enriched_data.update(spotify_data)
 
         # 2. If Spotify data is incomplete, try to fill gaps with Discogs
-        if not spotify_data.get("album"):
+        if not enriched_data.get("album"):
             discogs_result = await self.discogs_client.search_track(artist=artist, track=track, album=album)
             if discogs_result and "uri" in discogs_result:
                 discogs_metadata = await self.discogs_client.get_metadata(discogs_result["uri"])
                 if discogs_metadata and discogs_metadata.get("title"):
-                    spotify_data["album"] = discogs_metadata["title"]
+                    enriched_data["album"] = discogs_metadata["title"]
 
-        return spotify_data
+        # 3. Final verification for degraded signal
+        if enriched_data.get("artist") and enriched_data.get("track") and enriched_data.get("album"):
+            enriched_data["degraded_signal"] = False
+        else:
+            enriched_data["degraded_signal"] = True
+
+        return enriched_data
 
     async def _enforce_rate_limit(self):
         """Sleep to respect MusicBrainz rate limits."""
