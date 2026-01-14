@@ -2,15 +2,6 @@
 
 ## Active Track
 
-### [~] Track: Advanced Metadata & Matching Intelligence
-
-- **Goal:** Improve match quality and provide transparency when tracks are missing.
-- **Key Features:**
-  - Fix missing artist/album metadata in the modal (currently showing dashes).
-  - Integrate Discogs as a secondary data source to reduce "degraded signals".
-  - UI for "Degraded Signals" (explain why a track wasn't added).
-  - Implement "Manual Match Selection" UI for ambiguous searches (show top 5 matches).
-
 ## Backlog
 
 ### [ ] Track: Refactoring & Tech Debt
@@ -31,6 +22,7 @@
 
 ## Archive
 
+- [x] **Track: Advanced Metadata & Matching Intelligence** (2026-01-13)
 - [x] **User Identity & Privacy** (2026-01-07)
 - [x] **Playlist Lifecycle & Sync Engine** (2026-01-07)
 - [x] **Foundation & Security Hygiene** (2026-01-04)
