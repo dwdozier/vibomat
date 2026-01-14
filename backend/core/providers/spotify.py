@@ -2,9 +2,7 @@ from typing import List, Optional
 import spotipy
 from .base import BaseMusicProvider
 from backend.core.utils.helpers import _similarity, _determine_version
-from backend.core.metadata import MetadataVerifier
 import logging
-import httpx
 
 logger = logging.getLogger("backend.core.providers.spotify")
 
@@ -12,9 +10,6 @@ logger = logging.getLogger("backend.core.providers.spotify")
 class SpotifyProvider(BaseMusicProvider):
     def __init__(self, auth_token: str):
         self.sp = spotipy.Spotify(auth=auth_token)
-        # Create a new HTTP client instance for the Metadata Verifier
-        self.http_client = httpx.AsyncClient()
-        self.metadata_verifier = MetadataVerifier(http_client=self.http_client)
         self._user_id = None
 
     @property
@@ -32,7 +27,7 @@ class SpotifyProvider(BaseMusicProvider):
         track: str,
         album: Optional[str] = None,
         version: Optional[str] = None,
-    ) -> Optional[str]:
+    ) -> Optional[dict]:
         # Implementation logic moved from client.py, adapted for async if needed
         # For now, keeping synchronous calls but wrapped in async interface
 
@@ -40,7 +35,13 @@ class SpotifyProvider(BaseMusicProvider):
             query = f"track:{track} artist:{artist} album:{album}"
             results = self.sp.search(q=query, type="track", limit=1)
             if results and results["tracks"]["items"]:
-                return results["tracks"]["items"][0]["uri"]
+                item = results["tracks"]["items"][0]
+                return {
+                    "artist": ", ".join([a["name"] for a in item["artists"]]),
+                    "track": item["name"],
+                    "album": item["album"]["name"],
+                    "uri": item["uri"],
+                }
 
         query = f"track:{track} artist:{artist}"
         results = self.sp.search(q=query, type="track", limit=20)
@@ -77,7 +78,12 @@ class SpotifyProvider(BaseMusicProvider):
                 best_match = item
 
         if best_match and best_score > 60:
-            return best_match["uri"]
+            return {
+                "artist": ", ".join([a["name"] for a in best_match["artists"]]),
+                "track": best_match["name"],
+                "album": best_match["album"]["name"],
+                "uri": best_match["uri"],
+            }
         return None
 
     async def create_playlist(self, name: str, description: str = "", public: bool = False) -> str:

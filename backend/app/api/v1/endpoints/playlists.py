@@ -23,13 +23,20 @@ from backend.app.models.user import User
 from backend.app.models.playlist import Playlist as PlaylistModel
 from backend.app.core.tasks import sync_playlist_task
 from backend.core.client import SpotifyPlaylistBuilder
+from .users import get_spotify_provider, get_http_client
+from backend.core.providers.spotify import SpotifyProvider
 import uuid
+import httpx
 
 router = APIRouter()
 
 
-def get_ai_service(db: AsyncSession = Depends(get_async_session)):
-    return AIService(db)
+def get_ai_service(
+    db: AsyncSession = Depends(get_async_session),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    spotify_provider: SpotifyProvider = Depends(get_spotify_provider),
+):
+    return AIService(db=db, http_client=http_client, spotify_provider=spotify_provider)
 
 
 @router.post("/", response_model=PlaylistRead)

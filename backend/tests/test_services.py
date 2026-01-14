@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch, AsyncMock
 import pytest
 from httpx import AsyncClient
 from backend.core.metadata import MetadataVerifier
+from backend.core.providers.spotify import SpotifyProvider
 
 from backend.app.services.metadata_service import MetadataService
 from backend.app.services.integrations_service import IntegrationsService
@@ -15,6 +16,12 @@ def mock_httpx_client():
 
 
 @pytest.fixture
+def mock_spotify_provider():
+    """Mocks the SpotifyProvider."""
+    return AsyncMock(spec=SpotifyProvider)
+
+
+@pytest.fixture
 def mock_metadata_verifier_cls():
     """Mocks the MetadataVerifier class to track instantiations and methods."""
     with patch("backend.app.services.metadata_service.MetadataVerifier", spec=MetadataVerifier) as mock_cls:
@@ -24,29 +31,29 @@ def mock_metadata_verifier_cls():
 
 
 @pytest.fixture
-def metadata_service(mock_httpx_client):
+def metadata_service(mock_httpx_client, mock_spotify_provider):
     """Fixture to instantiate MetadataService with a mock client."""
-    return MetadataService(http_client=mock_httpx_client)
+    return MetadataService(http_client=mock_httpx_client, spotify_provider=mock_spotify_provider)
 
 
-async def test_metadata_service_enrich_artist(mock_metadata_verifier_cls):
+async def test_metadata_service_enrich_artist(mock_metadata_verifier_cls, mock_spotify_provider):
     """Test successful artist enrichment."""
     mock_verifier = mock_metadata_verifier_cls.return_value
     mock_verifier.search_artist.return_value = {"name": "Enriched", "id": "123"}
 
-    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
     result = await metadata_service.get_artist_info("Artist")
     assert result is not None
     assert result["name"] == "Enriched"
     mock_verifier.search_artist.assert_called_once_with("Artist")
 
 
-async def test_metadata_service_enrich_album(mock_metadata_verifier_cls):
+async def test_metadata_service_enrich_album(mock_metadata_verifier_cls, mock_spotify_provider):
     """Test successful album enrichment."""
     mock_verifier = mock_metadata_verifier_cls.return_value
     mock_verifier.search_album.return_value = {"title": "Album", "id": "456"}
 
-    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient))
+    metadata_service = MetadataService(http_client=AsyncMock(spec=AsyncClient), spotify_provider=mock_spotify_provider)
     result = await metadata_service.get_album_info("Artist", "Album")
     assert result is not None
     assert result["name"] == "Album"

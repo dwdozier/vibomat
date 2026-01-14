@@ -9,6 +9,7 @@ import asyncio
 from unittest.mock import AsyncMock
 import httpx
 from .metadata import MetadataVerifier
+from .providers.spotify import SpotifyProvider
 from .utils.helpers import (
     _similarity,
     _determine_version,
@@ -53,8 +54,12 @@ class SpotifyPlaylistBuilder:
             )
 
         self._user_id = None
-        # MetadataVerifier is async, so we use a mock client for the synchronous CLI
-        self.metadata_verifier = MetadataVerifier(http_client=AsyncMock(spec=httpx.AsyncClient))
+        # This is a temporary solution for the sync CLI.
+        # The verifier needs an async provider, so we mock it.
+        mock_provider = AsyncMock(spec=SpotifyProvider)
+        self.metadata_verifier = MetadataVerifier(
+            http_client=AsyncMock(spec=httpx.AsyncClient), spotify_provider=mock_provider
+        )
 
     @property
     def user_id(self) -> str:

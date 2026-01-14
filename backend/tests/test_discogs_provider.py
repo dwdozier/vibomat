@@ -55,7 +55,7 @@ async def test_search_track_success(mock_httpx_client):
     result = await client.search_track(artist="The Band", track="The Song")
 
     # Assertions
-    assert result == "discogs:master:12345"
+    assert result == {"uri": "discogs:master:12345"}
     mock_httpx_client.get.assert_called_once()
 
 
@@ -92,3 +92,103 @@ async def test_search_track_api_error(mock_httpx_client):
 
     assert "403" in str(excinfo.value)
     mock_httpx_client.get.assert_called_once()
+
+
+async def test_get_metadata_success(mock_httpx_client):
+    """Test successful metadata retrieval for a Discogs master URI."""
+    mock_response_payload = {
+        "id": 12345,
+        "title": "The Album",
+        "artists": [{"name": "The Band"}],
+        "year": 1970,
+        "tracklist": [{"title": "The Song", "duration": "3:45", "position": "A1"}],
+    }
+    mock_response = MagicMock(
+        status_code=200,
+        json=MagicMock(return_value=mock_response_payload),
+        raise_for_status=MagicMock(),
+    )
+    mock_httpx_client.get = AsyncMock(return_value=mock_response)
+
+    client = DiscogsClient()
+    metadata = await client.get_metadata("discogs:master:12345")
+
+    assert metadata is not None
+    assert metadata["title"] == "The Album"
+    assert metadata["artist"] == "The Band"
+    assert metadata["year"] == 1970
+    mock_httpx_client.get.assert_called_once_with("/masters/12345", params=None)
+
+
+async def test_get_metadata_invalid_uri(mock_httpx_client):
+    """Test that a malformed Discogs URI that causes a ValueError returns None."""
+    client = DiscogsClient()
+    # This URI will fail the "uri_type, uri_id = ..." unpacking
+    result = await client.get_metadata("invalid-uri-no-colons")
+    assert result is None
+    mock_httpx_client.get.assert_not_called()
+
+
+async def test_get_metadata_unsupported_uri_type(mock_httpx_client):
+    """Test that an unsupported Discogs URI type returns None."""
+    client = DiscogsClient()
+    result = await client.get_metadata("discogs:album:12345")
+    assert result is None
+    mock_httpx_client.get.assert_not_called()
+
+
+async def test_get_metadata_api_error(mock_httpx_client):
+    """Test that a non-404 API error during metadata fetch raises DiscogsAPIError."""
+    mock_response = MagicMock(status_code=500, text="Server Error")
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        "500 Server Error", request=httpx.Request("GET", "url"), response=mock_response
+    )
+    mock_httpx_client.get = AsyncMock(return_value=mock_response)
+
+    client = DiscogsClient()
+    with pytest.raises(DiscogsAPIError):
+        await client.get_metadata("discogs:master:12345")
+    mock_httpx_client.get.assert_called_once()
+
+
+async def test_get_metadata_no_artist(mock_httpx_client):
+    """Test metadata retrieval when the response is missing artist information."""
+    mock_response_payload = {"id": 12345, "title": "The Album", "year": 1970}
+    mock_response = MagicMock(
+        status_code=200,
+        json=MagicMock(return_value=mock_response_payload),
+        raise_for_status=MagicMock(),
+    )
+    mock_httpx_client.get = AsyncMock(return_value=mock_response)
+
+    client = DiscogsClient()
+    metadata = await client.get_metadata("discogs:release:12345")
+    assert metadata is not None
+    assert metadata["artist"] == "Unknown"
+
+
+async def test_search_track_with_album(mock_httpx_client):
+    """Test that the search query correctly includes the album."""
+    mock_httpx_client.get = AsyncMock(
+        return_value=MagicMock(status_code=200, json=MagicMock(return_value={"results": []}))
+    )
+    client = DiscogsClient()
+    await client.search_track(artist="Artist", track="Track", album="Album")
+    mock_httpx_client.get.assert_called_once()
+    # Check that 'Album' is in the query parameter
+    call_args = mock_httpx_client.get.call_args
+    assert "Album" in call_args[1]["params"]["query"]
+
+
+def test_retry_predicate_ignores_401():
+    """Test the retry predicate correctly advises not to retry on 401."""
+    from backend.core.providers.discogs import retry_if_not_auth_error
+
+    # Should not retry
+    exc_401 = httpx.HTTPStatusError("401 Unauthorized", request=MagicMock(), response=MagicMock(status_code=401))
+    assert not retry_if_not_auth_error(exc_401)
+
+    # Should retry
+    exc_500 = httpx.HTTPStatusError("500 Error", request=MagicMock(), response=MagicMock(status_code=500))
+    assert retry_if_not_auth_error(exc_500)
+    assert retry_if_not_auth_error(ValueError("Some other error"))

@@ -1,11 +1,12 @@
 from backend.core.metadata import MetadataVerifier
+from backend.core.providers.spotify import SpotifyProvider
 from typing import Optional, Dict, Any
 import httpx
 
 
 class MetadataService:
-    def __init__(self, http_client: httpx.AsyncClient):
-        self.verifier = MetadataVerifier(http_client=http_client)
+    def __init__(self, http_client: httpx.AsyncClient, spotify_provider: SpotifyProvider):
+        self.verifier = MetadataVerifier(http_client=http_client, spotify_provider=spotify_provider)
 
     async def get_artist_info(self, artist_name: str) -> Optional[Dict[str, Any]]:
         """Fetch enriched metadata for an artist."""

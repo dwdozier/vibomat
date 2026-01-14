@@ -10,6 +10,7 @@ from backend.core.ai import (
 )
 from backend.core.metadata import MetadataVerifier
 from backend.app.core.config import settings
+from backend.core.providers.spotify import SpotifyProvider
 
 
 def test_get_ai_api_key_env():
@@ -183,9 +184,9 @@ def test_generate_playlist_404_retry():
 
         assert mock_client.models.generate_content.call_count == 2
         # First call with default
-        assert mock_client.models.generate_content.call_args_list[0][1]["model"] == "gemini-flash-latest"
+        assert mock_client.models.generate_content.call_args_list[0].kwargs["model"] == "gemini-flash-latest"
         # Second call with fallback
-        assert mock_client.models.generate_content.call_args_list[1][1]["model"] == "fallback-model"
+        assert mock_client.models.generate_content.call_args_list[1].kwargs["model"] == "fallback-model"
 
 
 def test_generate_playlist_404_retry_same_model():
@@ -232,7 +233,13 @@ def async_mock_client():
     return AsyncMock(spec=httpx.AsyncClient)
 
 
-async def test_verify_ai_tracks_success(async_mock_client):
+@pytest.fixture
+def mock_spotify_provider():
+    """Mocks the SpotifyProvider."""
+    return AsyncMock(spec=SpotifyProvider)
+
+
+async def test_verify_ai_tracks_success(async_mock_client, mock_spotify_provider):
     """Test successful track verification."""
     from backend.core.ai import verify_ai_tracks
 
@@ -244,15 +251,19 @@ async def test_verify_ai_tracks_success(async_mock_client):
         mock_verifier.verify_track_version.return_value = AsyncMock(return_value=True)
         mock_verifier_cls.return_value = mock_verifier
 
-        verified, rejected = await verify_ai_tracks(tracks, http_client=async_mock_client)
+        verified, rejected = await verify_ai_tracks(
+            tracks,
+            http_client=async_mock_client,
+            spotify_provider=mock_spotify_provider,
+        )
 
         assert verified == tracks
         assert rejected == []
-        mock_verifier_cls.assert_called_once_with(http_client=async_mock_client)
+        mock_verifier_cls.assert_called_once_with(http_client=async_mock_client, spotify_provider=mock_spotify_provider)
         mock_verifier.verify_track_version.assert_called_once_with("A", "T", "studio")
 
 
-async def test_verify_ai_tracks_rejected(async_mock_client):
+async def test_verify_ai_tracks_rejected(async_mock_client, mock_spotify_provider):
     """Test track verification with rejections."""
     from backend.core.ai import verify_ai_tracks
 
@@ -261,14 +272,18 @@ async def test_verify_ai_tracks_rejected(async_mock_client):
         mock_verifier = AsyncMock(spec=MetadataVerifier)
         mock_verifier.verify_track_version.return_value = False
         mock_verifier_cls.return_value = mock_verifier
-        verified, rejected = await verify_ai_tracks(tracks, http_client=async_mock_client)
+        verified, rejected = await verify_ai_tracks(
+            tracks,
+            http_client=async_mock_client,
+            spotify_provider=mock_spotify_provider,
+        )
 
         assert verified == []
         assert rejected == ["A - T"]
-        mock_verifier_cls.assert_called_once_with(http_client=async_mock_client)
+        mock_verifier_cls.assert_called_once_with(http_client=async_mock_client, spotify_provider=mock_spotify_provider)
 
 
-async def test_verify_ai_tracks_exception(async_mock_client):
+async def test_verify_ai_tracks_exception(async_mock_client, mock_spotify_provider):
     """Test track verification when the verifier raises an exception."""
     from backend.core.ai import verify_ai_tracks
 
@@ -279,7 +294,11 @@ async def test_verify_ai_tracks_exception(async_mock_client):
         mock_verifier_cls.return_value = mock_verifier
 
         # We lean towards keeping tracks if verification fails technically
-        verified, rejected = await verify_ai_tracks(tracks, http_client=async_mock_client)
+        verified, rejected = await verify_ai_tracks(
+            tracks,
+            http_client=async_mock_client,
+            spotify_provider=mock_spotify_provider,
+        )
 
         assert verified == tracks
         assert rejected == []

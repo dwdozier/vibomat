@@ -5,9 +5,11 @@ from backend.app.db.session import get_async_session
 from backend.app.core.auth.fastapi_users import current_active_user
 from backend.app.models.user import User, user_favorite_playlists
 from backend.app.models.playlist import Playlist
+from backend.app.models.service_connection import ServiceConnection
 from backend.app.schemas.user import UserPublic
 from backend.app.schemas.playlist import PlaylistRead
 from backend.app.services.metadata_service import MetadataService
+from backend.core.providers.spotify import SpotifyProvider
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import uuid
@@ -24,8 +26,27 @@ def get_http_client() -> httpx.AsyncClient:
     return httpx.AsyncClient()
 
 
-def get_metadata_service(http_client: httpx.AsyncClient = Depends(get_http_client)):
-    return MetadataService(http_client=http_client)
+async def get_spotify_provider(
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+) -> SpotifyProvider:
+    result = await db.execute(
+        select(ServiceConnection).where(
+            ServiceConnection.user_id == user.id,
+            ServiceConnection.provider_name == "spotify",
+        )
+    )
+    connection = result.scalar_one_or_none()
+    if not connection or not connection.access_token:
+        raise HTTPException(status_code=404, detail="Spotify connection not found or invalid.")
+    return SpotifyProvider(auth_token=connection.access_token)
+
+
+def get_metadata_service(
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    spotify_provider: SpotifyProvider = Depends(get_spotify_provider),
+):
+    return MetadataService(http_client=http_client, spotify_provider=spotify_provider)
 
 
 class UserPreferencesUpdate(BaseModel):

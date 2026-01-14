@@ -11,6 +11,8 @@ class TrackBase(BaseModel):
     version: Optional[str] = Field(None, pattern="^[a-zA-Z0-9| ]*$")
     duration_ms: Optional[int] = None
     uri: Optional[str] = None
+    discogs_uri: Optional[str] = None
+    degraded_signal: Optional[bool] = None
 
 
 class TrackCreate(TrackBase):

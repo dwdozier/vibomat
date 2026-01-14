@@ -39,6 +39,8 @@ def test_generate_playlist_endpoint():
                 "album": None,
                 "duration_ms": None,
                 "uri": None,
+                "discogs_uri": None,
+                "degraded_signal": None,
             }
         ],
     }
@@ -65,6 +67,8 @@ def test_verify_tracks_endpoint():
             "album": None,
             "duration_ms": None,
             "uri": None,
+            "discogs_uri": None,
+            "degraded_signal": None,
         }
     ]
     mock_rejected = ["R - S"]
