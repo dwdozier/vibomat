@@ -47,9 +47,6 @@ htmlcov/
 .cache
 .ruff_cache
 
-# Gemini
-.gemini
-
 # playlist dir
 playlists/
 

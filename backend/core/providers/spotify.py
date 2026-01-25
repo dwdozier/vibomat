@@ -3,6 +3,7 @@ import spotipy
 from .base import BaseMusicProvider
 from backend.core.utils.helpers import _similarity, _determine_version
 import logging
+import asyncio
 
 logger = logging.getLogger("backend.core.providers.spotify")
 
@@ -12,10 +13,9 @@ class SpotifyProvider(BaseMusicProvider):
         self.sp = spotipy.Spotify(auth=auth_token)
         self._user_id = None
 
-    @property
-    def user_id(self) -> str:
+    async def get_user_id(self) -> str:
         if self._user_id is None:
-            user = self.sp.current_user()
+            user = await asyncio.to_thread(self.sp.current_user)
             if user is None:
                 raise Exception("Failed to authenticate with Spotify")
             self._user_id = user["id"]
@@ -33,7 +33,7 @@ class SpotifyProvider(BaseMusicProvider):
 
         if album:
             query = f"track:{track} artist:{artist} album:{album}"
-            results = self.sp.search(q=query, type="track", limit=1)
+            results = await asyncio.to_thread(self.sp.search, q=query, type="track", limit=1)
             if results and results["tracks"]["items"]:
                 item = results["tracks"]["items"][0]
                 return {
@@ -44,7 +44,7 @@ class SpotifyProvider(BaseMusicProvider):
                 }
 
         query = f"track:{track} artist:{artist}"
-        results = self.sp.search(q=query, type="track", limit=20)
+        results = await asyncio.to_thread(self.sp.search, q=query, type="track", limit=20)
         if results is None or not results["tracks"]["items"]:
             return None
 
@@ -87,14 +87,17 @@ class SpotifyProvider(BaseMusicProvider):
         return None
 
     async def create_playlist(self, name: str, description: str = "", public: bool = False) -> str:
-        playlist = self.sp.user_playlist_create(user=self.user_id, name=name, public=public, description=description)
+        user_id = await self.get_user_id()
+        playlist = await asyncio.to_thread(
+            self.sp.user_playlist_create, user=user_id, name=name, public=public, description=description
+        )
         return playlist["id"]
 
     async def add_tracks_to_playlist(self, playlist_id: str, track_uris: List[str]) -> None:
         # Spotify has a 100-track limit per request
         for i in range(0, len(track_uris), 100):
             batch = track_uris[i : i + 100]
-            self.sp.playlist_add_items(playlist_id, batch)
+            await asyncio.to_thread(self.sp.playlist_add_items, playlist_id, batch)
 
     async def replace_playlist_tracks(self, playlist_id: str, track_uris: List[str]) -> None:
         """Replace all tracks in a Spotify playlist with the given list of URIs."""
@@ -103,21 +106,21 @@ class SpotifyProvider(BaseMusicProvider):
         remaining_uris = track_uris[100:]
 
         # First call uses replace_playlist_items
-        self.sp.playlist_replace_items(playlist_id, first_batch)
+        await asyncio.to_thread(self.sp.playlist_replace_items, playlist_id, first_batch)
 
         # Subsequent calls use playlist_add_items
         for i in range(0, len(remaining_uris), 100):
             batch = remaining_uris[i : i + 100]
-            self.sp.playlist_add_items(playlist_id, batch)
+            await asyncio.to_thread(self.sp.playlist_add_items, playlist_id, batch)
 
     async def get_playlist(self, playlist_id: str) -> dict:
-        results = self.sp.playlist(playlist_id)
+        results = await asyncio.to_thread(self.sp.playlist, playlist_id)
         tracks = results["tracks"]["items"]
 
         # Helper to follow pagination
         current_page = results["tracks"]
         while current_page["next"]:
-            current_page = self.sp.next(current_page)
+            current_page = await asyncio.to_thread(self.sp.next, current_page)
             tracks.extend(current_page["items"])
 
         results["tracks"]["items"] = tracks
