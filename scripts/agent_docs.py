@@ -10,6 +10,10 @@ app = typer.Typer()
 # Initialize Claude Client
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
+# Model configuration
+DEFAULT_MODEL = "claude-sonnet-4-20250514"
+MODEL = os.getenv("ANTHROPIC_MODEL", DEFAULT_MODEL)
+
 GOOGLE_STYLE_GUIDE_PROMPT = """
 You are a Senior Technical Writer at Google. You strictly follow the
 Google Developer Documentation Style Guide.
@@ -176,7 +180,7 @@ def _generate_and_save(prompt: str, output_path: Path):
     """Generate content using Claude API and save to file."""
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL,
             max_tokens=8192,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
@@ -233,7 +237,7 @@ If no (e.g., minor bug fix, dependency update), return "NO_GUIDE".
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL,
             max_tokens=8192,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
