@@ -1,26 +1,4 @@
-# Gemini CLI & Conductor Guidelines & Project Workflow
-
-## Tool Use Protocols
-
-### 1. WriteTodos Tool
-
-- **STRICT SCHEMA:** The `todos` parameter MUST be a List of Objects, not Strings.
-- **CORRECT FORMAT:** `[{"description": "Task name", "status": "pending"}]`
-- **INCORRECT FORMAT:** `["Task name"]` - NEVER do this.
-
-### 2. Shell Tool (Git Commands)
-
-- **Simplicity:** Execute only ONE command per tool call.
-- **Description Field:** Keep the `description` field empty `""` or very short to avoid parser safety
-  blocks.
-- **Forbidden:** Do NOT use chaining characters (`&&`, `;`) or complex sub-shells.
-- **Failure Protocol:** If a `git` command fails due to "parsing" or "safety", STOP immediately.
-  Do not retry. Ask the user to run it.
-
-### 3. Git Workflow
-
-- Always run `git status` before committing.
-- If the agent cannot run git commands, fall back to asking the user to run them manually.
+# Conductor Guidelines & Project Workflow
 
 ## Guiding Principles
 
@@ -61,7 +39,7 @@ project documentation.
 
 - **Workflow:**
   - Detects changes in code, configuration, or specifications.
-  - Runs `agent_docs.py` using Gemini.
+  - Runs `agent_docs.py` using Claude.
   - Updates **`README.md`**, **`CONTRIBUTING.md`**, and **`SETUP.md`** to keep them synchronized.
   - Generates/Updates usage guides in `docs/guides/`.
   - Generates a PR for human review.
@@ -250,7 +228,7 @@ phase in `plan.md`.
 Before marking any task complete, verify:
 
 - [ ] All tests pass
-- [ ] Code coverage meets requirements (>80%)
+- [ ] Code coverage meets requirements (>90%)
 - [ ] Code follows project's code style guidelines (as defined in `code_styleguides/`)
 - [ ] All public functions/methods are documented (e.g., docstrings, JSDoc, GoDoc)
 - [ ] Type safety is enforced (e.g., type hints, TypeScript types, Go types)
@@ -341,7 +319,7 @@ Before requesting review:
 3. **Testing**
    - Unit tests comprehensive
    - Integration tests pass
-   - Coverage adequate (>80%)
+   - Coverage adequate (>90%)
 
 4. **Security**
    - No hardcoded secrets
@@ -437,7 +415,7 @@ A task is complete when:
 ### Pre-Deployment Checklist
 
 - [ ] All tests passing
-- [ ] Coverage >80%
+- [ ] Coverage >90%
 - [ ] No linting errors
 - [ ] Mobile testing complete
 - [ ] Environment variables configured

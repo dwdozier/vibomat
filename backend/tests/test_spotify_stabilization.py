@@ -8,8 +8,9 @@ from backend.app.services.integrations_service import IntegrationsService
 from backend.app.models.service_connection import ServiceConnection
 
 
+@pytest.mark.asyncio
 @patch("backend.core.providers.spotify.spotipy.Spotify")
-def test_spotify_provider_init_failure(mock_spotify_cls):
+async def test_spotify_provider_init_failure(mock_spotify_cls):
     """Test that SpotifyProvider handles initialization failure gracefully."""
     mock_spotify = MagicMock()
     mock_spotify_cls.return_value = mock_spotify
@@ -19,7 +20,7 @@ def test_spotify_provider_init_failure(mock_spotify_cls):
 
     provider = SpotifyProvider(auth_token="expired_token")
     with pytest.raises(SpotifyException) as excinfo:
-        _ = provider.user_id
+        _ = await provider.get_user_id()
 
     assert excinfo.value.http_status == 401
     assert "The access token expired" in str(excinfo.value)
@@ -41,15 +42,16 @@ def test_spotify_builder_init_failure(mock_spotify_cls):
     assert "Failed to authenticate with Spotify" in str(excinfo.value)
 
 
+@pytest.mark.asyncio
 @patch("backend.core.providers.spotify.spotipy.Spotify")
-def test_spotify_provider_init_success(mock_spotify_cls):
+async def test_spotify_provider_init_success(mock_spotify_cls):
     """Test that SpotifyProvider initializes correctly with a valid token."""
     mock_spotify = MagicMock()
     mock_spotify_cls.return_value = mock_spotify
     mock_spotify.current_user.return_value = {"id": "test_user_id"}
 
     provider = SpotifyProvider(auth_token="valid_token")
-    assert provider.user_id == "test_user_id"
+    assert await provider.get_user_id() == "test_user_id"
 
 
 @pytest.mark.asyncio

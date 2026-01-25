@@ -39,7 +39,7 @@ def get_ai_service(
     return AIService(db=db, http_client=http_client, spotify_provider=spotify_provider)
 
 
-@router.post("/", response_model=PlaylistRead)
+@router.post("/", response_model=PlaylistRead, status_code=201)
 async def create_playlist(
     playlist: PlaylistCreate,
     user: User = Depends(current_active_user),
@@ -93,7 +93,7 @@ async def get_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    playlist = result.scalar_one_or_none()
+    playlist = await result.scalar_one_or_none()  # type: ignore[misc]
 
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -118,7 +118,7 @@ async def update_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    db_playlist = result.scalar_one_or_none()
+    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -139,7 +139,7 @@ async def update_playlist(
     return db_playlist
 
 
-@router.post("/{playlist_id}/sync", response_model=Dict[str, str])
+@router.post("/{playlist_id}/sync", response_model=Dict[str, str], status_code=202)
 async def sync_playlist_endpoint(
     playlist_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -151,7 +151,7 @@ async def sync_playlist_endpoint(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    db_playlist = result.scalar_one_or_none()
+    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -183,7 +183,7 @@ async def delete_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    db_playlist = result.scalar_one_or_none()
+    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -208,7 +208,7 @@ async def restore_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_not(None))
     )
-    db_playlist = result.scalar_one_or_none()
+    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found or not deleted")
@@ -222,7 +222,7 @@ async def restore_playlist(
     return db_playlist
 
 
-@router.post("/import", response_model=PlaylistRead)
+@router.post("/import", response_model=PlaylistRead, status_code=201)
 async def import_playlist_endpoint(
     request: PlaylistImport,
     user: User = Depends(current_active_user),
@@ -345,7 +345,7 @@ async def verify_tracks_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/build", response_model=BuildResponse)
+@router.post("/build", response_model=BuildResponse, status_code=201)
 async def build_playlist_endpoint(
     request: PlaylistBuildRequest,
     user: User = Depends(current_active_user),
@@ -364,7 +364,7 @@ async def build_playlist_endpoint(
                 PlaylistModel.deleted_at.is_(None),
             )
         )
-        db_playlist = result.scalar_one_or_none()
+        db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
         if db_playlist and db_playlist.user_id == user.id:
             # Use data from DB
             # We will use db_playlist content below directly
@@ -380,7 +380,7 @@ async def build_playlist_endpoint(
             ServiceConnection.provider_name == "spotify",
         )
     )
-    conn = result.scalar_one_or_none()
+    conn = await result.scalar_one_or_none()  # type: ignore[misc]
 
     if not conn:
         raise HTTPException(

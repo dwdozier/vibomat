@@ -5,10 +5,18 @@ from unittest.mock import MagicMock, patch
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from backend.app.db.session import Base
 
-# Ensure we can import from root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 from backend.core.client import SpotifyPlaylistBuilder
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_path(request):
+    """Ensure root path is added to sys.path and removed after the session."""
+    root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    sys.path.insert(0, root_path)
+    yield
+    if sys.path and sys.path[0] == root_path:
+        sys.path.pop(0)
+
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql+asyncpg://user:pass@localhost:5432/vibomat_test")
 
@@ -53,10 +61,18 @@ async def db_session(test_db):
 
 @pytest.fixture
 def mock_spotify():
-    """Mock the spotipy.Spotify client."""
-    with patch("backend.core.client.spotipy.Spotify") as mock_cls:
+    """
+    Mocks the spotipy.Spotify client in both client.py and spotify.py provider.
+    This ensures that any instantiation of the client (in core.client or the provider)
+    is mocked for robust testing.
+    """
+    with (
+        patch("backend.core.client.spotipy.Spotify") as mock_client_cls,
+        patch("backend.core.providers.spotify.spotipy.Spotify") as mock_provider_cls,
+    ):
         instance = MagicMock()
-        mock_cls.return_value = instance
+        mock_client_cls.return_value = instance
+        mock_provider_cls.return_value = instance
         # Mock successful authentication
         instance.current_user.return_value = {"id": "test_user_id"}
         yield instance
@@ -78,7 +94,7 @@ def builder(mock_spotify):
         builder = SpotifyPlaylistBuilder("fake_client_id", "fake_client_secret")
         # Attach the mock to the builder for test access
         builder.metadata_verifier = mock_verifier_instance
-        return builder
+        yield builder
 
 
 def pytest_addoption(parser):

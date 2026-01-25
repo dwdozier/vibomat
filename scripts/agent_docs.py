@@ -3,14 +3,16 @@ import sys
 import time
 import typer
 from pathlib import Path
-from google import genai
-from google.genai import types
+import anthropic
 
 app = typer.Typer()
 
-# Initialize Gemini Client
-# We use the new google-genai SDK as per project dependencies
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Initialize Claude Client
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+# Model configuration
+DEFAULT_MODEL = "claude-sonnet-4-20250514"
+MODEL = os.getenv("ANTHROPIC_MODEL", DEFAULT_MODEL)
 
 GOOGLE_STYLE_GUIDE_PROMPT = """
 You are a Senior Technical Writer at Google. You strictly follow the
@@ -39,6 +41,7 @@ Return ONLY the full updated markdown content for the file. Do not include markd
 
 
 def get_file_content(path: Path) -> str:
+    """Read and return the content of a file, or empty string if it doesn't exist."""
     if not path.exists():
         return ""
     with open(path, "r") as f:
@@ -52,8 +55,9 @@ def update_readme(
     openapi_path: Path = typer.Option(None, help="Path to openapi.json if available"),
 ):
     """
-    Updates README.md based on code changes.
-    Checks for:
+    Update README.md based on code changes.
+
+    Check for:
     - New Core Features (backend/app endpoints)
     - Tech Stack updates (pyproject.toml, package.json)
     - Quick Start changes (docker-compose, SETUP.md)
@@ -99,8 +103,9 @@ def update_contributing(
     contributing_path: Path = typer.Option("CONTRIBUTING.md", help="Path to CONTRIBUTING.md"),
 ):
     """
-    Updates CONTRIBUTING.md based on tooling/workflow changes.
-    Checks for:
+    Update CONTRIBUTING.md based on tooling/workflow changes.
+
+    Check for:
     - Pre-commit config changes
     - CI/CD workflow updates
     - Testing framework changes (pyproject.toml)
@@ -138,8 +143,9 @@ def update_setup(
     setup_path: Path = typer.Option("SETUP.md", help="Path to SETUP.md"),
 ):
     """
-    Updates SETUP.md based on environment changes.
-    Checks for:
+    Update SETUP.md based on environment changes.
+
+    Check for:
     - Dockerfile updates
     - New environment variables (.env.example or code references)
     - Python dependency changes requiring system libs
@@ -171,13 +177,15 @@ def update_setup(
 
 
 def _generate_and_save(prompt: str, output_path: Path):
+    """Generate content using Claude API and save to file."""
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(temperature=0.1),
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=8192,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
         )
-        updated_content = response.text
+        updated_content = message.content[0].text
         if not updated_content or len(updated_content) < 10:
             typer.echo(f"Skipping {output_path}: Content empty/short.")
             return
@@ -195,9 +203,7 @@ def generate_guide(
     diff_path: Path = typer.Option(..., help="Path to the git diff file"),
     output_dir: Path = typer.Option("docs/guides", help="Directory to save the new guide"),
 ):
-    """
-    Generates a new Usage Guide if significant API changes are detected.
-    """
+    """Generate a new Usage Guide if significant API changes are detected."""
     diff_content = get_file_content(diff_path)
 
     if not diff_content:
@@ -230,15 +236,14 @@ If no (e.g., minor bug fix, dependency update), return "NO_GUIDE".
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-            ),
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=8192,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
         )
 
-        text_content = response.text
+        text_content = message.content[0].text
         if not text_content:
             typer.echo("No content generated.")
             return
@@ -250,7 +255,6 @@ If no (e.g., minor bug fix, dependency update), return "NO_GUIDE".
             return
 
         # Extract a filename suggestion (simplified approach)
-        # In a real scenario, we ask Gemini for filename too.
         filename = f"guide_{int(time.time())}.md"
 
         output_path = output_dir / filename
