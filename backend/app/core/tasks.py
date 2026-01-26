@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import cast
-import traceback
 from uuid import UUID
+import logging
 
 from sqlalchemy import delete, select, CursorResult
 from taskiq_redis import ListQueueBroker
@@ -13,6 +13,12 @@ from backend.app.models.service_connection import ServiceConnection
 from backend.app.models.user import User
 from backend.app.services.integrations_service import IntegrationsService
 from backend.core.providers.spotify import SpotifyProvider
+from backend.app.exceptions import (
+    SpotifyAPIError,
+    TokenRefreshError,
+)
+
+logger = logging.getLogger(__name__)
 
 broker = ListQueueBroker(str(settings.REDIS_URL))
 
@@ -91,11 +97,42 @@ async def sync_playlist_task(playlist_id: UUID) -> str:
 
             return f"Sync successful for playlist {playlist_id} on {playlist.provider}"
 
+        except TokenRefreshError as e:
+            await session.rollback()
+            logger.error(
+                "Token refresh failed during playlist sync",
+                extra={
+                    "playlist_id": str(playlist_id),
+                    "user_id": str(user.id) if user else None,
+                    "provider": playlist.provider if playlist else None,
+                    "error": str(e),
+                },
+            )
+            return f"Sync failed for playlist {playlist_id}: Token refresh failed"
+
+        except SpotifyAPIError as e:
+            await session.rollback()
+            logger.error(
+                "Spotify API error during playlist sync",
+                extra={
+                    "playlist_id": str(playlist_id),
+                    "user_id": str(user.id) if user else None,
+                    "provider_id": playlist.provider_id if playlist else None,
+                    "error": str(e),
+                },
+            )
+            return f"Sync failed for playlist {playlist_id}: Spotify API error"
+
         except Exception as e:
             await session.rollback()
-            # Log the error
-            print(f"Error during sync_playlist_task for {playlist_id}: {e}")
-            traceback.print_exc()
+            logger.error(
+                "Unexpected error during playlist sync",
+                extra={
+                    "playlist_id": str(playlist_id),
+                    "error": str(e),
+                },
+                exc_info=True,
+            )
             return f"Sync failed for playlist {playlist_id}: {str(e)}"
 
 
