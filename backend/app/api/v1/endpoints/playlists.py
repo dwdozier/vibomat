@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Dict
@@ -7,6 +7,7 @@ from pydantic import ValidationError
 import logging
 
 from backend.app.db.session import get_async_session
+from backend.app.core.rate_limit import limiter
 from backend.app.models.service_connection import ServiceConnection
 from backend.app.schemas.playlist import (
     GenerationRequest,
@@ -527,13 +528,17 @@ async def search_playlists_by_track(
 
 
 @router.get("/search/metadata")
+@limiter.limit("30/minute")
 async def search_metadata(
+    request: Request,
+    response: Response,
     q: str,
     db: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_active_user),
 ):
     """
     Search for artists and tracks using FTS and Trigrams.
+    Rate limited to 30 requests per minute per IP.
     """
     from backend.app.models.metadata import Artist, Track
     from sqlalchemy import func, or_

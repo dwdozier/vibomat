@@ -53,8 +53,9 @@ class ServiceConnection(Base):
     provider_name: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., "spotify"
     provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    access_token: Mapped[str] = mapped_column(String(1024), nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String(1024), nullable=True)
+    # Encrypted at rest for security
+    access_token: Mapped[str] = mapped_column(EncryptedJSON, nullable=False)
+    refresh_token: Mapped[Optional[str]] = mapped_column(EncryptedJSON, nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     # Scopes granted by the user
