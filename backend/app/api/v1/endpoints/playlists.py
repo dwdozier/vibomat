@@ -28,7 +28,12 @@ from backend.app.models.user import User
 from backend.app.models.playlist import Playlist as PlaylistModel
 from backend.app.core.tasks import sync_playlist_task
 from backend.core.client import SpotifyPlaylistBuilder
-from backend.app.exceptions import InvalidPlaylistDataError
+from backend.app.exceptions import (
+    InvalidPlaylistDataError,
+    SpotifyAPIError,
+    TokenRefreshError,
+    AIServiceError,
+)
 from .users import get_spotify_provider, get_http_client
 from backend.core.providers.spotify import SpotifyProvider
 import uuid
@@ -295,7 +300,15 @@ async def import_playlist_endpoint(
             access_token = await integrations_service.get_valid_spotify_token(conn)
         else:
             raise HTTPException(status_code=400, detail="Provider not supported")
-    except Exception as e:
+    except (TokenRefreshError, SpotifyAPIError) as e:
+        logger.error(
+            "Token refresh failed during playlist import",
+            extra={
+                "user_id": str(user.id),
+                "provider": request.provider,
+                "error": str(e),
+            },
+        )
         raise HTTPException(status_code=400, detail=f"Failed to refresh token: {str(e)}")
 
     # 3. Fetch playlist details
@@ -361,10 +374,34 @@ async def import_playlist_endpoint(
         await db.refresh(db_playlist)
         return db_playlist
 
+    except (InvalidPlaylistDataError, ValidationError):
+        # Re-raise validation errors (already logged above)
+        raise
+    except SpotifyAPIError as e:
+        logger.error(
+            "Spotify API error during playlist import",
+            extra={
+                "user_id": str(user.id),
+                "provider": request.provider,
+                "provider_playlist_id": request.provider_playlist_id,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"Failed to import playlist from Spotify: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.error(
+            "Unexpected error during playlist import",
+            extra={
+                "user_id": str(user.id),
+                "provider": request.provider,
+                "provider_playlist_id": request.provider_playlist_id,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"Failed to import playlist: {str(e)}")
 
 
@@ -381,10 +418,28 @@ async def generate_playlist_endpoint(
         # ai_service.generate now returns {title, description, tracks}
         result = ai_service.generate(prompt=request.prompt, count=request.count, artists=request.artists)
         return result
+    except AIServiceError as e:
+        logger.error(
+            "AI service error during playlist generation",
+            extra={
+                "user_id": str(user.id),
+                "prompt": request.prompt,
+                "count": request.count,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"AI service failed to generate playlist: {str(e)}")
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.error(
+            "Unexpected error during playlist generation",
+            extra={
+                "user_id": str(user.id),
+                "prompt": request.prompt,
+                "count": request.count,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -402,7 +457,26 @@ async def verify_tracks_endpoint(
         tracks_dict = [t.model_dump() for t in request.tracks]
         verified, rejected = await ai_service.verify_tracks(tracks_dict)
         return {"verified": verified, "rejected": rejected}
+    except AIServiceError as e:
+        logger.error(
+            "AI service error during track verification",
+            extra={
+                "user_id": str(user.id),
+                "track_count": len(request.tracks),
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"AI service failed to verify tracks: {str(e)}")
     except Exception as e:
+        logger.error(
+            "Unexpected error during track verification",
+            extra={
+                "user_id": str(user.id),
+                "track_count": len(request.tracks),
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -453,7 +527,14 @@ async def build_playlist_endpoint(
     integrations_service = IntegrationsService(db)
     try:
         access_token = await integrations_service.get_valid_spotify_token(conn)
-    except Exception as e:
+    except (TokenRefreshError, SpotifyAPIError) as e:
+        logger.error(
+            "Token refresh failed during playlist build",
+            extra={
+                "user_id": str(user.id),
+                "error": str(e),
+            },
+        )
         raise HTTPException(status_code=400, detail=f"Failed to refresh Spotify token: {str(e)}")
 
     # 3. Use the token to build the playlist
@@ -498,10 +579,29 @@ async def build_playlist_endpoint(
             "actual_tracks": actual_tracks,
             "total_duration_ms": total_ms,
         }
+    except SpotifyAPIError as e:
+        logger.error(
+            "Spotify API error during playlist build",
+            extra={
+                "user_id": str(user.id),
+                "playlist_id": request.playlist_id,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"Failed to build playlist on Spotify: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.error(
+            "Unexpected error during playlist build",
+            extra={
+                "user_id": str(user.id),
+                "playlist_id": request.playlist_id,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"Failed to build playlist: {str(e)}")
 
 
