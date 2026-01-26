@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Dict
 from datetime import datetime, timezone
+from pydantic import ValidationError
+import logging
+
 from backend.app.db.session import get_async_session
+from backend.app.core.rate_limit import limiter
 from backend.app.models.service_connection import ServiceConnection
 from backend.app.schemas.playlist import (
     GenerationRequest,
@@ -15,6 +19,7 @@ from backend.app.schemas.playlist import (
     PlaylistRead,
     PlaylistBuildRequest,
     PlaylistImport,
+    PlaylistContentSchema,
 )
 from backend.app.services.ai_service import AIService
 from backend.app.services.integrations_service import IntegrationsService
@@ -23,10 +28,18 @@ from backend.app.models.user import User
 from backend.app.models.playlist import Playlist as PlaylistModel
 from backend.app.core.tasks import sync_playlist_task
 from backend.core.client import SpotifyPlaylistBuilder
+from backend.app.exceptions import (
+    InvalidPlaylistDataError,
+    SpotifyAPIError,
+    TokenRefreshError,
+    AIServiceError,
+)
 from .users import get_spotify_provider, get_http_client
 from backend.core.providers.spotify import SpotifyProvider
 import uuid
 import httpx
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -50,6 +63,23 @@ async def create_playlist(
     """
     # Convert Pydantic models to dicts for JSON storage
     tracks_dict = [t.model_dump() for t in playlist.tracks]
+
+    # Validate content_json before saving to database
+    try:
+        PlaylistContentSchema(name=playlist.name, tracks=tracks_dict)  # type: ignore
+    except ValidationError as e:
+        logger.warning(
+            "Playlist validation failed on create",
+            extra={
+                "user_id": str(user.id),
+                "playlist_name": playlist.name,
+                "validation_errors": e.errors(),
+            },
+        )
+        raise InvalidPlaylistDataError(
+            "Invalid playlist data",
+            details={"validation_errors": e.errors()},
+        )
 
     db_playlist = PlaylistModel(
         user_id=user.id,
@@ -132,6 +162,24 @@ async def update_playlist(
 
     # Update content
     tracks_dict = [t.model_dump() for t in playlist_update.tracks]
+
+    # Validate content_json before updating
+    try:
+        PlaylistContentSchema(name=playlist_update.name, tracks=tracks_dict)  # type: ignore
+    except ValidationError as e:
+        logger.warning(
+            "Playlist validation failed on update",
+            extra={
+                "user_id": str(user.id),
+                "playlist_id": str(playlist_id),
+                "validation_errors": e.errors(),
+            },
+        )
+        raise InvalidPlaylistDataError(
+            "Invalid playlist data",
+            details={"validation_errors": e.errors()},
+        )
+
     db_playlist.content_json = {"tracks": tracks_dict}
 
     await db.commit()
@@ -252,7 +300,15 @@ async def import_playlist_endpoint(
             access_token = await integrations_service.get_valid_spotify_token(conn)
         else:
             raise HTTPException(status_code=400, detail="Provider not supported")
-    except Exception as e:
+    except (TokenRefreshError, SpotifyAPIError) as e:
+        logger.error(
+            "Token refresh failed during playlist import",
+            extra={
+                "user_id": str(user.id),
+                "provider": request.provider,
+                "error": str(e),
+            },
+        )
         raise HTTPException(status_code=400, detail=f"Failed to refresh token: {str(e)}")
 
     # 3. Fetch playlist details
@@ -282,6 +338,24 @@ async def import_playlist_endpoint(
                         }
                     )
 
+        # Validate imported playlist data before saving
+        try:
+            PlaylistContentSchema(name=name, tracks=tracks)  # type: ignore
+        except ValidationError as e:
+            logger.warning(
+                "Playlist validation failed on import",
+                extra={
+                    "user_id": str(user.id),
+                    "provider": request.provider,
+                    "provider_playlist_id": request.provider_playlist_id,
+                    "validation_errors": e.errors(),
+                },
+            )
+            raise InvalidPlaylistDataError(
+                "Invalid imported playlist data",
+                details={"validation_errors": e.errors()},
+            )
+
         # Save to DB
         db_playlist = PlaylistModel(
             user_id=user.id,
@@ -300,10 +374,34 @@ async def import_playlist_endpoint(
         await db.refresh(db_playlist)
         return db_playlist
 
+    except (InvalidPlaylistDataError, ValidationError):
+        # Re-raise validation errors (already logged above)
+        raise
+    except SpotifyAPIError as e:
+        logger.error(
+            "Spotify API error during playlist import",
+            extra={
+                "user_id": str(user.id),
+                "provider": request.provider,
+                "provider_playlist_id": request.provider_playlist_id,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"Failed to import playlist from Spotify: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.error(
+            "Unexpected error during playlist import",
+            extra={
+                "user_id": str(user.id),
+                "provider": request.provider,
+                "provider_playlist_id": request.provider_playlist_id,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"Failed to import playlist: {str(e)}")
 
 
@@ -320,10 +418,28 @@ async def generate_playlist_endpoint(
         # ai_service.generate now returns {title, description, tracks}
         result = ai_service.generate(prompt=request.prompt, count=request.count, artists=request.artists)
         return result
+    except AIServiceError as e:
+        logger.error(
+            "AI service error during playlist generation",
+            extra={
+                "user_id": str(user.id),
+                "prompt": request.prompt,
+                "count": request.count,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"AI service failed to generate playlist: {str(e)}")
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.error(
+            "Unexpected error during playlist generation",
+            extra={
+                "user_id": str(user.id),
+                "prompt": request.prompt,
+                "count": request.count,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -341,7 +457,26 @@ async def verify_tracks_endpoint(
         tracks_dict = [t.model_dump() for t in request.tracks]
         verified, rejected = await ai_service.verify_tracks(tracks_dict)
         return {"verified": verified, "rejected": rejected}
+    except AIServiceError as e:
+        logger.error(
+            "AI service error during track verification",
+            extra={
+                "user_id": str(user.id),
+                "track_count": len(request.tracks),
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"AI service failed to verify tracks: {str(e)}")
     except Exception as e:
+        logger.error(
+            "Unexpected error during track verification",
+            extra={
+                "user_id": str(user.id),
+                "track_count": len(request.tracks),
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -392,7 +527,14 @@ async def build_playlist_endpoint(
     integrations_service = IntegrationsService(db)
     try:
         access_token = await integrations_service.get_valid_spotify_token(conn)
-    except Exception as e:
+    except (TokenRefreshError, SpotifyAPIError) as e:
+        logger.error(
+            "Token refresh failed during playlist build",
+            extra={
+                "user_id": str(user.id),
+                "error": str(e),
+            },
+        )
         raise HTTPException(status_code=400, detail=f"Failed to refresh Spotify token: {str(e)}")
 
     # 3. Use the token to build the playlist
@@ -437,10 +579,29 @@ async def build_playlist_endpoint(
             "actual_tracks": actual_tracks,
             "total_duration_ms": total_ms,
         }
+    except SpotifyAPIError as e:
+        logger.error(
+            "Spotify API error during playlist build",
+            extra={
+                "user_id": str(user.id),
+                "playlist_id": request.playlist_id,
+                "error": str(e),
+            },
+        )
+        raise HTTPException(status_code=502, detail=f"Failed to build playlist on Spotify: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
+        logger.error(
+            "Unexpected error during playlist build",
+            extra={
+                "user_id": str(user.id),
+                "playlist_id": request.playlist_id,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"Failed to build playlist: {str(e)}")
 
 
@@ -467,13 +628,17 @@ async def search_playlists_by_track(
 
 
 @router.get("/search/metadata")
+@limiter.limit("30/minute")
 async def search_metadata(
+    request: Request,
+    response: Response,
     q: str,
     db: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_active_user),
 ):
     """
     Search for artists and tracks using FTS and Trigrams.
+    Rate limited to 30 requests per minute per IP.
     """
     from backend.app.models.metadata import Artist, Track
     from sqlalchemy import func, or_

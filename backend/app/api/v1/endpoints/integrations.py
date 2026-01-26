@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from backend.app.db.session import get_async_session
 from backend.app.core.auth.fastapi_users import current_active_user
+from backend.app.core.rate_limit import limiter
 from backend.app.models.user import User
 from backend.app.models.service_connection import ServiceConnection
 from backend.app.core.config import settings
@@ -64,12 +65,16 @@ async def save_relay_config(
 
 
 @router.get("/spotify/login")
+@limiter.limit("10/minute")
 async def spotify_login(
+    request: Request,
+    response: Response,
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Redirect the user to Spotify for authentication.
+    Rate limited to 10 requests per minute per IP.
     """
     import urllib.parse
 
