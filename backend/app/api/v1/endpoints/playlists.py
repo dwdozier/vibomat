@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Dict
 from datetime import datetime, timezone
+from pydantic import ValidationError
+import logging
+
 from backend.app.db.session import get_async_session
 from backend.app.models.service_connection import ServiceConnection
 from backend.app.schemas.playlist import (
@@ -15,6 +18,7 @@ from backend.app.schemas.playlist import (
     PlaylistRead,
     PlaylistBuildRequest,
     PlaylistImport,
+    PlaylistContentSchema,
 )
 from backend.app.services.ai_service import AIService
 from backend.app.services.integrations_service import IntegrationsService
@@ -23,10 +27,13 @@ from backend.app.models.user import User
 from backend.app.models.playlist import Playlist as PlaylistModel
 from backend.app.core.tasks import sync_playlist_task
 from backend.core.client import SpotifyPlaylistBuilder
+from backend.app.exceptions import InvalidPlaylistDataError
 from .users import get_spotify_provider, get_http_client
 from backend.core.providers.spotify import SpotifyProvider
 import uuid
 import httpx
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -50,6 +57,23 @@ async def create_playlist(
     """
     # Convert Pydantic models to dicts for JSON storage
     tracks_dict = [t.model_dump() for t in playlist.tracks]
+
+    # Validate content_json before saving to database
+    try:
+        PlaylistContentSchema(name=playlist.name, tracks=tracks_dict)  # type: ignore
+    except ValidationError as e:
+        logger.warning(
+            "Playlist validation failed on create",
+            extra={
+                "user_id": str(user.id),
+                "playlist_name": playlist.name,
+                "validation_errors": e.errors(),
+            },
+        )
+        raise InvalidPlaylistDataError(
+            "Invalid playlist data",
+            details={"validation_errors": e.errors()},
+        )
 
     db_playlist = PlaylistModel(
         user_id=user.id,
@@ -132,6 +156,24 @@ async def update_playlist(
 
     # Update content
     tracks_dict = [t.model_dump() for t in playlist_update.tracks]
+
+    # Validate content_json before updating
+    try:
+        PlaylistContentSchema(name=playlist_update.name, tracks=tracks_dict)  # type: ignore
+    except ValidationError as e:
+        logger.warning(
+            "Playlist validation failed on update",
+            extra={
+                "user_id": str(user.id),
+                "playlist_id": str(playlist_id),
+                "validation_errors": e.errors(),
+            },
+        )
+        raise InvalidPlaylistDataError(
+            "Invalid playlist data",
+            details={"validation_errors": e.errors()},
+        )
+
     db_playlist.content_json = {"tracks": tracks_dict}
 
     await db.commit()
@@ -281,6 +323,24 @@ async def import_playlist_endpoint(
                             "uri": track["uri"],
                         }
                     )
+
+        # Validate imported playlist data before saving
+        try:
+            PlaylistContentSchema(name=name, tracks=tracks)  # type: ignore
+        except ValidationError as e:
+            logger.warning(
+                "Playlist validation failed on import",
+                extra={
+                    "user_id": str(user.id),
+                    "provider": request.provider,
+                    "provider_playlist_id": request.provider_playlist_id,
+                    "validation_errors": e.errors(),
+                },
+            )
+            raise InvalidPlaylistDataError(
+                "Invalid imported playlist data",
+                details={"validation_errors": e.errors()},
+            )
 
         # Save to DB
         db_playlist = PlaylistModel(
