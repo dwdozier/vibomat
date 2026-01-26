@@ -1,4 +1,3 @@
-```markdown
 # Vibomat
 
 An intelligent, full-stack application to generate and manage music playlists using Generative AI
@@ -48,4 +47,3 @@ Vibomat uses the **Conductor** framework for spec-driven development.
 ## Licensing
 
 Vibomat is licensed under the MIT License. See `LICENSE` for details.
-```
