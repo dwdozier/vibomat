@@ -185,13 +185,17 @@ class TestTokenRefresh:
             "expires_in": 3600,
         }
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client.__aenter__.return_value = mock_client
-            mock_client.post.return_value = mock_response
-            mock_client_cls.return_value = mock_client
+        with patch("backend.app.services.integrations_service.settings") as mock_settings:
+            mock_settings.SPOTIFY_CLIENT_ID = "test_client_id"
+            mock_settings.SPOTIFY_CLIENT_SECRET = "test_client_secret"
 
-            result = await service.get_valid_spotify_token(connection)
+            with patch("httpx.AsyncClient") as mock_client_cls:
+                mock_client = AsyncMock()
+                mock_client.__aenter__.return_value = mock_client
+                mock_client.post.return_value = mock_response
+                mock_client_cls.return_value = mock_client
+
+                result = await service.get_valid_spotify_token(connection)
 
         assert result == "new_token"
         assert connection.access_token == "new_token"
@@ -245,14 +249,18 @@ class TestTokenRefresh:
         mock_response.status_code = 400
         mock_response.json.return_value = {"error": "invalid_grant", "error_description": "Token revoked"}
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client.__aenter__.return_value = mock_client
-            mock_client.post.return_value = mock_response
-            mock_client_cls.return_value = mock_client
+        with patch("backend.app.services.integrations_service.settings") as mock_settings:
+            mock_settings.SPOTIFY_CLIENT_ID = "test_client_id"
+            mock_settings.SPOTIFY_CLIENT_SECRET = "test_client_secret"
 
-            with pytest.raises(SpotifyAPIError) as exc_info:
-                await service.get_valid_spotify_token(connection)
+            with patch("httpx.AsyncClient") as mock_client_cls:
+                mock_client = AsyncMock()
+                mock_client.__aenter__.return_value = mock_client
+                mock_client.post.return_value = mock_response
+                mock_client_cls.return_value = mock_client
+
+                with pytest.raises(SpotifyAPIError) as exc_info:
+                    await service.get_valid_spotify_token(connection)
 
         assert "Failed to refresh Spotify token" in str(exc_info.value)
         # Lock should still be released even on error
@@ -285,13 +293,17 @@ class TestTokenRefresh:
             "expires_in": 3600,
         }
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
-            mock_client = AsyncMock()
-            mock_client.__aenter__.return_value = mock_client
-            mock_client.post.return_value = mock_response
-            mock_client_cls.return_value = mock_client
+        with patch("backend.app.services.integrations_service.settings") as mock_settings:
+            mock_settings.SPOTIFY_CLIENT_ID = "test_client_id"
+            mock_settings.SPOTIFY_CLIENT_SECRET = "test_client_secret"
 
-            result = await service.get_valid_spotify_token(connection)
+            with patch("httpx.AsyncClient") as mock_client_cls:
+                mock_client = AsyncMock()
+                mock_client.__aenter__.return_value = mock_client
+                mock_client.post.return_value = mock_response
+                mock_client_cls.return_value = mock_client
+
+                result = await service.get_valid_spotify_token(connection)
 
         assert result == "new_token"
         # Verify lock was acquired and released
