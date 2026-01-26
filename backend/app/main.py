@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from backend.app.api.v1.api import api_router
 from backend.app.core.tasks import broker
+from backend.app.exceptions import ViboMatException
+from backend.app.middleware.exception_handler import (
+    vibomat_exception_handler,
+    generic_exception_handler,
+)
 from contextlib import asynccontextmanager
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
@@ -19,6 +24,10 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Register exception handlers
+app.add_exception_handler(ViboMatException, vibomat_exception_handler)  # type: ignore[arg-type]
+app.add_exception_handler(Exception, generic_exception_handler)  # type: ignore[arg-type]
 
 # Trust the headers from Nginx
 
