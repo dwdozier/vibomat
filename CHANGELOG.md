@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.6.0...vibomat-v0.7.0) (2026-01-14)
+
+
+### Features
+
+* Implement asynchronous metadata verification via MusicBrainz and Discogs ([#91](https://github.com/dwdozier/vibomat/issues/91)) ([28a2dc8](https://github.com/dwdozier/vibomat/commit/28a2dc8cffc3d9cb4e4bc8d6b03047e601cd2cc3))
+
 ## [0.6.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.5.0...vibomat-v0.6.0) (2026-01-08)
 
 ### Features
