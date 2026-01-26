@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from backend.app.api.v1.api import api_router
+from backend.app.core.config import settings
 from backend.app.core.tasks import broker
 from backend.app.exceptions import ViboMatException
 from backend.app.middleware.exception_handler import (
@@ -29,9 +30,9 @@ app = FastAPI(
 app.add_exception_handler(ViboMatException, vibomat_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, generic_exception_handler)  # type: ignore[arg-type]
 
-# Trust the headers from Nginx
-
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])  # type: ignore
+# Trust proxy headers only from configured trusted IPs (not wildcard)
+# This prevents header spoofing attacks from untrusted sources
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=settings.TRUSTED_PROXY_IPS)  # type: ignore
 
 
 app.include_router(api_router, prefix="/api/v1")

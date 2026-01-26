@@ -30,6 +30,20 @@ class Settings(BaseSettings):
     FASTAPI_SECRET: str  # Kept for backward compatibility, but we should unify
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
+    # Proxy Security - Trusted proxy IPs for ProxyHeadersMiddleware
+    # Only proxies from these IPs can set X-Forwarded-* headers
+    TRUSTED_PROXY_IPS: Union[List[str], str] = ["127.0.0.1", "::1"]
+
+    @field_validator("TRUSTED_PROXY_IPS", mode="before")
+    def assemble_trusted_proxy_ips(cls, v: Union[str, List[str]]) -> List[str]:
+        if v is None or v == "":
+            return ["127.0.0.1", "::1"]
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip().strip("\"'") for i in v.split(",")]
+        elif isinstance(v, list):
+            return v
+        raise ValueError(v)
+
     # Admin
     ADMIN_EMAILS: Union[List[EmailStr], str] = []
 

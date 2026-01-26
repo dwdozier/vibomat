@@ -135,7 +135,7 @@ async def test_integrations_service_token_refresh_no_refresh_token():
 @pytest.mark.asyncio
 async def test_integrations_service_token_refresh_no_creds():
     """Test token refresh fails if no credentials available."""
-    from backend.app.core.config import settings
+    from backend.app.exceptions import TokenRefreshError
 
     db = MagicMock()
     service = IntegrationsService(db)
@@ -149,12 +149,12 @@ async def test_integrations_service_token_refresh_no_creds():
         credentials={},
     )
 
-    with (
-        patch.object(settings, "SPOTIFY_CLIENT_ID", None),
-        patch.object(settings, "SPOTIFY_CLIENT_SECRET", None),
-    ):
+    # Patch settings where they're used (in the integrations_service module)
+    with patch("backend.app.services.integrations_service.settings") as mock_settings:
+        mock_settings.SPOTIFY_CLIENT_ID = None
+        mock_settings.SPOTIFY_CLIENT_SECRET = None
 
-        with pytest.raises(Exception) as exc:
+        with pytest.raises(TokenRefreshError) as exc:
             await service.get_valid_spotify_token(conn)
         assert "Spotify Relay credentials not found" in str(exc.value)
 
