@@ -1,7 +1,40 @@
 import uuid
 from datetime import datetime
 from typing import List, Optional, Any, Dict
+from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+
+class PlayabilityReason(str, Enum):
+    """Enum for track playability status reasons."""
+
+    PLAYABLE = "playable"
+    NOT_FOUND = "not_found"
+    REGION_RESTRICTED = "region_restricted"
+    EXPLICIT_CONTENT_RESTRICTED = "explicit_content_restricted"
+    LICENSE_EXPIRED = "license_expired"
+    LOCAL_FILE_ONLY = "local_file_only"
+    UNAVAILABLE = "unavailable"
+    UNKNOWN = "unknown"
+
+
+class PlayabilityStatus(BaseModel):
+    """
+    Playability status for a track on a specific relay station.
+
+    Attributes:
+        playable: Whether the track is playable on this relay
+        reason: Reason for playability status
+        available_markets: ISO 3166-1 alpha-2 country codes where track is available
+        checked_at: ISO 8601 timestamp of when playability was checked
+        restrictions: Additional restriction details from the provider
+    """
+
+    playable: bool
+    reason: PlayabilityReason
+    available_markets: Optional[List[str]] = Field(None, description="ISO 3166-1 alpha-2 country codes")
+    checked_at: str = Field(..., description="ISO 8601 timestamp")
+    restrictions: Optional[Dict[str, Any]] = None
 
 
 class TrackBase(BaseModel):
@@ -13,6 +46,13 @@ class TrackBase(BaseModel):
     uri: Optional[str] = None
     discogs_uri: Optional[str] = None
     degraded_signal: Optional[bool] = None
+    playability: Optional[Dict[str, PlayabilityStatus]] = Field(
+        None,
+        description="Playability status per relay station (e.g., {'spotify': {...}, 'apple_music': {...}})",
+    )
+    verification_sources: Optional[List[str]] = Field(
+        None, description="Sources that verified this track (e.g., ['spotify', 'musicbrainz', 'discogs'])"
+    )
 
 
 class TrackCreate(TrackBase):
@@ -100,6 +140,8 @@ class TrackContentSchema(BaseModel):
     - artist and track: required, 1-255 characters
     - duration_ms: 0 to 86400000 (max 24 hours)
     - provider: must be one of known providers (spotify, discogs, musicbrainz)
+    - playability: optional dict of relay name to playability status
+    - verification_sources: optional list of source names
     """
 
     artist: str = Field(..., min_length=1, max_length=255)
@@ -110,6 +152,8 @@ class TrackContentSchema(BaseModel):
     provider_id: Optional[str] = Field(None, max_length=255)
     uri: Optional[str] = Field(None, max_length=500)
     discogs_uri: Optional[str] = Field(None, max_length=500)
+    playability: Optional[Dict[str, Any]] = None
+    verification_sources: Optional[List[str]] = None
 
     @field_validator("artist", "track")
     @classmethod
