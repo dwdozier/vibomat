@@ -321,3 +321,84 @@ async def test_check_track_playability_default_is_playable(mock_spotify):
 
     assert result["playable"] is True
     assert result["reason"] == PlayabilityReason.PLAYABLE
+
+
+# Market Detection Tests
+
+
+@pytest.mark.asyncio
+async def test_get_user_market_success(mock_spotify):
+    """Test get_user_market returns user's country code."""
+    mock_spotify.current_user.return_value = {
+        "id": "test_user_id",
+        "country": "US",
+        "display_name": "Test User",
+        "email": "test@example.com",
+    }
+
+    provider = SpotifyProvider(auth_token="token")
+    market = await provider.get_user_market()
+
+    assert market == "US"
+    mock_spotify.current_user.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_market_no_country(mock_spotify):
+    """Test get_user_market when country is not available."""
+    mock_spotify.current_user.return_value = {
+        "id": "test_user_id",
+        "display_name": "Test User",
+        # country field missing
+    }
+
+    provider = SpotifyProvider(auth_token="token")
+    market = await provider.get_user_market()
+
+    assert market is None
+    mock_spotify.current_user.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_market_api_error(mock_spotify):
+    """Test get_user_market handles API errors."""
+    mock_spotify.current_user.side_effect = Exception("Spotify API error")
+
+    provider = SpotifyProvider(auth_token="token")
+
+    with pytest.raises(Exception) as exc_info:
+        await provider.get_user_market()
+
+    assert "Spotify API error" in str(exc_info.value)
+    mock_spotify.current_user.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_market_null_response(mock_spotify):
+    """Test get_user_market when API returns None."""
+    mock_spotify.current_user.return_value = None
+
+    provider = SpotifyProvider(auth_token="token")
+
+    with pytest.raises(Exception) as exc_info:
+        await provider.get_user_market()
+
+    assert "Failed to authenticate" in str(exc_info.value)
+    mock_spotify.current_user.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_market_different_countries(mock_spotify):
+    """Test get_user_market with various country codes."""
+    test_countries = ["GB", "JP", "CA", "FR", "DE", "AU"]
+
+    for country in test_countries:
+        mock_spotify.current_user.return_value = {
+            "id": "test_user_id",
+            "country": country,
+        }
+
+        provider = SpotifyProvider(auth_token="token")
+        market = await provider.get_user_market()
+
+        assert market == country
