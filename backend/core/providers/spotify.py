@@ -1,7 +1,9 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from datetime import datetime, UTC
 import spotipy
 from .base import BaseMusicProvider
 from backend.core.utils.helpers import _similarity, _determine_version
+from backend.app.schemas.playlist import PlayabilityReason
 import logging
 import asyncio
 
@@ -9,9 +11,17 @@ logger = logging.getLogger("backend.core.providers.spotify")
 
 
 class SpotifyProvider(BaseMusicProvider):
-    def __init__(self, auth_token: str):
+    def __init__(self, auth_token: str, market: Optional[str] = None):
+        """
+        Initialize Spotify provider.
+
+        Args:
+            auth_token: Spotify authentication token
+            market: ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB') for market-specific queries
+        """
         self.sp = spotipy.Spotify(auth=auth_token)
         self._user_id = None
+        self.market = market
 
     async def get_user_id(self) -> str:
         if self._user_id is None:
@@ -20,6 +30,78 @@ class SpotifyProvider(BaseMusicProvider):
                 raise Exception("Failed to authenticate with Spotify")
             self._user_id = user["id"]
         return self._user_id
+
+    async def check_track_playability(self, track_uri: str, market: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Check if a track is playable on Spotify.
+
+        Args:
+            track_uri: Spotify URI (spotify:track:xxx)
+            market: ISO 3166-1 alpha-2 country code (e.g., 'US'). If None, uses instance market.
+
+        Returns:
+            Dictionary with playability information:
+            {
+                "playable": bool,
+                "reason": PlayabilityReason value,
+                "available_markets": List[str] or None,
+                "is_local": bool,
+                "restrictions": Dict[str, str] or None,
+                "checked_at": ISO 8601 timestamp
+            }
+        """
+        # Extract track ID from URI
+        track_id = track_uri.split(":")[-1] if ":" in track_uri else track_uri
+
+        # Use provided market or instance market
+        effective_market = market or self.market
+
+        # Query Spotify API for track details
+        try:
+            track_data = await asyncio.to_thread(self.sp.track, track_id, market=effective_market)
+        except Exception as e:
+            logger.warning(f"Failed to check playability for track {track_id}: {e}")
+            return {
+                "playable": False,
+                "reason": PlayabilityReason.UNKNOWN,
+                "available_markets": None,
+                "is_local": False,
+                "restrictions": None,
+                "checked_at": datetime.now(UTC).isoformat(),
+            }
+
+        # Extract playability information
+        is_playable = track_data.get("is_playable", True)  # Default True if not present
+        available_markets = track_data.get("available_markets", [])
+        restrictions = track_data.get("restrictions", {})
+        is_local = track_data.get("is_local", False)
+
+        # Determine reason for playability status
+        if is_playable:
+            reason = PlayabilityReason.PLAYABLE
+        elif is_local:
+            reason = PlayabilityReason.LOCAL_FILE_ONLY
+        elif restrictions:
+            restriction_reason = restrictions.get("reason", "")
+            if restriction_reason == "market":
+                reason = PlayabilityReason.REGION_RESTRICTED
+            elif restriction_reason == "explicit":
+                reason = PlayabilityReason.EXPLICIT_CONTENT_RESTRICTED
+            else:
+                reason = PlayabilityReason.UNAVAILABLE
+        elif effective_market and effective_market not in available_markets:
+            reason = PlayabilityReason.REGION_RESTRICTED
+        else:
+            reason = PlayabilityReason.UNAVAILABLE
+
+        return {
+            "playable": is_playable,
+            "reason": reason,
+            "available_markets": available_markets if not is_playable and available_markets else None,
+            "is_local": is_local,
+            "restrictions": restrictions if restrictions else None,
+            "checked_at": datetime.now(UTC).isoformat(),
+        }
 
     async def search_track(
         self,
