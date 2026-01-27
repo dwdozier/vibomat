@@ -31,8 +31,8 @@ To interact with Spotify, you must register an application:
 1. **Clone & Environment**:
 
     ```bash
-    git clone https://github.com/dwdozier/spotify-playlist-builder.git
-    cd spotify-playlist-builder
+    git clone https://github.com/dwdozier/vibomat.git
+    cd vibomat
     uv venv
     source .venv/bin/activate # Linux/Mac
     # .venv\Scripts\activate # Windows
