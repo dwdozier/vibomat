@@ -97,3 +97,4 @@ jobs:
           branch: docs/auto-update-claude
           delete-branch: true
           base: main
+          fresh-branch: true
