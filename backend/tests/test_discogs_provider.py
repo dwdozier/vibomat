@@ -15,12 +15,20 @@ def mock_httpx_client():
         yield mock_client
 
 
-async def test_discogs_client_init_no_pat_raises_error():
-    """Test that initialization fails if DISCOGS_PAT is missing."""
+async def test_discogs_client_init_no_pat_creates_disabled_client():
+    """Test that DiscogsClient can be created without DISCOGS_PAT but is non-functional."""
     with patch("backend.core.providers.discogs.settings.DISCOGS_PAT", None):
-        with pytest.raises(ValueError) as excinfo:
-            DiscogsClient()
-        assert "DISCOGS_PAT is not configured" in str(excinfo.value)
+        client = DiscogsClient()
+        # Client should be created successfully but be non-functional
+        assert client.http_client is None
+        assert client.base_url is None
+        assert client.headers is None
+        # Verify that searches return None when client is not configured
+        result = await client.search_track(artist="Artist", track="Track")
+        assert result is None
+        # Verify that metadata retrieval also returns None
+        metadata = await client.get_metadata("discogs:master:12345")
+        assert metadata is None
 
 
 async def test_search_track_success(mock_httpx_client):

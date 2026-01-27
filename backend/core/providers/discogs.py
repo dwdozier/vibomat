@@ -31,7 +31,11 @@ class DiscogsClient(BaseMusicProvider):
 
     def __init__(self):
         if not settings.DISCOGS_PAT:
-            raise ValueError("DISCOGS_PAT is not configured in settings.")
+            logger.warning("DISCOGS_PAT is not configured. Discogs metadata enrichment will be disabled.")
+            self.base_url = None
+            self.headers = None
+            self.http_client = None
+            return
 
         self.base_url = "https://api.discogs.com"
         self.headers = {
@@ -50,6 +54,9 @@ class DiscogsClient(BaseMusicProvider):
     )
     async def _get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
         """Internal asynchronous GET request with retry logic."""
+        if self.http_client is None:
+            logger.debug("Discogs client not configured, skipping request")
+            return None
         response = await self.http_client.get(endpoint, params=params)
 
         try:
