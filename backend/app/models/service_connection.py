@@ -61,6 +61,9 @@ class ServiceConnection(Base):
     # Scopes granted by the user
     scopes: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
 
+    # User's market/country (ISO 3166-1 alpha-2 code, e.g., 'US', 'GB', 'JP')
+    market: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
+
     # User-supplied configuration (e.g., Client ID, Client Secret for custom app)
     # Encrypted at rest
     credentials: Mapped[Optional[dict[str, Any]]] = mapped_column(EncryptedJSON, nullable=True)

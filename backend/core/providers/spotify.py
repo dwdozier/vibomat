@@ -31,6 +31,33 @@ class SpotifyProvider(BaseMusicProvider):
             self._user_id = user["id"]
         return self._user_id
 
+    async def get_user_market(self) -> Optional[str]:
+        """
+        Get the user's market (country) from their Spotify profile.
+
+        Returns:
+            ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'JP') or None if unavailable
+
+        Raises:
+            Exception: If authentication fails
+        """
+        try:
+            user = await asyncio.to_thread(self.sp.current_user)
+            if user is None:
+                raise Exception("Failed to authenticate with Spotify")
+
+            # Spotify returns 'country' field in user profile
+            market = user.get("country")
+            if market:
+                logger.info(f"Detected user market: {market}")
+            else:
+                logger.warning("User market not available in Spotify profile")
+
+            return market
+        except Exception as e:
+            logger.error(f"Failed to get user market: {e}")
+            raise
+
     async def check_track_playability(self, track_uri: str, market: Optional[str] = None) -> Dict[str, Any]:
         """
         Check if a track is playable on Spotify.
