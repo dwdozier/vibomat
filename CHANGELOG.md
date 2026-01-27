@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.7.0...vibomat-v0.8.0) (2026-01-27)
+
+
+### Features
+
+* Backend Security & Error Handling Improvements ([#106](https://github.com/dwdozier/vibomat/issues/106)) ([076dff2](https://github.com/dwdozier/vibomat/commit/076dff2ca46d98a0da8eeae905cef88196850cae))
+* Complete refactoring track and migrate to Claude Code ([#101](https://github.com/dwdozier/vibomat/issues/101)) ([93eadab](https://github.com/dwdozier/vibomat/commit/93eadab248330da51b2737e831f84dbd8866b1a6))
+
+
+### Bug Fixes
+
+* **ci:** Prevent doc-agent merge conflicts with fresh-branch strategy ([#107](https://github.com/dwdozier/vibomat/issues/107)) ([d117613](https://github.com/dwdozier/vibomat/commit/d11761371404fe01c87557ed0b15102d618467ce))
+* **deps:** Configure Dependabot to ignore python-multipart until upstream fix ([#109](https://github.com/dwdozier/vibomat/issues/109)) ([f88865f](https://github.com/dwdozier/vibomat/commit/f88865fc1c9d5d56a1fbb01ac45384d8c665e1ed))
+
+
+### Documentation
+
+* Auto-update documentation via Claude Agent ([#108](https://github.com/dwdozier/vibomat/issues/108)) ([085bcf5](https://github.com/dwdozier/vibomat/commit/085bcf5bf07ade9965d59df74c40eb5399bf47fd))
+
 ## [0.7.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.6.0...vibomat-v0.7.0) (2026-01-14)
 
 
