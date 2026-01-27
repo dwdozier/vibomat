@@ -53,7 +53,7 @@ def test_get_my_playlists_filters_deleted(mock_db_session):
 def test_get_playlist_filters_deleted(mock_db_session):
     pid = uuid.uuid4()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db_session.execute.return_value = mock_result
 
     response = client.get(f"/api/v1/playlists/{pid}")
@@ -77,7 +77,7 @@ def test_delete_playlist_soft_deletes(mock_db_session):
     mock_playlist.deleted_at = None
 
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_playlist)
     mock_db_session.execute.return_value = mock_result
 
     response = client.delete(f"/api/v1/playlists/{pid}")
@@ -102,7 +102,7 @@ def test_restore_playlist_recovers(mock_db_session):
     mock_playlist.deleted_at = datetime.now(timezone.utc)
 
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_playlist)
     mock_db_session.execute.return_value = mock_result
 
     response = client.post(f"/api/v1/playlists/{pid}/restore")

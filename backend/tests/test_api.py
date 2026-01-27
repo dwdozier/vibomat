@@ -130,7 +130,7 @@ def test_spotify_login_endpoint():
 
     mock_db = MagicMock()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -155,7 +155,7 @@ def test_spotify_callback_endpoint():
     mock_db.commit = AsyncMock()
     # Mock the ServiceConnection lookup for credentials
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -202,7 +202,7 @@ def test_spotify_callback_token_error_with_details():
 
     mock_db = MagicMock()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -251,7 +251,7 @@ def test_build_playlist_endpoint_success():
     mock_conn = MagicMock(spec=ServiceConnection)
     mock_conn.access_token = "fake_token"
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_conn)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_conn)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -293,7 +293,7 @@ def test_build_playlist_endpoint_no_connection():
 
     mock_db = MagicMock()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -325,7 +325,7 @@ def test_spotify_callback_existing_connection():
     mock_conn = MagicMock(spec=ServiceConnection)
     mock_conn.credentials = {"client_id": "c", "client_secret": "s"}
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_conn)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_conn)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -362,7 +362,7 @@ def test_save_relay_config():
     mock_db = MagicMock()
     mock_db.commit = AsyncMock()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -388,7 +388,7 @@ def test_spotify_login_with_custom_creds():
     mock_conn = MagicMock(spec=ServiceConnection)
     mock_conn.credentials = {"client_id": "user_client_id"}
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_conn)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_conn)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -409,7 +409,7 @@ def test_build_playlist_endpoint_failure():
     mock_conn = MagicMock(spec=ServiceConnection)
     mock_conn.access_token = "fake_token"
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_conn)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_conn)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db
@@ -468,7 +468,7 @@ def test_spotify_login_no_client_id_extra():
 
     mock_db = MagicMock()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[current_active_user] = lambda: mock_user
@@ -490,7 +490,7 @@ def test_spotify_callback_no_creds_extra():
     # Mocking ServiceConnection lookup to find no user-specific config
     mock_db = MagicMock()
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db.execute = AsyncMock(return_value=mock_result)
 
     app.dependency_overrides[get_async_session] = lambda: mock_db

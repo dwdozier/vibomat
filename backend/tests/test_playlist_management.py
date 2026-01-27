@@ -95,7 +95,7 @@ def test_get_playlist_details(mock_db_session):
     mock_playlist.content_json = {"tracks": []}
 
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_playlist)
     mock_db_session.execute.return_value = mock_result
 
     response = client.get(f"/api/v1/playlists/{pid}")
@@ -106,7 +106,7 @@ def test_get_playlist_details(mock_db_session):
 
 def test_get_playlist_not_found(mock_db_session):
     mock_result = MagicMock()
-    mock_result.scalar_one_or_none = AsyncMock(return_value=None)
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
     mock_db_session.execute.return_value = mock_result
 
     response = client.get(f"/api/v1/playlists/{uuid.uuid4()}")
@@ -126,7 +126,7 @@ def test_update_playlist(mock_db_session):
 
     mock_result = MagicMock()
 
-    mock_result.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_playlist)
     mock_db_session.execute.return_value = mock_result
 
     payload = {"name": "New Name", "tracks": []}
@@ -177,7 +177,7 @@ def test_import_playlist_success(mock_db_session):
         )
 
         # Mock DB execute: first call returns connection
-        mock_db_session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=mock_conn)
+        mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=mock_conn)
 
         def mock_refresh(obj):
             obj.id = uuid.uuid4()
@@ -233,7 +233,7 @@ def test_import_playlist_success(mock_db_session):
                 provider_id="sp_id_123",
             )
 
-            mock_db_session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+            mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=mock_playlist)
 
             with patch("backend.app.api.v1.endpoints.playlists.sync_playlist_task") as mock_sync_task:
 
@@ -259,7 +259,7 @@ def test_import_playlist_success(mock_db_session):
                 provider_id=None,
             )
 
-            mock_db_session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+            mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=mock_playlist)
 
             response = client.post(f"/api/v1/playlists/{pid}/sync")
 
@@ -279,7 +279,7 @@ def test_import_playlist_success(mock_db_session):
                 provider_id="sp_id_123",
             )
 
-            mock_db_session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=mock_playlist)
+            mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=mock_playlist)
 
             response = client.post(f"/api/v1/playlists/{pid}/sync")
 
@@ -294,7 +294,7 @@ def test_delete_playlist_endpoint_extra(mock_db_session):
     playlist = Playlist(id=pid, user_id=mock_user.id, name="Test PL")
 
     # Mock the database execute call to return the playlist object
-    mock_db_session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=playlist)
+    mock_db_session.execute.return_value.scalar_one_or_none = MagicMock(return_value=playlist)
 
     response = client.delete(f"/api/v1/playlists/{playlist.id}")
 
