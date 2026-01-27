@@ -1,5 +1,6 @@
 import pytest
 from backend.core.providers.spotify import SpotifyProvider
+from backend.app.schemas.playlist import PlayabilityReason
 
 
 @pytest.mark.asyncio
@@ -113,3 +114,210 @@ async def test_spotify_provider_add_tracks(mock_spotify):
     provider = SpotifyProvider(auth_token="token")
     await provider.add_tracks_to_playlist("pl_id", ["uri:1"])
     mock_spotify.playlist_add_items.assert_called_once_with("pl_id", ["uri:1"])
+
+
+# Playability Tests
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_playable(mock_spotify):
+    """Test check_track_playability with a playable track."""
+    mock_spotify.track.return_value = {
+        "id": "123",
+        "name": "Test Track",
+        "is_playable": True,
+        "available_markets": ["US", "CA", "GB"],
+        "is_local": False,
+        "restrictions": {},
+    }
+
+    provider = SpotifyProvider(auth_token="token", market="US")
+    result = await provider.check_track_playability("spotify:track:123")
+
+    assert result["playable"] is True
+    assert result["reason"] == PlayabilityReason.PLAYABLE
+    assert result["available_markets"] is None  # Not included for playable tracks
+    assert result["is_local"] is False
+    assert result["restrictions"] is None
+    assert "checked_at" in result
+    mock_spotify.track.assert_called_once_with("123", market="US")
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_region_restricted(mock_spotify):
+    """Test check_track_playability with region-restricted track."""
+    mock_spotify.track.return_value = {
+        "id": "456",
+        "name": "Restricted Track",
+        "is_playable": False,
+        "available_markets": ["JP", "KR"],
+        "is_local": False,
+        "restrictions": {"reason": "market"},
+    }
+
+    provider = SpotifyProvider(auth_token="token", market="US")
+    result = await provider.check_track_playability("spotify:track:456")
+
+    assert result["playable"] is False
+    assert result["reason"] == PlayabilityReason.REGION_RESTRICTED
+    assert result["available_markets"] == ["JP", "KR"]
+    assert result["restrictions"] == {"reason": "market"}
+    assert "checked_at" in result
+    mock_spotify.track.assert_called_once_with("456", market="US")
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_explicit_content(mock_spotify):
+    """Test check_track_playability with explicit content restriction."""
+    mock_spotify.track.return_value = {
+        "id": "789",
+        "name": "Explicit Track",
+        "is_playable": False,
+        "available_markets": ["US"],
+        "is_local": False,
+        "restrictions": {"reason": "explicit"},
+    }
+
+    provider = SpotifyProvider(auth_token="token")
+    result = await provider.check_track_playability("789", market="US")
+
+    assert result["playable"] is False
+    assert result["reason"] == PlayabilityReason.EXPLICIT_CONTENT_RESTRICTED
+    assert result["restrictions"] == {"reason": "explicit"}
+    assert "checked_at" in result
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_local_file(mock_spotify):
+    """Test check_track_playability with local file."""
+    mock_spotify.track.return_value = {
+        "id": "local",
+        "name": "Local File",
+        "is_playable": False,
+        "available_markets": [],
+        "is_local": True,
+        "restrictions": {},
+    }
+
+    provider = SpotifyProvider(auth_token="token")
+    result = await provider.check_track_playability("spotify:local:abc")
+
+    assert result["playable"] is False
+    assert result["reason"] == PlayabilityReason.LOCAL_FILE_ONLY
+    assert result["is_local"] is True
+    assert "checked_at" in result
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_unavailable(mock_spotify):
+    """Test check_track_playability with unavailable track."""
+    mock_spotify.track.return_value = {
+        "id": "unavail",
+        "name": "Unavailable Track",
+        "is_playable": False,
+        "available_markets": [],
+        "is_local": False,
+        "restrictions": {"reason": "unknown"},
+    }
+
+    provider = SpotifyProvider(auth_token="token")
+    result = await provider.check_track_playability("spotify:track:unavail")
+
+    assert result["playable"] is False
+    assert result["reason"] == PlayabilityReason.UNAVAILABLE
+    assert "checked_at" in result
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_api_error(mock_spotify):
+    """Test check_track_playability handles API errors gracefully."""
+    mock_spotify.track.side_effect = Exception("Spotify API error")
+
+    provider = SpotifyProvider(auth_token="token")
+    result = await provider.check_track_playability("spotify:track:error")
+
+    assert result["playable"] is False
+    assert result["reason"] == PlayabilityReason.UNKNOWN
+    assert result["available_markets"] is None
+    assert result["is_local"] is False
+    assert result["restrictions"] is None
+    assert "checked_at" in result
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_custom_market(mock_spotify):
+    """Test check_track_playability with custom market override."""
+    mock_spotify.track.return_value = {
+        "id": "123",
+        "name": "Test Track",
+        "is_playable": True,
+        "available_markets": ["GB"],
+        "is_local": False,
+        "restrictions": {},
+    }
+
+    provider = SpotifyProvider(auth_token="token", market="US")
+    result = await provider.check_track_playability("spotify:track:123", market="GB")
+
+    assert result["playable"] is True
+    assert result["reason"] == PlayabilityReason.PLAYABLE
+    # Should use the provided market "GB", not the instance market "US"
+    mock_spotify.track.assert_called_once_with("123", market="GB")
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_no_market(mock_spotify):
+    """Test check_track_playability with no market specified."""
+    mock_spotify.track.return_value = {
+        "id": "123",
+        "name": "Test Track",
+        "is_playable": True,
+        "available_markets": ["US"],
+        "is_local": False,
+        "restrictions": {},
+    }
+
+    provider = SpotifyProvider(auth_token="token")  # No market specified
+    result = await provider.check_track_playability("spotify:track:123")
+
+    assert result["playable"] is True
+    assert result["reason"] == PlayabilityReason.PLAYABLE
+    mock_spotify.track.assert_called_once_with("123", market=None)
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_market_not_in_available(mock_spotify):
+    """Test check_track_playability when user market not in available markets."""
+    mock_spotify.track.return_value = {
+        "id": "123",
+        "name": "Test Track",
+        "is_playable": False,
+        "available_markets": ["JP", "KR"],  # User market "US" not in list
+        "is_local": False,
+        "restrictions": {},
+    }
+
+    provider = SpotifyProvider(auth_token="token", market="US")
+    result = await provider.check_track_playability("spotify:track:123")
+
+    assert result["playable"] is False
+    assert result["reason"] == PlayabilityReason.REGION_RESTRICTED
+    assert result["available_markets"] == ["JP", "KR"]
+
+
+@pytest.mark.asyncio
+async def test_check_track_playability_default_is_playable(mock_spotify):
+    """Test that is_playable defaults to True if not present in response."""
+    mock_spotify.track.return_value = {
+        "id": "123",
+        "name": "Test Track",
+        # is_playable not present
+        "available_markets": ["US"],
+        "is_local": False,
+    }
+
+    provider = SpotifyProvider(auth_token="token")
+    result = await provider.check_track_playability("123")
+
+    assert result["playable"] is True
+    assert result["reason"] == PlayabilityReason.PLAYABLE
