@@ -17,6 +17,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    ignore:
+      # Ignore python-multipart updates until fastapi-users supports 0.0.22
+      # Tracking: https://github.com/fastapi-users/fastapi-users/pull/1560
+      - dependency-name: "python-multipart"
+        update-types: ["version-update:semver-patch"]
     groups:
       backend-deps:
         patterns:
