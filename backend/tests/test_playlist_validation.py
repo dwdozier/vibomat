@@ -8,7 +8,13 @@ data from entering the content_json field.
 import pytest
 from pydantic import ValidationError
 
-from backend.app.schemas.playlist import TrackContentSchema, PlaylistContentSchema
+from backend.app.schemas.playlist import (
+    TrackContentSchema,
+    PlaylistContentSchema,
+    PlayabilityReason,
+    PlayabilityStatus,
+    TrackBase,
+)
 from backend.app.exceptions import InvalidPlaylistDataError
 
 
@@ -138,6 +144,43 @@ class TestTrackContentSchema:
         track = TrackContentSchema(artist="Artist Name", track="Track Title", provider="SPOTIFY")
         assert track.provider == "spotify"  # Should be normalized to lowercase
 
+    def test_playability_optional(self):
+        """Verify playability field is optional."""
+        track = TrackContentSchema(artist="Artist Name", track="Track Title")
+        assert track.playability is None
+
+    def test_playability_with_data(self):
+        """Verify playability field accepts valid data structure."""
+        playability_data = {
+            "spotify": {
+                "playable": True,
+                "reason": "playable",
+                "checked_at": "2026-01-27T00:00:00Z",
+            }
+        }
+        track = TrackContentSchema(artist="Artist Name", track="Track Title", playability=playability_data)
+        assert track.playability is not None
+        assert "spotify" in track.playability
+        assert track.playability["spotify"]["playable"] is True
+
+    def test_verification_sources_optional(self):
+        """Verify verification_sources field is optional."""
+        track = TrackContentSchema(artist="Artist Name", track="Track Title")
+        assert track.verification_sources is None
+
+    def test_verification_sources_with_data(self):
+        """Verify verification_sources field accepts list of strings."""
+        sources = ["spotify", "musicbrainz", "discogs"]
+        track = TrackContentSchema(artist="Artist Name", track="Track Title", verification_sources=sources)
+        assert track.verification_sources == sources
+        assert track.verification_sources is not None
+        assert len(track.verification_sources) == 3
+
+    def test_verification_sources_empty_list(self):
+        """Verify verification_sources can be an empty list."""
+        track = TrackContentSchema(artist="Artist Name", track="Track Title", verification_sources=[])
+        assert track.verification_sources == []
+
 
 class TestPlaylistContentSchema:
     """Test playlist content validation."""
@@ -212,6 +255,96 @@ class TestPlaylistContentSchema:
         with pytest.raises(ValidationError) as exc_info:
             PlaylistContentSchema(name="Test Playlist", tracks=tracks)  # type: ignore
         assert "duration_ms" in str(exc_info.value)
+
+
+class TestPlayabilitySchemas:
+    """Test playability reason enum and status model."""
+
+    def test_playability_reason_enum_values(self):
+        """Verify all playability reason enum values are accessible."""
+        assert PlayabilityReason.PLAYABLE == "playable"
+        assert PlayabilityReason.NOT_FOUND == "not_found"
+        assert PlayabilityReason.REGION_RESTRICTED == "region_restricted"
+        assert PlayabilityReason.EXPLICIT_CONTENT_RESTRICTED == "explicit_content_restricted"
+        assert PlayabilityReason.LICENSE_EXPIRED == "license_expired"
+        assert PlayabilityReason.LOCAL_FILE_ONLY == "local_file_only"
+        assert PlayabilityReason.UNAVAILABLE == "unavailable"
+        assert PlayabilityReason.UNKNOWN == "unknown"
+
+    def test_playability_status_minimal(self):
+        """Verify minimal valid PlayabilityStatus."""
+        status = PlayabilityStatus(playable=True, reason=PlayabilityReason.PLAYABLE, checked_at="2026-01-27T00:00:00Z")
+        assert status.playable is True
+        assert status.reason == PlayabilityReason.PLAYABLE
+        assert status.checked_at == "2026-01-27T00:00:00Z"
+        assert status.available_markets is None
+        assert status.restrictions is None
+
+    def test_playability_status_with_markets(self):
+        """Verify PlayabilityStatus with available markets."""
+        status = PlayabilityStatus(
+            playable=False,
+            reason=PlayabilityReason.REGION_RESTRICTED,
+            checked_at="2026-01-27T00:00:00Z",
+            available_markets=["US", "CA", "GB"],
+        )
+        assert status.playable is False
+        assert status.reason == PlayabilityReason.REGION_RESTRICTED
+        assert status.available_markets is not None
+        assert len(status.available_markets) == 3
+        assert "US" in status.available_markets
+
+    def test_playability_status_with_restrictions(self):
+        """Verify PlayabilityStatus with restriction details."""
+        status = PlayabilityStatus(
+            playable=False,
+            reason=PlayabilityReason.EXPLICIT_CONTENT_RESTRICTED,
+            checked_at="2026-01-27T00:00:00Z",
+            restrictions={"reason": "explicit", "message": "Explicit content"},
+        )
+        assert status.restrictions is not None
+        assert status.restrictions["reason"] == "explicit"
+
+    def test_track_base_with_playability(self):
+        """Verify TrackBase accepts playability data."""
+        playability_status = PlayabilityStatus(
+            playable=True, reason=PlayabilityReason.PLAYABLE, checked_at="2026-01-27T00:00:00Z"
+        )
+        track = TrackBase(
+            artist="Test Artist",
+            track="Test Track",
+            playability={"spotify": playability_status},
+        )
+        assert track.playability is not None
+        assert "spotify" in track.playability
+        assert track.playability["spotify"].playable is True
+
+    def test_track_base_with_verification_sources(self):
+        """Verify TrackBase accepts verification sources."""
+        track = TrackBase(
+            artist="Test Artist",
+            track="Test Track",
+            verification_sources=["spotify", "musicbrainz"],
+        )
+        assert track.verification_sources is not None
+        assert len(track.verification_sources) == 2
+        assert "spotify" in track.verification_sources
+        assert "musicbrainz" in track.verification_sources
+
+    def test_track_base_with_both_new_fields(self):
+        """Verify TrackBase accepts both playability and verification sources."""
+        playability_status = PlayabilityStatus(
+            playable=True, reason=PlayabilityReason.PLAYABLE, checked_at="2026-01-27T00:00:00Z"
+        )
+        track = TrackBase(
+            artist="Test Artist",
+            track="Test Track",
+            playability={"spotify": playability_status},
+            verification_sources=["spotify", "musicbrainz", "discogs"],
+        )
+        assert track.playability is not None
+        assert track.verification_sources is not None
+        assert len(track.verification_sources) == 3
 
 
 class TestInvalidPlaylistDataError:
