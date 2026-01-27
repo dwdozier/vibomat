@@ -523,6 +523,13 @@ async def build_playlist_endpoint(
             detail="Spotify relay station not connected. Please go to Settings.",
         )
 
+    # Check if OAuth was completed (not just relay config saved)
+    if not conn.refresh_token or conn.provider_user_id == "PENDING":
+        raise HTTPException(
+            status_code=400,
+            detail="Please complete Spotify authorization by clicking 'Connect to Spotify' in Settings.",
+        )
+
     # 2. Ensure token is valid
     integrations_service = IntegrationsService(db)
     try:
@@ -532,6 +539,9 @@ async def build_playlist_endpoint(
             "Token refresh failed during playlist build",
             extra={
                 "user_id": str(user.id),
+                "connection_id": str(conn.id),
+                "provider_user_id": conn.provider_user_id,
+                "has_refresh_token": bool(conn.refresh_token),
                 "error": str(e),
             },
         )
