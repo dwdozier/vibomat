@@ -24,9 +24,19 @@ and external metadata verification.
 
 ## Quick Start
 
-1. **Boot Systems:** `docker compose up -d`
-2. **Access Terminal:** `http://localhost:3000`
-3. **Authentication:** Register and establish your Citizen ID.
+1. **Clone & Environment**:
+
+    ```bash
+    git clone https://github.com/dwdozier/vibomat.git
+    cd vibomat
+    uv venv
+    source .venv/bin/activate # Linux/Mac
+    # .venv\Scripts\activate # Windows
+    ```
+
+2. **Boot Systems:** `docker compose up -d`
+3. **Access Terminal:** `http://localhost:3000`
+4. **Authentication:** Register and establish your Citizen ID.
 
 ## Developer Workflow
 
