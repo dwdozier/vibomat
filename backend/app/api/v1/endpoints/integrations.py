@@ -36,7 +36,7 @@ async def save_relay_config(
             ServiceConnection.provider_name == config.provider,
         )
     )
-    conn = await result.scalar_one_or_none()  # type: ignore[misc]
+    conn = result.scalar_one_or_none()
 
     if not conn:
         # Create a placeholder connection to store credentials even before OAuth
@@ -85,7 +85,7 @@ async def spotify_login(
             ServiceConnection.provider_name == "spotify",
         )
     )
-    conn = await result.scalar_one_or_none()  # type: ignore[misc]
+    conn = result.scalar_one_or_none()
 
     client_id = settings.SPOTIFY_CLIENT_ID
     if conn and conn.credentials:
@@ -127,7 +127,7 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
             ServiceConnection.provider_name == "spotify",
         )
     )
-    conn = await result.scalar_one_or_none()  # type: ignore[misc]
+    conn = result.scalar_one_or_none()
 
     client_id = settings.SPOTIFY_CLIENT_ID
     client_secret = settings.SPOTIFY_CLIENT_SECRET

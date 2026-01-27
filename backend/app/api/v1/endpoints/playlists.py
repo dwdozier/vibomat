@@ -123,7 +123,7 @@ async def get_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    playlist = await result.scalar_one_or_none()  # type: ignore[misc]
+    playlist = result.scalar_one_or_none()
 
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -148,7 +148,7 @@ async def update_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
+    db_playlist = result.scalar_one_or_none()
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -199,7 +199,7 @@ async def sync_playlist_endpoint(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
+    db_playlist = result.scalar_one_or_none()
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -231,7 +231,7 @@ async def delete_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_(None))
     )
-    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
+    db_playlist = result.scalar_one_or_none()
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -256,7 +256,7 @@ async def restore_playlist(
     result = await db.execute(
         select(PlaylistModel).where(PlaylistModel.id == playlist_id, PlaylistModel.deleted_at.is_not(None))
     )
-    db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
+    db_playlist = result.scalar_one_or_none()
 
     if not db_playlist:
         raise HTTPException(status_code=404, detail="Playlist not found or not deleted")
@@ -499,7 +499,7 @@ async def build_playlist_endpoint(
                 PlaylistModel.deleted_at.is_(None),
             )
         )
-        db_playlist = await result.scalar_one_or_none()  # type: ignore[misc]
+        db_playlist = result.scalar_one_or_none()
         if db_playlist and db_playlist.user_id == user.id:
             # Use data from DB
             # We will use db_playlist content below directly
@@ -515,7 +515,7 @@ async def build_playlist_endpoint(
             ServiceConnection.provider_name == "spotify",
         )
     )
-    conn = await result.scalar_one_or_none()  # type: ignore[misc]
+    conn = result.scalar_one_or_none()
 
     if not conn:
         raise HTTPException(
