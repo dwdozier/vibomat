@@ -81,8 +81,6 @@ def upgrade() -> None:
                 {"token": encrypted_refresh, "id": connection_id},
             )
 
-    conn.commit()
-
 
 def downgrade() -> None:
     """Decrypt tokens back to plaintext (not recommended for production)."""
@@ -119,5 +117,3 @@ def downgrade() -> None:
                 )
             except Exception:
                 pass  # Skip if decryption fails
-
-    conn.commit()

@@ -99,7 +99,9 @@ async def spotify_login(
         "response_type": "code",
         "redirect_uri": settings.SPOTIFY_REDIRECT_URI,
         "scope": (
-            "playlist-modify-public playlist-modify-private " "playlist-read-private playlist-read-collaborative"
+            "playlist-modify-public playlist-modify-private "
+            "playlist-read-private playlist-read-collaborative "
+            "user-read-private"
         ),
         "state": str(user.id),
     }
@@ -171,6 +173,9 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
         )
         spotify_user = user_response.json()
 
+        # Extract user's market (country code)
+        user_market = spotify_user.get("country")
+
         # 4. Update or Create Connection
         # Note: Database expects naive timestamp (UTC)
         expires_at = (datetime.now(UTC) + timedelta(seconds=token_data["expires_in"])).replace(tzinfo=None)
@@ -184,6 +189,7 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
                 refresh_token=token_data.get("refresh_token"),
                 expires_at=expires_at,
                 scopes=granted_scopes,
+                market=user_market,
             )
             db.add(conn)
         else:
@@ -192,6 +198,7 @@ async def spotify_callback(code: str, state: str, db: AsyncSession = Depends(get
             conn.refresh_token = token_data.get("refresh_token")
             conn.expires_at = expires_at
             conn.scopes = granted_scopes
+            conn.market = user_market
 
         await db.commit()
 
