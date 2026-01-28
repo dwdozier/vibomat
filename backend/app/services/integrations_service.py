@@ -77,13 +77,17 @@ class IntegrationsService:
             async with DistributedLock(
                 self.redis, lock_key, timeout=30, blocking=True, max_wait=10.0, retry_interval=0.1
             ):
-                return await self._refresh_spotify_token(connection, client_id, client_secret)
+                token = await self._refresh_spotify_token(connection, client_id, client_secret)
         else:
             # No Redis available, proceed without locking (not recommended for production)
             logger.warning(
                 f"No Redis client available for connection {connection.id}, " "proceeding without distributed lock"
             )
-            return await self._refresh_spotify_token(connection, client_id, client_secret)
+            token = await self._refresh_spotify_token(connection, client_id, client_secret)
+
+        # Lazy-load market if missing after token refresh
+        await self._ensure_market_populated(connection)
+        return token
 
     async def _refresh_spotify_token(self, connection: ServiceConnection, client_id: str, client_secret: str) -> str:
         """
