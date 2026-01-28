@@ -136,6 +136,7 @@ class SpotifyProvider(BaseMusicProvider):
         track: str,
         album: Optional[str] = None,
         version: Optional[str] = None,
+        check_playability: bool = False,
     ) -> Optional[dict]:
         # Implementation logic moved from client.py, adapted for async if needed
         # For now, keeping synchronous calls but wrapped in async interface
@@ -145,12 +146,19 @@ class SpotifyProvider(BaseMusicProvider):
             results = await asyncio.to_thread(self.sp.search, q=query, type="track", limit=1)
             if results and results["tracks"]["items"]:
                 item = results["tracks"]["items"][0]
-                return {
+                result = {
                     "artist": ", ".join([a["name"] for a in item["artists"]]),
                     "track": item["name"],
                     "album": item["album"]["name"],
                     "uri": item["uri"],
                 }
+
+                # Check playability if requested
+                if check_playability:
+                    playability_info = await self.check_track_playability(item["uri"])
+                    result["playability"] = playability_info
+
+                return result
 
         query = f"track:{track} artist:{artist}"
         results = await asyncio.to_thread(self.sp.search, q=query, type="track", limit=20)
@@ -187,12 +195,19 @@ class SpotifyProvider(BaseMusicProvider):
                 best_match = item
 
         if best_match and best_score > 60:
-            return {
+            result = {
                 "artist": ", ".join([a["name"] for a in best_match["artists"]]),
                 "track": best_match["name"],
                 "album": best_match["album"]["name"],
                 "uri": best_match["uri"],
             }
+
+            # Check playability if requested
+            if check_playability:
+                playability_info = await self.check_track_playability(best_match["uri"])
+                result["playability"] = playability_info
+
+            return result
         return None
 
     async def create_playlist(self, name: str, description: str = "", public: bool = False) -> str:
