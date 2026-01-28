@@ -24,6 +24,8 @@ To interact with Spotify, you must register an application:
     - `http://localhost:8000/api/v1/integrations/spotify/callback` (for Web API)
 4. Copy your **Client ID** and **Client Secret**.
 
+**Note**: The application now requests the `user-read-private` scope to access your Spotify market (country) information, which enables region-specific music recommendations and availability.
+
 ---
 
 ## 2. Local Installation
@@ -117,7 +119,21 @@ You will need 4 terminal tabs:
 
 ---
 
-## 5. Verification
+## 5. Database Migration
+
+After setting up the application, run database migrations to ensure your schema is up to date:
+
+```bash
+# If using Docker Compose, migrations run automatically
+# For manual setup:
+PYTHONPATH=. uv run alembic upgrade head
+```
+
+**Note**: The application includes automatic migration for existing Spotify connections to populate market information. This migration safely handles token decryption and API calls to backfill missing data.
+
+---
+
+## 6. Verification
 
 Run the test suite to ensure everything is configured correctly:
 
