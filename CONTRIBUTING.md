@@ -46,6 +46,12 @@ We use `Vitest` and `React Testing Library`.
 cd frontend && npm test
 ```
 
+### Database Migrations
+
+When creating database migrations that require external API calls (such as backfilling data from
+Spotify), ensure the migration handles errors gracefully and continues processing other records if
+individual operations fail. Use appropriate logging to track progress and failures.
+
 ### Pre-Commit Hooks
 
 MANDATORY. Install before committing. All hooks are configured to run via `uv run` to ensure

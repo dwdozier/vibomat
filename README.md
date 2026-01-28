@@ -72,6 +72,19 @@ rebuilding to install new dependencies.
 PYTHONPATH=. uv run pytest backend/tests/e2e/test_api_sanity.py --run-ci -v
 ```
 
+### Database Migrations
+
+**Problem:** Database schema changes after pulling updates
+
+**Solution:** Apply pending migrations to update your database:
+
+```bash
+# Apply all pending migrations
+docker-compose exec backend alembic upgrade head
+```
+
+**Why:** Code changes may include database schema updates that require migration execution.
+
 ### Common Issues
 
 - **Database migrations:** Run `docker-compose exec backend alembic upgrade head`
