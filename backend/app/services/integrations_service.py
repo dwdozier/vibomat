@@ -42,6 +42,8 @@ class IntegrationsService:
         # If token is still valid (with 5 minute buffer), return it
         if connection.expires_at and connection.expires_at > now_naive + timedelta(minutes=5):
             logger.debug(f"Using cached valid token for connection {connection.id}")
+            # Lazy-load market if missing
+            await self._ensure_market_populated(connection)
             return connection.access_token
 
         # Token is expired or expiring soon, refresh it
@@ -182,3 +184,46 @@ class IntegrationsService:
                 status_code=502,
                 details={"connection_id": connection.id, "error": str(e)},
             ) from e
+
+    async def _ensure_market_populated(self, connection: ServiceConnection) -> None:
+        """
+        Lazy-load market from Spotify if not already populated.
+
+        This handles cases where:
+        - Market was not set during OAuth flow
+        - Backfill migration failed due to expired tokens
+        - Legacy connections created before market feature
+
+        Args:
+            connection: ServiceConnection to check/update
+        """
+        # Skip if market already populated or not a Spotify connection
+        if connection.market or connection.provider_name != "spotify":
+            return
+
+        try:
+            from backend.core.providers.spotify import SpotifyProvider
+
+            logger.info(f"Lazy-loading market for connection {connection.id}")
+            provider = SpotifyProvider(auth_token=connection.access_token, market=None)
+            market = await provider.get_user_market()
+
+            if market:
+                connection.market = market
+                await self.db.commit()
+                logger.info(
+                    f"Market '{market}' populated for connection {connection.id}",
+                    extra={"connection_id": connection.id, "market": market},
+                )
+            else:
+                logger.warning(
+                    f"No market available for connection {connection.id}",
+                    extra={"connection_id": connection.id},
+                )
+
+        except Exception as e:
+            # Log but don't fail the main operation
+            logger.warning(
+                f"Failed to lazy-load market for connection {connection.id}: {e}",
+                extra={"connection_id": connection.id},
+            )
