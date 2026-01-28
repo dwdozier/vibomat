@@ -99,7 +99,9 @@ async def spotify_login(
         "response_type": "code",
         "redirect_uri": settings.SPOTIFY_REDIRECT_URI,
         "scope": (
-            "playlist-modify-public playlist-modify-private " "playlist-read-private playlist-read-collaborative"
+            "playlist-modify-public playlist-modify-private "
+            "playlist-read-private playlist-read-collaborative "
+            "user-read-private"
         ),
         "state": str(user.id),
     }
