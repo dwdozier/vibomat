@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.9.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.8.0...vibomat-v0.9.0) (2026-02-10)
+
+
+### Features
+
+* **schemas:** Add playability tracking fields to track schemas ([#119](https://github.com/dwdozier/vibomat/issues/119)) ([2b1e80f](https://github.com/dwdozier/vibomat/commit/2b1e80fb5a624ee2502ce20c2a4e637dd987816f))
+* **search:** Add playability checking to track search ([#123](https://github.com/dwdozier/vibomat/issues/123)) ([639ece6](https://github.com/dwdozier/vibomat/commit/639ece6501d0e6ef6ba02d4ac4010a326f4d5373))
+* **spotify:** Add market auto-detection from user profile ([#121](https://github.com/dwdozier/vibomat/issues/121)) ([09bfca4](https://github.com/dwdozier/vibomat/commit/09bfca4ba42ff420e4c4dadc8e84b5384de9b82d))
+* **spotify:** Add market auto-detection from user profile ([#122](https://github.com/dwdozier/vibomat/issues/122)) ([007864a](https://github.com/dwdozier/vibomat/commit/007864ae09ffd54b62f63ac3ab37b3504ad759e9))
+* **spotify:** Add track playability checking to SpotifyProvider ([#120](https://github.com/dwdozier/vibomat/issues/120)) ([ec07b86](https://github.com/dwdozier/vibomat/commit/ec07b86c1464ec1065c4182ae5adec812add4312))
+
+
+### Bug Fixes
+
+* **api:** Fix Spotify relay 500 error - correct SQLAlchemy scalar_one_or_none usage ([#113](https://github.com/dwdozier/vibomat/issues/113)) ([3f502ce](https://github.com/dwdozier/vibomat/commit/3f502ceaaa9429b3aa09a7c9704dd32c77294f3c))
+* Fix Spotify playlist transmission errors (OAuth validation + optional Discogs) ([#116](https://github.com/dwdozier/vibomat/issues/116)) ([70da6ee](https://github.com/dwdozier/vibomat/commit/70da6eeb2c5dbdce16332200c8877b58caae4216))
+
+
+### Documentation
+
+* Add TECHNICAL_DEBT.md tracking next steps and completed work ([#112](https://github.com/dwdozier/vibomat/issues/112)) ([8354c81](https://github.com/dwdozier/vibomat/commit/8354c812d170b463cda0fb42a7742c0eb884e211))
+* Auto-update documentation via Claude Agent ([#111](https://github.com/dwdozier/vibomat/issues/111)) ([b9b45ab](https://github.com/dwdozier/vibomat/commit/b9b45ab81bf052f5e9ed90cccf434704729dcd2a))
+
 ## [0.8.0](https://github.com/dwdozier/vibomat/compare/vibomat-v0.7.0...vibomat-v0.8.0) (2026-01-27)
 
 
